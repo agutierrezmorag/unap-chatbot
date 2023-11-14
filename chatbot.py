@@ -14,7 +14,7 @@ from langchain.chains.question_answering import load_qa_chain
 
 # API keys
 load_dotenv()
-# OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
 PINECONE_ENV = os.getenv("PINECONE_ENV")
 
