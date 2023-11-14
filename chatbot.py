@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from langchain.document_loaders import TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Pinecone
-from langchain.embeddings.openai import OpenAIEmbeddings
+from langchain.embeddings import HuggingFaceInstructEmbeddings
 
 from langchain.llms import OpenAI
 from langchain.chains.question_answering import load_qa_chain
@@ -14,7 +14,7 @@ from langchain.chains.question_answering import load_qa_chain
 
 # API keys
 load_dotenv()
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+# OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
 PINECONE_ENV = os.getenv("PINECONE_ENV")
 
@@ -29,7 +29,7 @@ def get_doc_names():
 
 # Embedding
 @st.cache_resource
-def create_or_get_embeddings():
+def create_or_get_vectorstore():
     # Carga de documentos
     raw_text_files = []
     for file in os.listdir("documentos"):
@@ -46,7 +46,7 @@ def create_or_get_embeddings():
     texts = text_splitter.split_documents(raw_text_files)
 
     # Creacion o pull de index de embedding
-    embeddings = OpenAIEmbeddings()
+    embeddings = HuggingFaceInstructEmbeddings(model_name='hkunlp/instructor-xl')
     pinecone.init(
         api_key=PINECONE_API_KEY, 
         environment=PINECONE_ENV,
@@ -61,7 +61,7 @@ def create_or_get_embeddings():
     else:
         docsearch = Pinecone.from_existing_index(index_name, embeddings)
 
-    return (texts, docsearch)
+    return docsearch
 
 
 # LLM
@@ -85,7 +85,7 @@ def main():
 
     # Variables a utilizar
     file_names = get_doc_names();
-    text_files, docsearch = create_or_get_embeddings();
+    docsearch = create_or_get_vectorstore();
     chain = llm_load();
 
     st.title('UNAP Chatbot 🤖📖')
@@ -104,7 +104,7 @@ def main():
     
     # User input
     if prompt := st.chat_input("Escribe tu pregunta..."):
-        # Agregar input de usuario al hisotrial
+        # Agregar input de usuario al historial
         st.session_state.messages.append({"role": "user", "content": prompt})
         # Mostrar input en su contenedor
         with st.chat_message("user"):
