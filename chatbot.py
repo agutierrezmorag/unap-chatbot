@@ -13,7 +13,8 @@ from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.chains.question_answering import load_qa_chain
 
 from langchain.callbacks import get_openai_callback
-from langchain.chains import RetrievalQAWithSourcesChain
+from langchain.chains import ConversationalRetrievalChain
+from langchain.memory import ConversationBufferWindowMemory
 
 # API keys
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
@@ -81,14 +82,16 @@ def do_embedding(text_chunks):
 
 def answer_question(vectorstore, question):
     llm = ChatOpenAI(model='gpt-3.5-turbo')
-    chain = load_qa_chain(llm=llm, chain_type='stuff')
-    relevant_docs = vectorstore.similarity_search(question, k=3)
+    retriever = vectorstore.as_retriever(search_type="similarity", search_kwargs={"k":2})
+    chain = ConversationalRetrievalChain.from_llm(llm=llm, retriever=retriever)
 
     with get_openai_callback() as cb:
-        result = chain.run(input_documents=relevant_docs, question=question)
+        result = chain({"question": question, "chat_history": st.session_state.chat_history})
         tokens_used = cb.total_tokens
 
-    return result, tokens_used
+    st.session_state.chat_history = [(question, result['answer'])]
+
+    return result['answer'], tokens_used
 
 
 def main():
@@ -112,6 +115,8 @@ def main():
     # # Inicializacion historial de chat
     if "messages" not in st.session_state:
         st.session_state.messages = []
+    if "chat_history" not in st.session_state:
+        st.session_state.chat_history = []
 
     # Mantener historial en caso de rerun de app
     for message in st.session_state.messages:
@@ -133,6 +138,7 @@ def main():
             message_placeholder.markdown(f'{full_response} {tokens}')
         # Agregar respuesta del LLM al historial
         st.session_state.messages.append({"role": "assistant", "content": f'{full_response} {tokens}'})
+    
 
 if __name__ == '__main__':
     main()
