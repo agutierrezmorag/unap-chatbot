@@ -6,20 +6,29 @@ from dotenv import load_dotenv
 from langchain.document_loaders import TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Pinecone
-from langchain.embeddings import HuggingFaceInstructEmbeddings
+from langchain.embeddings import HuggingFaceEmbeddings
 
-from langchain.llms import OpenAI
+from langchain.llms import HuggingFaceHub
+from langchain.chat_models import ChatOpenAI
+from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.chains.question_answering import load_qa_chain
 
+from langchain.prompts import PromptTemplate
+from langchain.schema.runnable import RunnablePassthrough
+
+from langchain.memory import ConversationBufferMemory
+from langchain.chains import ConversationalRetrievalChain
 
 # API keys
-load_dotenv()
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
 PINECONE_ENV = os.getenv("PINECONE_ENV")
+HUGGINGFACEHUB_API_TOKEN = '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'
+
 
 
 # Listado de nombres de documentos
+@st.cache_data
 def get_doc_names():
     file_names = []
     for file in os.listdir("documentos"):
@@ -27,9 +36,8 @@ def get_doc_names():
     return file_names
 
 
-# Embedding
 @st.cache_resource
-def create_or_get_vectorstore():
+def load_and_split_docs():
     # Carga de documentos
     raw_text_files = []
     for file in os.listdir("documentos"):
@@ -44,67 +52,75 @@ def create_or_get_vectorstore():
         length_function=len
         )
     texts = text_splitter.split_documents(raw_text_files)
+    return texts
 
-    # Creacion o pull de index de embedding
-    embeddings = HuggingFaceInstructEmbeddings(model_name='hkunlp/instructor-xl')
+
+# Embedding
+## Importar vectorstore
+@st.cache_resource
+def get_vectorstore():
+    embeddings = OpenAIEmbeddings()
     pinecone.init(
         api_key=PINECONE_API_KEY, 
         environment=PINECONE_ENV,
     )
-    index_name = "unap-chatbot"
+    index_name = "chatbot-unap"
 
-    # en caso de no existir el index, se crea
-    if index_name not in pinecone.list_indexes():
-        pinecone.create_index(name=index_name, metric="cosine", dimension=1536)
-        docsearch = Pinecone.from_documents(texts, embeddings, index_name=index_name)
-    # de lo contrario, se hace un pull al index existente
-    else:
-        docsearch = Pinecone.from_existing_index(index_name, embeddings)
+    vectorstore = Pinecone.from_existing_index(index_name, embeddings)
+    return vectorstore
 
-    return docsearch
+## Crear vectorstore
+def do_embedding(text_chunks):
+    embeddings = OpenAIEmbeddings()
+    pinecone.init(
+        api_key=PINECONE_API_KEY, 
+        environment=PINECONE_ENV,
+    )
+    index_name = "chatbot-unap"
+
+    pinecone.create_index(name=index_name, metric="cosine", dimension=1536)
+    vectorstore = Pinecone.from_documents(text_chunks, embeddings, index_name=index_name)
+    return vectorstore
 
 
-# LLM
-def llm_load():
-    llm = OpenAI(temperature=0)
+def answer_question(vectorstore, question):
+    llm = ChatOpenAI(model='gpt-3.5-turbo')
     chain = load_qa_chain(llm=llm, chain_type='stuff')
-    return chain
-
-
-# Paso de user input a llm
-def answer(docsearch, query, chain):
-     docs = docsearch.similarity_search(query)
-     return chain.run(input_documents=docs, question=query)
-
+    print(f'CHAIN=>{chain}')
+    relevant_docs = vectorstore.similarity_search(question)
+    return chain.run(input_documents=relevant_docs, question=question)
+    
 
 def main():
+    load_dotenv()
     st.set_page_config(
         page_title="UNAP Chatbot 📖",
         page_icon="🤖",
     )
 
-    # Variables a utilizar
-    file_names = get_doc_names();
-    docsearch = create_or_get_vectorstore();
-    chain = llm_load();
+    vectorstore = get_vectorstore()
+    file_names = get_doc_names()
+
+    with st.sidebar:
+        if st.button('Crear embedding 📖'):
+            do_embedding(load_and_split_docs())
+        st.write(file_names)
 
     st.title('UNAP Chatbot 🤖📖')
     st.write('Chat capaz de responder preguntas relacionadas a reglamentos y documentos relacionados con la universidad Arturo Prat. Actualmente es consciente de', len(file_names), 'documentos.')
-    with st.expander('Listado de documentos'):
-         st.write(file_names)
-
-    # Inicializacion historial de chat
+    
+    # # Inicializacion historial de chat
     if "messages" not in st.session_state:
         st.session_state.messages = []
-    
+
     # Mantener historial en caso de rerun de app
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
-    
+
     # User input
     if prompt := st.chat_input("Escribe tu pregunta..."):
-        # Agregar input de usuario al historial
+        # Agregar input de usuario al hisotrial
         st.session_state.messages.append({"role": "user", "content": prompt})
         # Mostrar input en su contenedor
         with st.chat_message("user"):
@@ -113,10 +129,11 @@ def main():
         with st.chat_message("assistant"):
             message_placeholder = st.empty()
             with st.spinner('Generando respuesta...'):
-                full_response = answer(docsearch=docsearch, query=prompt, chain=chain)
+                full_response = answer_question(vectorstore=vectorstore, question=prompt)
             message_placeholder.markdown(full_response + "▌")
         # Agregar respuesta del LLM al historial
         st.session_state.messages.append({"role": "assistant", "content": full_response})
+
 
 if __name__ == '__main__':
     main()
