@@ -6,25 +6,20 @@ from dotenv import load_dotenv
 from langchain.document_loaders import TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Pinecone
-from langchain.embeddings import HuggingFaceEmbeddings
 
 from langchain.llms import HuggingFaceHub
 from langchain.chat_models import ChatOpenAI
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.chains.question_answering import load_qa_chain
 
-from langchain.prompts import PromptTemplate
-from langchain.schema.runnable import RunnablePassthrough
-
-from langchain.memory import ConversationBufferMemory
-from langchain.chains import ConversationalRetrievalChain
+from langchain.callbacks import get_openai_callback
+from langchain.chains import RetrievalQAWithSourcesChain
 
 # API keys
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
 PINECONE_ENV = os.getenv("PINECONE_ENV")
 HUGGINGFACEHUB_API_TOKEN = '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'
-
 
 
 # Listado de nombres de documentos
@@ -69,6 +64,7 @@ def get_vectorstore():
     vectorstore = Pinecone.from_existing_index(index_name, embeddings)
     return vectorstore
 
+
 ## Crear vectorstore
 def do_embedding(text_chunks):
     embeddings = OpenAIEmbeddings()
@@ -86,10 +82,14 @@ def do_embedding(text_chunks):
 def answer_question(vectorstore, question):
     llm = ChatOpenAI(model='gpt-3.5-turbo')
     chain = load_qa_chain(llm=llm, chain_type='stuff')
-    print(f'CHAIN=>{chain}')
-    relevant_docs = vectorstore.similarity_search(question)
-    return chain.run(input_documents=relevant_docs, question=question)
-    
+    relevant_docs = vectorstore.similarity_search(question, k=3)
+
+    with get_openai_callback() as cb:
+        result = chain.run(input_documents=relevant_docs, question=question)
+        tokens_used = cb.total_tokens
+
+    return result, tokens_used
+
 
 def main():
     load_dotenv()
@@ -129,11 +129,10 @@ def main():
         with st.chat_message("assistant"):
             message_placeholder = st.empty()
             with st.spinner('Generando respuesta...'):
-                full_response = answer_question(vectorstore=vectorstore, question=prompt)
-            message_placeholder.markdown(full_response + "▌")
+                full_response, tokens = answer_question(vectorstore=vectorstore, question=prompt)
+            message_placeholder.markdown(f'{full_response} {tokens}')
         # Agregar respuesta del LLM al historial
-        st.session_state.messages.append({"role": "assistant", "content": full_response})
-
+        st.session_state.messages.append({"role": "assistant", "content": f'{full_response} {tokens}'})
 
 if __name__ == '__main__':
     main()
