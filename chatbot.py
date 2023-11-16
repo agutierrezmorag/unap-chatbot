@@ -21,7 +21,11 @@ OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
 PINECONE_ENV = os.getenv("PINECONE_ENV")
 HUGGINGFACEHUB_API_TOKEN = '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'
+from langchain.globals import set_llm_cache
+from langchain.cache import InMemoryCache
+set_llm_cache(InMemoryCache())
 
+llm = ChatOpenAI(model='gpt-3.5-turbo')
 
 # Listado de nombres de documentos
 @st.cache_data
@@ -81,13 +85,14 @@ def do_embedding(text_chunks):
 
 
 def answer_question(vectorstore, question):
-    llm = ChatOpenAI(model='gpt-3.5-turbo')
     retriever = vectorstore.as_retriever(search_type="similarity", search_kwargs={"k":2})
-    chain = ConversationalRetrievalChain.from_llm(llm=llm, retriever=retriever)
+    chain = ConversationalRetrievalChain.from_llm(llm=llm, retriever=retriever, max_tokens_limit=2000, return_source_documents=True)
 
     with get_openai_callback() as cb:
         result = chain({"question": question, "chat_history": st.session_state.chat_history})
+        print(result['source_documents'])
         tokens_used = cb.total_tokens
+        print(cb)
 
     st.session_state.chat_history = [(question, result['answer'])]
 
@@ -135,7 +140,7 @@ def main():
             message_placeholder = st.empty()
             with st.spinner('Generando respuesta...'):
                 full_response, tokens = answer_question(vectorstore=vectorstore, question=prompt)
-            message_placeholder.markdown(f'{full_response} {tokens}')
+            message_placeholder.markdown(f'{full_response} **({tokens})**')
         # Agregar respuesta del LLM al historial
         st.session_state.messages.append({"role": "assistant", "content": f'{full_response} {tokens}'})
     
