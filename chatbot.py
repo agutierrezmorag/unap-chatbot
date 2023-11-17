@@ -40,7 +40,7 @@ def get_llm():
 def db_connection():
     key_dict = json.loads(st.secrets["textkey"])
     creds = firestore.Client.service_account.Credentials.from_service_account_info(key_dict)
-    db = firestore.Client(credentials=creds, project="streamlit-reddit")
+    db = firestore.Client(credentials=creds)
     return db
 
 
