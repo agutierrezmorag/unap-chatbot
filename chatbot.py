@@ -19,6 +19,9 @@ from langchain.cache import InMemoryCache
 
 from langchain.prompts import PromptTemplate
 
+from langchain.agents.agent_toolkits import create_retriever_tool
+from langchain.agents.agent_toolkits import create_conversational_retrieval_agent
+
 # API keys
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
@@ -28,10 +31,38 @@ load_dotenv()
 set_llm_cache(InMemoryCache())
 
 
+@st.cache_resource
+def get_tools():
+    vectorstore = get_vectorstore()
+    tool = create_retriever_tool(
+        vectorstore.as_retriever(search_kwargs={"k": 2}),
+        "search_documents",
+        "useful for answering questions about documents.",
+    )
+    tools = [tool]
+    return tools
+
+
+def execute_agent(question):
+    with get_openai_callback() as cb:
+        llm = get_llm()
+        tools = get_tools()
+        agent = create_conversational_retrieval_agent(llm, tools, verbose=True, remember_intermediate_steps=True, max_token_limit=1500)
+        result = agent({'input': f'Segun los documentos, {question}'})
+        tokens = {
+            'total_tokens': cb.total_tokens,
+            'prompt_tokens': cb.prompt_tokens,
+            'completion_tokens': cb.completion_tokens,
+            'total_cost_usd': cb.total_cost
+        }
+        print(cb)
+    print(result)
+    return result['output'], tokens
+
 # Instanciar llm
 @st.cache_resource(show_spinner=False)
 def get_llm():
-    llm = ChatOpenAI(model='gpt-3.5-turbo', max_tokens=1000)
+    llm = ChatOpenAI(model='gpt-3.5-turbo', streaming=True, max_tokens=1000)
     return llm
 
 
@@ -109,7 +140,7 @@ def do_embedding(text_chunks):
 
 
 # Generacion de respuesta
-def answer_question(vectorstore, question):
+def answer_question(question):
     template = """
     You are a helpful chatbot, always eager to answer questions made by students and workers of a college.
     Your job is to answer questions based on documents and their context, and improve your answers from previous answers.
@@ -127,6 +158,7 @@ def answer_question(vectorstore, question):
         input_variables=["chat_history", "context", "question"]
     )
 
+    vectorstore = get_vectorstore()
     retriever = vectorstore.as_retriever(search_type="similarity", search_kwargs={"k":2})
     chain = ConversationalRetrievalChain.from_llm(llm=get_llm(), retriever=retriever, max_tokens_limit=2000, verbose=True, combine_docs_chain_kwargs={"prompt": PROMPT})
 
@@ -147,7 +179,7 @@ def answer_question(vectorstore, question):
 
 
 # Registrar datos en la base de datos 
-def add_to_db(question, answer, tokens, time_to_answer):
+def add_to_db(question, answer, tokens, time_to_answer, chat_type):
     chat_id = st.session_state.chat_id
     db = db_connection()
 
@@ -166,7 +198,8 @@ def add_to_db(question, answer, tokens, time_to_answer):
         'question': question,
         'answer': answer,
         'tokens': tokens,
-        'time_to_answer': time_to_answer
+        'time_to_answer': time_to_answer,
+        'chat_type': chat_type
     })
 
 
@@ -184,6 +217,9 @@ def main():
              len(file_names), 
              'documentos.'
              )
+    chat_type = st.radio('Tipo de chat', ['LLM', 'Agente'])
+    
+    print(chat_type)
     
     with st.expander('Listado de documentos'):
         st.write(file_names)
@@ -217,7 +253,10 @@ def main():
             message_placeholder = st.empty()
             start = time.time()
             with st.spinner('Generando respuesta...'):
-                full_response, tokens = answer_question(vectorstore=get_vectorstore(), question=prompt)
+                if chat_type == 'Agente':
+                    full_response, tokens = execute_agent(question=prompt)
+                else:
+                    full_response, tokens = answer_question(question=prompt)
             message_placeholder.markdown(full_response + '▌')
             end = time.time()
             if st.session_state.ask_feedback:
@@ -230,7 +269,7 @@ def main():
         # Agregar respuesta del LLM al historial
         st.session_state.messages.append({"role": "assistant", "content": full_response})
 
-        add_to_db(question=prompt, answer=full_response, tokens=tokens, time_to_answer=end-start)
+        add_to_db(question=prompt, answer=full_response, tokens=tokens, time_to_answer=end-start, chat_type=chat_type)
 
 
 if __name__ == '__main__':
