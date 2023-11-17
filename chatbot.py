@@ -1,9 +1,9 @@
-import os, json
+import os, json, time
 import pinecone
 import streamlit as st
 from dotenv import load_dotenv
 from google.cloud import firestore
-import time
+from google.oauth2 import service_account
 
 from langchain.document_loaders import TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -39,7 +39,7 @@ def get_llm():
 @st.cache_resource
 def db_connection():
     key_dict = json.loads(st.secrets["textkey"])
-    creds = firestore.Client.service_account.Credentials.from_service_account_info(key_dict)
+    creds = service_account.Credentials.from_service_account_info(key_dict)
     db = firestore.Client(credentials=creds)
     return db
 
