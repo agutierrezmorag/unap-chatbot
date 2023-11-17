@@ -3,5 +3,5 @@ pinecone-client
 openai
 python-dotenv
 streamlit
-streamlit_analytics 
 tiktoken
+google-cloud-firestore
