@@ -4,3 +4,4 @@ openai
 python-dotenv
 streamlit
 streamlit_analytics 
+tiktoken
