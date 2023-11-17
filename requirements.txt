@@ -3,3 +3,4 @@ pinecone-client
 openai
 python-dotenv
 streamlit
+streamlit_analytics 

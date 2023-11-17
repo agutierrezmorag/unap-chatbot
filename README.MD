@@ -6,7 +6,7 @@ Disponible en: <https://unap-chatbot.streamlit.app/>
 
 ## Servicios utilizados
 
-- [**OpenAI API**](https://openai.com/blog/openai-api) para la generacion de la respuesta. Modelo `gpt-3.5-turbo`.
+- [**OpenAI API**](https://openai.com/blog/openai-api) para la generacion de las respuestas. Modelo `gpt-3.5-turbo`.
 - [**Pinecone**](https://www.pinecone.io/) como base de datos de vectores.
 - [**Streamlit**](https://streamlit.io/) para el frontend y deploy de la herramienta.
 
