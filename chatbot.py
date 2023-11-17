@@ -17,6 +17,8 @@ from langchain.chains import ConversationalRetrievalChain
 from langchain.globals import set_llm_cache
 from langchain.cache import InMemoryCache
 
+from langchain.prompts import PromptTemplate
+
 # API keys
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
@@ -106,19 +108,40 @@ def do_embedding(text_chunks):
 
 # Generacion de respuesta
 def answer_question(vectorstore, question):
+    template = """
+    You are a helpful chatbot, always eager to answer questions made by students and workers of a college.
+    Your job is to answer questions based on documents and their context, and improve your answers from previous answers.
+    Don't try to make up an answer, if you don't know, just say that you don't know.
+    Answer in the same language the question was asked. Always answer formally. 
+    If it takes you more than 5 seconds to answer, just say you can not answer right now and to ask again later.
+
+    Context: {context}
+
+    Question: {question}
+    Answer: 
+    """
+    PROMPT = PromptTemplate(
+        template=template,
+        input_variables=["chat_history", "context", "question"]
+    )
+
     retriever = vectorstore.as_retriever(search_type="similarity", search_kwargs={"k":2})
-    chain = ConversationalRetrievalChain.from_llm(llm=get_llm(), retriever=retriever, max_tokens_limit=2000, verbose=True)
+    chain = ConversationalRetrievalChain.from_llm(llm=get_llm(), retriever=retriever, max_tokens_limit=2000, verbose=True, combine_docs_chain_kwargs={"prompt": PROMPT})
 
     with get_openai_callback() as cb:
         result = chain({"question": question, "chat_history": st.session_state.chat_history})
         with st.expander('tokens'):
             cb
         print(result)
-        tokens_used = cb.total_tokens
-        print(cb)
+        tokens = {
+            'total_tokens': cb.total_tokens,
+            'prompt_tokens': cb.prompt_tokens,
+            'completion_tokens': cb.completion_tokens,
+            'total_cost_usd': cb.total_cost
+        }
 
     st.session_state.chat_history = [(question, result['answer'])]
-    return result['answer'], tokens_used
+    return result['answer'], tokens
 
 
 # Registrar datos en la base de datos 
@@ -193,7 +216,7 @@ def main():
             start = time.time()
             with st.spinner('Generando respuesta...'):
                 full_response, tokens = answer_question(vectorstore=get_vectorstore(), question=prompt)
-            message_placeholder.markdown(f'{full_response} *({tokens})*')
+            message_placeholder.markdown(full_response + '▌')
             end = time.time()
             if st.session_state.ask_feedback:
                 with col1:
@@ -203,7 +226,7 @@ def main():
                 with col3:
                     st.button(":thumbsdown:", key='dislike')
         # Agregar respuesta del LLM al historial
-        st.session_state.messages.append({"role": "assistant", "content": f'{full_response} *({tokens})*'})
+        st.session_state.messages.append({"role": "assistant", "content": full_response})
 
         add_to_db(question=prompt, answer=full_response, tokens=tokens, time_to_answer=end-start)
 
