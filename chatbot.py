@@ -1,4 +1,4 @@
-import os
+import os, json
 import pinecone
 import streamlit as st
 from dotenv import load_dotenv
@@ -38,7 +38,9 @@ def get_llm():
 # Conectar con firestore
 @st.cache_resource
 def db_connection():
-    db = firestore.Client.from_service_account_json("firestore-key.json")
+    key_dict = json.loads(st.secrets["textkey"])
+    creds = firestore.Client.service_account.Credentials.from_service_account_info(key_dict)
+    db = firestore.Client(credentials=creds, project="streamlit-reddit")
     return db
 
 
