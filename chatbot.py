@@ -1,4 +1,6 @@
-import os, json, time
+import os
+import json
+import time
 import pinecone
 import streamlit as st
 from dotenv import load_dotenv
@@ -19,11 +21,11 @@ from langchain.cache import InMemoryCache
 
 from langchain.prompts import PromptTemplate
 
-from langchain.agents.agent_toolkits import create_retriever_tool
-from langchain.agents.agent_toolkits import create_conversational_retrieval_agent
+from langchain.agents.agent_toolkits import create_retriever_tool, create_conversational_retrieval_agent
 
 from trubrics.integrations.streamlit import FeedbackCollector
 from streamlit_feedback import streamlit_feedback
+
 
 # API keys
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
@@ -40,7 +42,7 @@ def get_tools():
     tool = create_retriever_tool(
         vectorstore.as_retriever(search_kwargs={"k": 2}),
         "search_documents",
-        "useful for answering questions about documents.",
+        "use it as context to answer most questions.",
     )
     tools = [tool]
     return tools
@@ -50,8 +52,9 @@ def execute_agent(question):
     with get_openai_callback() as cb:
         llm = get_llm()
         tools = get_tools()
-        agent = create_conversational_retrieval_agent(llm, tools, verbose=True, remember_intermediate_steps=True, max_token_limit=1500)
-        result = agent({'input': f'Segun los documentos, {question}'})
+        agent = create_conversational_retrieval_agent(
+            llm, tools, verbose=True, remember_intermediate_steps=True, max_token_limit=1500)
+        result = agent({'input': question})
         tokens = {
             'total_tokens': cb.total_tokens,
             'prompt_tokens': cb.prompt_tokens,
@@ -62,10 +65,11 @@ def execute_agent(question):
     print(result)
     return result['output'], tokens
 
+
 # Instanciar llm
 @st.cache_resource(show_spinner=False)
 def get_llm():
-    llm = ChatOpenAI(model='gpt-3.5-turbo', streaming=True, max_tokens=1000)
+    llm = ChatOpenAI(model='gpt-3.5-turbo', max_tokens=1000)
     return llm
 
 
@@ -83,9 +87,11 @@ def get_chats_len():
     chats_ref = db_connection().collection('chats').get()
     return len(chats_ref)
 
+
 def get_messages_len():
     chat_id = st.session_state.chat_id
-    message_ref = db_connection().collection('chats').document(chat_id).collection('messages').get()
+    message_ref = db_connection().collection(
+        'chats').document(chat_id).collection('messages').get()
     return len(message_ref)
 
 
@@ -104,9 +110,9 @@ def load_and_split_docs():
     # Carga de documentos
     raw_text_files = []
     for file in os.listdir("documentos"):
-            text_path = "./documentos/" + file
-            loader = TextLoader(text_path, encoding='UTF-8')
-            raw_text_files.extend(loader.load())
+        text_path = "./documentos/" + file
+        loader = TextLoader(text_path, encoding='UTF-8')
+        raw_text_files.extend(loader.load())
 
     # Split de textos
     text_splitter = RecursiveCharacterTextSplitter(
@@ -124,7 +130,7 @@ def load_and_split_docs():
 def get_vectorstore():
     embeddings = OpenAIEmbeddings()
     pinecone.init(
-        api_key=PINECONE_API_KEY, 
+        api_key=PINECONE_API_KEY,
         environment=PINECONE_ENV,
     )
     index_name = "chatbot-unap"
@@ -133,17 +139,18 @@ def get_vectorstore():
     return vectorstore
 
 
-## Crear vectorstore
+# Crear vectorstore
 def do_embedding(text_chunks):
     embeddings = OpenAIEmbeddings()
     pinecone.init(
-        api_key=PINECONE_API_KEY, 
+        api_key=PINECONE_API_KEY,
         environment=PINECONE_ENV,
     )
     index_name = "chatbot-unap"
 
     pinecone.create_index(name=index_name, metric="cosine", dimension=1536)
-    vectorstore = Pinecone.from_documents(text_chunks, embeddings, index_name=index_name)
+    vectorstore = Pinecone.from_documents(
+        text_chunks, embeddings, index_name=index_name)
     return vectorstore
 
 
@@ -154,7 +161,15 @@ def answer_question(question):
     Your job is to answer questions based on documents and their context, and improve your answers from previous answers.
     Don't try to make up an answer, if you don't know, just say that you don't know.
     Answer in the same language the question was asked. Always answer formally. 
-    If it takes you more than 5 seconds to answer, just say you can not answer right now and to ask again later.
+    ALWAYS return a "SOURCES" part in your answer, in bold.
+    The "SOURCES" part should be a reference to the name(s) of the document(s) from which you got your answer.
+
+    And if the user greets with greetings like Hi, hello, How are you, etc reply accordingly as well.
+
+    Example of your response should be:
+
+    The answer is foo
+    Fuente(s): xyz
 
     Context: {context}
 
@@ -167,14 +182,21 @@ def answer_question(question):
     )
 
     vectorstore = get_vectorstore()
-    retriever = vectorstore.as_retriever(search_type="similarity", search_kwargs={"k":2})
-    chain = ConversationalRetrievalChain.from_llm(llm=get_llm(), retriever=retriever, max_tokens_limit=2000, verbose=True, combine_docs_chain_kwargs={"prompt": PROMPT})
+    retriever = vectorstore.as_retriever(
+        search_type="similarity", search_kwargs={"k": 2}
+    )
+    chain = ConversationalRetrievalChain.from_llm(
+        llm=get_llm(), retriever=retriever, max_tokens_limit=2000, verbose=True, combine_docs_chain_kwargs={"prompt": PROMPT}
+    )
 
     with get_openai_callback() as cb:
-        result = chain({"question": question, "chat_history": st.session_state.chat_history})
-        with st.expander('tokens'):
-            cb
+        result = chain(
+            {"question": question, "chat_history": st.session_state.chat_history}
+        )
         print(result)
+        with st.expander('tokens'):
+            st.write(cb)
+        print(cb)
         tokens = {
             'total_tokens': cb.total_tokens,
             'prompt_tokens': cb.prompt_tokens,
@@ -186,7 +208,7 @@ def answer_question(question):
     return result['answer'], tokens
 
 
-# Registrar datos en la base de datos 
+# Registrar datos en la base de datos
 def add_to_db(question, answer, tokens, time_to_answer, chat_type, message_id, user_feedback=None):
     chat_id = st.session_state.chat_id
     db = db_connection()
@@ -203,7 +225,7 @@ def add_to_db(question, answer, tokens, time_to_answer, chat_type, message_id, u
     # Agregar pregunta y respuesta a sub coleccion messages
     messages_ref = chat_doc_ref.collection('messages')
     message_doc_ref = messages_ref.document(message_id)
-    
+
     # Revisar si documento con chat_id existe
     message_doc = message_doc_ref.get()
     if not message_doc.exists:
@@ -216,6 +238,7 @@ def add_to_db(question, answer, tokens, time_to_answer, chat_type, message_id, u
             'chat_type': chat_type,
             'user_feedback': user_feedback
         })
+
 
 def update_feedback(feedback):
 
@@ -233,6 +256,7 @@ def update_feedback(feedback):
         'user_feedback': feedback
     })
 
+
 def main():
     st.set_page_config(
         page_title="UNAP Chatbot 📖",
@@ -240,44 +264,39 @@ def main():
     )
 
     file_names = get_doc_names()
-    col1,col2,col3 = st.columns([3,0.5,0.5])
 
     st.title('🤖 UNAP Chatbot 📖')
-    st.write('Chat capaz de responder preguntas relacionadas a reglamentos y documentos relacionados con la universidad Arturo Prat. Actualmente es consciente de', 
-             len(file_names), 
+    st.write('Chat capaz de responder preguntas relacionadas a reglamentos y documentos relacionados con la universidad Arturo Prat. Actualmente es consciente de',
+             len(file_names),
              'documentos.'
              )
     chat_type = st.radio('Tipo de chat', ['LLM', 'Agente'])
-    
-    #print(chat_type)
-    
+
     with st.expander('Listado de documentos'):
         st.write(file_names)
 
     # # Inicializacion historial de chat
     if "messages" not in st.session_state:
-        st.session_state.messages = [{"role": "assistant", "content": "¡Hola! ¿Como te puedo ayudar?"}]
+        st.session_state.messages = [
+            {"role": "assistant", "content": "¡Hola! ¿Como te puedo ayudar?"}
+        ]
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
-    if "ask_feedback" not in st.session_state:
-        st.session_state.ask_feedback = True
     if "chat_id" not in st.session_state:
         st.session_state.chat_id = str(get_chats_len() + 1)
     if "message_id" not in st.session_state:
         st.session_state.message_id = str(get_messages_len()+1)
-    
+
     # Mantener historial en caso de rerun de app
     for message in st.session_state.messages:
         with st.chat_message(message['role']):
             st.markdown(message["content"])
-    
+
     # User input
     prompt = st.chat_input("Escribe tu pregunta...")
 
     if prompt:
-
         st.session_state.message_id = str(get_messages_len()+1)
-
         # Agregar input de usuario al historial
         st.session_state.messages.append({"role": "user", "content": prompt})
         # Mostrar input en su contenedor
@@ -289,27 +308,33 @@ def main():
             start = time.time()
             with st.spinner('Generando respuesta...'):
                 if chat_type == 'Agente':
-                    full_response, tokens = execute_agent(question=prompt)                    
+                    full_response, tokens = execute_agent(question=prompt)
                 else:
                     full_response, tokens = answer_question(question=prompt)
             message_placeholder.markdown(full_response + '▌')
             end = time.time()
 
-        
-
         # Agregar respuesta del LLM al historial
-        st.session_state.messages.append({"role": "assistant", "content": full_response})
+        st.session_state.messages.append(
+            {"role": "assistant", "content": full_response}
+        )
 
-        add_to_db(question=prompt, answer=full_response, tokens=tokens, time_to_answer=end-start, chat_type=chat_type, message_id=st.session_state.message_id)
+        add_to_db(
+            question=prompt,
+            answer=full_response,
+            tokens=tokens,
+            time_to_answer=end - start,
+            chat_type=chat_type,
+            message_id=st.session_state.message_id
+        )
 
-
-    #Pasada la primera respuesta NO entra a la funcion
+    # Pasada la primera respuesta NO entra a la funcion
     streamlit_feedback(
-                feedback_type="thumbs",
-                optional_text_label="[Opcional] Otorguenos feedback adicional",
-                key=st.session_state.message_id,
-                on_submit=update_feedback,
-            )
+        feedback_type="thumbs",
+        optional_text_label="[Opcional] Proporciona feedback adicional",
+        key=st.session_state.message_id,
+        on_submit=update_feedback,
+    )
 
 
 if __name__ == '__main__':
