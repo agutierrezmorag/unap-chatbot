@@ -22,10 +22,13 @@ from langchain.prompts import PromptTemplate
 from langchain.agents.agent_toolkits import create_retriever_tool
 from langchain.agents.agent_toolkits import create_conversational_retrieval_agent
 
+from trubrics.integrations.streamlit import FeedbackCollector
+from streamlit_feedback import streamlit_feedback
+
 # API keys
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
-PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
-PINECONE_ENV = os.getenv("PINECONE_ENV")
+PINECONE_API_KEY = os.getenv('PINECONE_API_KEY')
+PINECONE_ENV = os.getenv('PINECONE_ENV')
 
 load_dotenv()
 set_llm_cache(InMemoryCache())
@@ -79,6 +82,11 @@ def db_connection():
 def get_chats_len():
     chats_ref = db_connection().collection('chats').get()
     return len(chats_ref)
+
+def get_messages_len():
+    chat_id = st.session_state.chat_id
+    message_ref = db_connection().collection('chats').document(chat_id).collection('messages').get()
+    return len(message_ref)
 
 
 # Listado de nombres de documentos
@@ -142,7 +150,7 @@ def do_embedding(text_chunks):
 # Generacion de respuesta
 def answer_question(question):
     template = """
-    You are a helpful chatbot, always eager to answer questions made by students and workers of a college.
+    You are a helpful chatbot, always eager to answer questions made by students and workers of a college from Chile, so your answers should be based on Chilean context.
     Your job is to answer questions based on documents and their context, and improve your answers from previous answers.
     Don't try to make up an answer, if you don't know, just say that you don't know.
     Answer in the same language the question was asked. Always answer formally. 
@@ -179,7 +187,7 @@ def answer_question(question):
 
 
 # Registrar datos en la base de datos 
-def add_to_db(question, answer, tokens, time_to_answer, chat_type):
+def add_to_db(question, answer, tokens, time_to_answer, chat_type, message_id, user_feedback=None):
     chat_id = st.session_state.chat_id
     db = db_connection()
 
@@ -194,14 +202,36 @@ def add_to_db(question, answer, tokens, time_to_answer, chat_type):
 
     # Agregar pregunta y respuesta a sub coleccion messages
     messages_ref = chat_doc_ref.collection('messages')
-    messages_ref.add({
-        'question': question,
-        'answer': answer,
-        'tokens': tokens,
-        'time_to_answer': time_to_answer,
-        'chat_type': chat_type
-    })
+    message_doc_ref = messages_ref.document(message_id)
+    
+    # Revisar si documento con chat_id existe
+    message_doc = message_doc_ref.get()
+    if not message_doc.exists:
+        # Crearlo en caso de que no exista
+        message_doc_ref.set({
+            'question': question,
+            'answer': answer,
+            'tokens': tokens,
+            'time_to_answer': time_to_answer,
+            'chat_type': chat_type,
+            'user_feedback': user_feedback
+        })
 
+def update_feedback(feedback):
+
+    chat_id = st.session_state.chat_id
+    message_id = st.session_state.message_id
+    db = db_connection()
+
+    chats_ref = db.collection('chats')
+    chat_doc_ref = chats_ref.document(chat_id)
+
+    message_ref = chat_doc_ref.collection('messages')
+    message_doc_ref = message_ref.document(message_id)
+
+    message_doc_ref.update({
+        'user_feedback': feedback
+    })
 
 def main():
     st.set_page_config(
@@ -219,7 +249,7 @@ def main():
              )
     chat_type = st.radio('Tipo de chat', ['LLM', 'Agente'])
     
-    print(chat_type)
+    #print(chat_type)
     
     with st.expander('Listado de documentos'):
         st.write(file_names)
@@ -233,16 +263,21 @@ def main():
         st.session_state.ask_feedback = True
     if "chat_id" not in st.session_state:
         st.session_state.chat_id = str(get_chats_len() + 1)
-
+    if "message_id" not in st.session_state:
+        st.session_state.message_id = str(get_messages_len()+1)
+    
     # Mantener historial en caso de rerun de app
     for message in st.session_state.messages:
         with st.chat_message(message['role']):
             st.markdown(message["content"])
-
+    
     # User input
     prompt = st.chat_input("Escribe tu pregunta...")
 
     if prompt:
+
+        st.session_state.message_id = str(get_messages_len()+1)
+
         # Agregar input de usuario al historial
         st.session_state.messages.append({"role": "user", "content": prompt})
         # Mostrar input en su contenedor
@@ -254,22 +289,27 @@ def main():
             start = time.time()
             with st.spinner('Generando respuesta...'):
                 if chat_type == 'Agente':
-                    full_response, tokens = execute_agent(question=prompt)
+                    full_response, tokens = execute_agent(question=prompt)                    
                 else:
                     full_response, tokens = answer_question(question=prompt)
             message_placeholder.markdown(full_response + '▌')
             end = time.time()
-            if st.session_state.ask_feedback:
-                with col1:
-                    st.markdown('*¿Que te parecio la velocidad de la respuesta?*')
-                with col2:
-                    st.button(":thumbsup:", key='like')
-                with col3:
-                    st.button(":thumbsdown:", key='dislike')
+
+        
+
         # Agregar respuesta del LLM al historial
         st.session_state.messages.append({"role": "assistant", "content": full_response})
 
-        add_to_db(question=prompt, answer=full_response, tokens=tokens, time_to_answer=end-start, chat_type=chat_type)
+        add_to_db(question=prompt, answer=full_response, tokens=tokens, time_to_answer=end-start, chat_type=chat_type, message_id=st.session_state.message_id)
+
+
+    #Pasada la primera respuesta NO entra a la funcion
+    streamlit_feedback(
+                feedback_type="thumbs",
+                optional_text_label="[Opcional] Otorguenos feedback adicional",
+                key=st.session_state.message_id,
+                on_submit=update_feedback,
+            )
 
 
 if __name__ == '__main__':
