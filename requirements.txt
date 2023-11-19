@@ -6,3 +6,5 @@ streamlit
 tiktoken
 google-cloud-firestore
 google-auth-oauthlib
+streamlit-feedback
+trubrics
