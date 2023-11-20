@@ -42,7 +42,7 @@ def get_tools():
     tool = create_retriever_tool(
         vectorstore.as_retriever(search_kwargs={"k": 2}),
         "search_documents",
-        "use it as context to answer most questions.",
+        "useful to answer questions.",
     )
     tools = [tool]
     return tools
@@ -53,8 +53,10 @@ def execute_agent(question):
         llm = get_llm()
         tools = get_tools()
         agent = create_conversational_retrieval_agent(
-            llm, tools, verbose=True, remember_intermediate_steps=True, max_token_limit=1500)
+            llm, tools, verbose=True, remember_intermediate_steps=True, max_token_limit=1500
+        )
         result = agent({'input': question})
+        print(agent)
         tokens = {
             'total_tokens': cb.total_tokens,
             'prompt_tokens': cb.prompt_tokens,
@@ -62,7 +64,7 @@ def execute_agent(question):
             'total_cost_usd': cb.total_cost
         }
         print(cb)
-    print(result)
+    #print(result)
     return result['output'], tokens
 
 
@@ -150,7 +152,8 @@ def do_embedding(text_chunks):
 
     pinecone.create_index(name=index_name, metric="cosine", dimension=1536)
     vectorstore = Pinecone.from_documents(
-        text_chunks, embeddings, index_name=index_name)
+        text_chunks, embeddings, index_name=index_name
+    )
     return vectorstore
 
 
@@ -161,15 +164,15 @@ def answer_question(question):
     Your job is to answer questions based on documents and their context, and improve your answers from previous answers.
     Don't try to make up an answer, if you don't know, just say that you don't know.
     Answer in the same language the question was asked. Always answer formally. 
-    ALWAYS return a "SOURCES" part in your answer, in bold.
-    The "SOURCES" part should be a reference to the name(s) of the document(s) from which you got your answer.
+    If needed, return a "Fuentes, desde tmplt" part in your answer, in bold.
+    The "Fuentes, desde tmplt" part should be a reference to the name(s) of the document(s) from which you got your answer.
 
     And if the user greets with greetings like Hi, hello, How are you, etc reply accordingly as well.
 
     Example of your response should be:
 
     The answer is foo
-    Fuente(s): xyz
+    Fuentes, desde tmplt: xyz
 
     Context: {context}
 
@@ -186,17 +189,30 @@ def answer_question(question):
         search_type="similarity", search_kwargs={"k": 2}
     )
     chain = ConversationalRetrievalChain.from_llm(
-        llm=get_llm(), retriever=retriever, max_tokens_limit=2000, verbose=True, combine_docs_chain_kwargs={"prompt": PROMPT}
+        llm=get_llm(), retriever=retriever, max_tokens_limit=2000, verbose=True, return_source_documents=True,combine_docs_chain_kwargs={"prompt": PROMPT}
     )
 
     with get_openai_callback() as cb:
         result = chain(
             {"question": question, "chat_history": st.session_state.chat_history}
         )
-        print(result)
+
+        source_doc_names = set()
+        for document in result['source_documents']:
+            file_path = document.metadata['source']
+            file_name = os.path.splitext(os.path.basename(file_path))[0]
+            formatted_name = ' '.join(word.capitalize() for word in file_name.split('_'))
+
+            # Check if the name has already been printed
+            if formatted_name not in source_doc_names:
+                print(formatted_name)
+                source_doc_names.add(formatted_name)
+
         with st.expander('tokens'):
             st.write(cb)
+
         print(cb)
+
         tokens = {
             'total_tokens': cb.total_tokens,
             'prompt_tokens': cb.prompt_tokens,
@@ -205,7 +221,15 @@ def answer_question(question):
         }
 
     st.session_state.chat_history = [(question, result['answer'])]
-    return result['answer'], tokens
+
+    if len(source_doc_names) == 1:
+        source_doc_names_str = next(iter(source_doc_names))
+    else:
+        source_doc_names_str = ', '.join(source_doc_names)
+
+    answer = result['answer']
+    answer_with_sources = f"{answer}\n\nFuentes (llm): {source_doc_names_str}"
+    return answer_with_sources, tokens, source_doc_names
 
 
 # Registrar datos en la base de datos
@@ -310,8 +334,8 @@ def main():
                 if chat_type == 'Agente':
                     full_response, tokens = execute_agent(question=prompt)
                 else:
-                    full_response, tokens = answer_question(question=prompt)
-            message_placeholder.markdown(full_response + '▌')
+                    full_response, tokens, source_doc_names = answer_question(question=prompt)
+            message_placeholder.markdown(full_response)
             end = time.time()
 
         # Agregar respuesta del LLM al historial
