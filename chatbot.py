@@ -36,40 +36,6 @@ load_dotenv()
 set_llm_cache(InMemoryCache())
 
 
-""" 
-Funciones del agente
-@st.cache_resource
-def get_tools():
-    vectorstore = get_vectorstore()
-    tool = create_retriever_tool(
-        vectorstore.as_retriever(search_kwargs={"k": 2}),
-        "search_documents",
-        "useful to answer questions.",
-    )
-    tools = [tool]
-    return tools
-
-
-def execute_agent(question):
-    with get_openai_callback() as cb:
-        llm = get_llm()
-        tools = get_tools()
-        agent = create_conversational_retrieval_agent(
-            llm, tools, verbose=True, remember_intermediate_steps=True, max_token_limit=1500
-        )
-        result = agent({'input': question})
-        print(agent)
-        tokens = {
-            'total_tokens': cb.total_tokens,
-            'prompt_tokens': cb.prompt_tokens,
-            'completion_tokens': cb.completion_tokens,
-            'total_cost_usd': cb.total_cost
-        }
-        print(cb)
-    #print(result)
-    return result['output'], tokens """
-
-
 # Instanciar llm
 @st.cache_resource(show_spinner=False)
 def get_llm():
@@ -163,20 +129,23 @@ def do_embedding(text_chunks):
 # Generacion de respuesta
 def answer_question(question):
     template = """
-    You are a helpful chatbot, always eager to answer questions made by students and workers of a college from Chile, so your answers should be based on Chilean context.
-    Your job is to answer questions based on documents and their context, and improve your answers from previous answers.
+    You are a helpful chatbot, always eager to answer questions made by students and workers of the college 'Universidad Arturo Prat', from Chile.
+    Your job is to answer questions based on documents and their context, and improve your answers based on previous answers.
     Don't try to make up an answer, if you don't know, just say that you don't know.
     Answer in the same language the question was asked. Always answer formally. 
-    If needed, return a "Fuentes, desde tmplt" part in your answer, in bold.
-    The "Fuentes, desde tmplt" part should be a reference to the name(s) of the document(s) from which you got your answer.
+    If the question is related to any of the documents return a "Fuentes" part in your answer, written in bold.
+    The "Fuentes" part should ONLY reference the SPECIFIC file names of the documents from which you got your answer.
+    Only include the "Fuentes" part where it applies, if you don't know the specific name of the file of the document, don't include it in your answer.
 
     And if the user greets with greetings like Hi, hello, How are you, etc reply accordingly as well.
 
     Example of your response should be:
 
     The answer is foo
-    Fuentes, desde tmplt: xyz
 
+    Fuentes: xyz
+
+    Base your answer in the following context and question. DO NOT return the following to the user.
     Context: {context}
 
     Question: {question}
@@ -192,7 +161,7 @@ def answer_question(question):
         search_type="similarity", search_kwargs={"k": 2}
     )
     chain = ConversationalRetrievalChain.from_llm(
-        llm=get_llm(), retriever=retriever, max_tokens_limit=2000, verbose=True, return_source_documents=True,combine_docs_chain_kwargs={"prompt": PROMPT}
+        llm=get_llm(), retriever=retriever, max_tokens_limit=2000, return_source_documents=True, verbose=True,combine_docs_chain_kwargs={"prompt": PROMPT}
     )
 
     with get_openai_callback() as cb:
@@ -200,20 +169,8 @@ def answer_question(question):
             {"question": question, "chat_history": st.session_state.chat_history}
         )
 
-        source_doc_names = set()
-        for document in result['source_documents']:
-            file_path = document.metadata['source']
-            file_name = os.path.splitext(os.path.basename(file_path))[0]
-            formatted_name = ' '.join(word.capitalize() for word in file_name.split('_'))
-
-            # Check if the name has already been printed
-            if formatted_name not in source_doc_names:
-                print(formatted_name)
-                source_doc_names.add(formatted_name)
-
         with st.expander('tokens'):
             st.write(cb)
-
         print(cb)
 
         tokens = {
@@ -225,14 +182,8 @@ def answer_question(question):
 
     st.session_state.chat_history = [(question, result['answer'])]
 
-    if len(source_doc_names) == 1:
-        source_doc_names_str = next(iter(source_doc_names))
-    else:
-        source_doc_names_str = ', '.join(source_doc_names)
-
     answer = result['answer']
-    answer_with_sources = f"{answer}\n\nFuentes (llm): {source_doc_names_str}"
-    return answer_with_sources, tokens, source_doc_names
+    return answer, tokens
 
 
 # Registrar datos en la base de datos
@@ -314,7 +265,7 @@ def main():
     if "message_id" not in st.session_state:
         st.session_state.message_id = str(get_messages_len()+1)
     if 'model' not in st.session_state:
-        st.session_state_model = chat_type
+        st.session_state.model = chat_type
 
     # Mantener historial en caso de rerun de app
     for message in st.session_state.messages:
@@ -336,7 +287,7 @@ def main():
             message_placeholder = st.empty()
             start = time.time()
             with st.spinner('Generando respuesta...'):
-                full_response, tokens, source_doc_names = answer_question(question=prompt)
+                full_response, tokens = answer_question(question=prompt)
             message_placeholder.markdown(full_response)
             end = time.time()
 
@@ -357,7 +308,7 @@ def main():
     # Pasada la primera respuesta NO entra a la funcion
     streamlit_feedback(
         feedback_type="thumbs",
-        optional_text_label="[Opcional] Proporciona feedback adicional",
+        optional_text_label="Proporciona feedback adicional (Opcional)",
         key=st.session_state.message_id,
         on_submit=update_feedback,
     )
