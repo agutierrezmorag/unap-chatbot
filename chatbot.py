@@ -21,7 +21,7 @@ from langchain.cache import InMemoryCache
 
 from langchain.prompts import PromptTemplate
 
-from langchain.agents.agent_toolkits import create_retriever_tool, create_conversational_retrieval_agent
+# from langchain.agents.agent_toolkits import create_retriever_tool, create_conversational_retrieval_agent
 
 from trubrics.integrations.streamlit import FeedbackCollector
 from streamlit_feedback import streamlit_feedback
@@ -36,6 +36,8 @@ load_dotenv()
 set_llm_cache(InMemoryCache())
 
 
+""" 
+Funciones del agente
 @st.cache_resource
 def get_tools():
     vectorstore = get_vectorstore()
@@ -65,13 +67,14 @@ def execute_agent(question):
         }
         print(cb)
     #print(result)
-    return result['output'], tokens
+    return result['output'], tokens """
 
 
 # Instanciar llm
 @st.cache_resource(show_spinner=False)
 def get_llm():
-    llm = ChatOpenAI(model='gpt-3.5-turbo', max_tokens=1000)
+    model = st.session_state.model
+    llm = ChatOpenAI(model=model, max_tokens=1000)
     return llm
 
 
@@ -290,11 +293,11 @@ def main():
     file_names = get_doc_names()
 
     st.title('🤖 UNAP Chatbot 📖')
-    st.write('Chat capaz de responder preguntas relacionadas a reglamentos y documentos relacionados con la universidad Arturo Prat. Actualmente es consciente de',
+    st.write('Chat capaz de responder preguntas relacionadas a reglamentos y documentos de la universidad Arturo Prat. Actualmente es consciente de',
              len(file_names),
              'documentos.'
              )
-    chat_type = st.radio('Tipo de chat', ['LLM', 'Agente'])
+    chat_type = st.radio('Modelo', ['gpt-3.5-turbo-1106', 'gpt-4-1106-preview'])
 
     with st.expander('Listado de documentos'):
         st.write(file_names)
@@ -310,6 +313,8 @@ def main():
         st.session_state.chat_id = str(get_chats_len() + 1)
     if "message_id" not in st.session_state:
         st.session_state.message_id = str(get_messages_len()+1)
+    if 'model' not in st.session_state:
+        st.session_state_model = chat_type
 
     # Mantener historial en caso de rerun de app
     for message in st.session_state.messages:
@@ -331,10 +336,7 @@ def main():
             message_placeholder = st.empty()
             start = time.time()
             with st.spinner('Generando respuesta...'):
-                if chat_type == 'Agente':
-                    full_response, tokens = execute_agent(question=prompt)
-                else:
-                    full_response, tokens, source_doc_names = answer_question(question=prompt)
+                full_response, tokens, source_doc_names = answer_question(question=prompt)
             message_placeholder.markdown(full_response)
             end = time.time()
 
