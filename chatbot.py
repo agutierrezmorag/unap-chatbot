@@ -199,7 +199,7 @@ def answer_question(question):
         with st.expander('tokens'):
             st.write(cb)
         print(cb)
-        print("Ahora viene el vector store \n")
+        print("\n")
         print(retriever.get_relevant_documents(question, search_kwargs={"k": 2}))
 
         tokens = {
