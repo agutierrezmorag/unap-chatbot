@@ -134,10 +134,10 @@ def answer_question(question):
     Don't try to make up an answer, if you don't know, just say that you don't know.
     Answer in the same language the question was asked. Always answer formally. 
     If the question is related to any of the documents return a "Fuentes" part in your answer, written in bold.
-    The "Fuentes" part should ONLY reference the SPECIFIC file names of the documents from which you got your answer.
-    Only include the "Fuentes" part where it applies, if you don't know the specific name of the file of the document, don't include it in your answer.
+    The "Fuentes" part should ONLY reference the source documents from which you got your answer.
+    Only include the "Fuentes" part if the question is related to college regulation or the college 'Universidad arturo prat' or 'UNAP', if you don't know the specific name of the file of the document, don't include it in your answer.
 
-    And if the user greets with greetings like Hi, hello, How are you, etc reply accordingly as well.
+    And if the user greets with greetings like Hi, hello, How are you, etc reply accordingly as well but don't include the "Fuentes" part.
 
     Example of your response should be:
 
@@ -147,31 +147,60 @@ def answer_question(question):
 
     Base your answer in the following context and question. DO NOT return the following to the user.
     Context: {context}
+    Soucer Documents: {source}
+    Inside the given source, remember the documents names inside, they shoul be added in the "Fuentes" part of the response. 
+
+    
+    If the question isn't about college regulation or about the college 'Universidad arturo prat' or 'UNAP' don't include any "Fuentes" part in the response. 
 
     Question: {question}
     Answer: 
     """
     PROMPT = PromptTemplate(
         template=template,
-        input_variables=["chat_history", "context", "question"]
+        input_variables=["chat_history", "context", "question", "source"]
     )
 
     vectorstore = get_vectorstore()
     retriever = vectorstore.as_retriever(
         search_type="similarity", search_kwargs={"k": 2}
     )
+
     chain = ConversationalRetrievalChain.from_llm(
         llm=get_llm(), retriever=retriever, max_tokens_limit=2000, return_source_documents=True, verbose=True,combine_docs_chain_kwargs={"prompt": PROMPT}
     )
 
+    
+    docs = retriever.get_relevant_documents(question, search_kwargs={"k": 2})
+
+    source_doc_names = set()
+    for document in docs:
+        file_path = document.metadata['source']
+        file_name = os.path.splitext(os.path.basename(file_path))[0]
+        formatted_name = ' '.join(word.capitalize() for word in file_name.split('_'))
+
+        # Check if the name has already been printed
+        if formatted_name not in source_doc_names:
+            print(formatted_name)
+            source_doc_names.add(formatted_name)
+    
+    if len(source_doc_names) == 1:
+        source_doc_names_str = next(iter(source_doc_names))
+    else:
+        source_doc_names_str = ', '.join(source_doc_names)
+
+    
+    
     with get_openai_callback() as cb:
         result = chain(
-            {"question": question, "chat_history": st.session_state.chat_history}
+            {"question": question, "chat_history": st.session_state.chat_history, "source": source_doc_names_str}
         )
 
         with st.expander('tokens'):
             st.write(cb)
         print(cb)
+        print("Ahora viene el vector store \n")
+        print(retriever.get_relevant_documents(question, search_kwargs={"k": 2}))
 
         tokens = {
             'total_tokens': cb.total_tokens,
