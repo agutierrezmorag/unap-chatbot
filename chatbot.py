@@ -1,31 +1,24 @@
-import os
 import json
+import os
 import time
+
 import pinecone
 import streamlit as st
 from dotenv import load_dotenv
 from google.cloud import firestore
 from google.oauth2 import service_account
-
-from langchain.document_loaders import TextLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.vectorstores import Pinecone
-
-from langchain.chat_models import ChatOpenAI
-from langchain.embeddings.openai import OpenAIEmbeddings
-
+from langchain.cache import InMemoryCache
 from langchain.callbacks import get_openai_callback
 from langchain.chains import ConversationalRetrievalChain
+from langchain.chat_models import ChatOpenAI
+from langchain.document_loaders import TextLoader
+from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.globals import set_llm_cache
-from langchain.cache import InMemoryCache
-
 from langchain.prompts import PromptTemplate
-
-# from langchain.agents.agent_toolkits import create_retriever_tool, create_conversational_retrieval_agent
-
-from trubrics.integrations.streamlit import FeedbackCollector
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.vectorstores import Pinecone
 from streamlit_feedback import streamlit_feedback
-
+from trubrics.integrations.streamlit import FeedbackCollector
 
 # API keys
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -159,42 +152,18 @@ def answer_question(question):
         llm=get_llm(),
         retriever=retriever,
         max_tokens_limit=2000,
-        return_source_documents=True,
         verbose=True,
         combine_docs_chain_kwargs={"prompt": PROMPT},
     )
 
-    
-    docs = retriever.get_relevant_documents(question, search_kwargs={"k": 2})
-
-    source_doc_names = set()
-    for document in docs:
-        file_path = document.metadata['source']
-        file_name = os.path.splitext(os.path.basename(file_path))[0]
-        formatted_name = ' '.join(word.capitalize() for word in file_name.split('_'))
-
-        # Check if the name has already been printed
-        if formatted_name not in source_doc_names:
-            print(formatted_name)
-            source_doc_names.add(formatted_name)
-    
-    if len(source_doc_names) == 1:
-        source_doc_names_str = next(iter(source_doc_names))
-    else:
-        source_doc_names_str = ', '.join(source_doc_names)
-
-    
-    
     with get_openai_callback() as cb:
         result = chain(
-            {"question": question, "chat_history": st.session_state.chat_history, "source": source_doc_names_str}
+            {"question": question, "chat_history": st.session_state.chat_history}
         )
 
         with st.expander("tokens"):
             st.write(cb)
         print(cb)
-        print("\n")
-        print(retriever.get_relevant_documents(question, search_kwargs={"k": 2}))
 
         tokens = {
             "total_tokens": cb.total_tokens,
