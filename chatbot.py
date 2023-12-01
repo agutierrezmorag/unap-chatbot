@@ -142,7 +142,7 @@ def answer_question(question):
 
     Base your answer in the following context and question. DO NOT return the following to the user.
     Context: {context}
-
+    
     Question: {question}
     Answer: 
     """
@@ -154,6 +154,7 @@ def answer_question(question):
     retriever = vectorstore.as_retriever(
         search_type="similarity", search_kwargs={"k": 2}
     )
+
     chain = ConversationalRetrievalChain.from_llm(
         llm=get_llm(),
         retriever=retriever,
@@ -163,14 +164,37 @@ def answer_question(question):
         combine_docs_chain_kwargs={"prompt": PROMPT},
     )
 
+    
+    docs = retriever.get_relevant_documents(question, search_kwargs={"k": 2})
+
+    source_doc_names = set()
+    for document in docs:
+        file_path = document.metadata['source']
+        file_name = os.path.splitext(os.path.basename(file_path))[0]
+        formatted_name = ' '.join(word.capitalize() for word in file_name.split('_'))
+
+        # Check if the name has already been printed
+        if formatted_name not in source_doc_names:
+            print(formatted_name)
+            source_doc_names.add(formatted_name)
+    
+    if len(source_doc_names) == 1:
+        source_doc_names_str = next(iter(source_doc_names))
+    else:
+        source_doc_names_str = ', '.join(source_doc_names)
+
+    
+    
     with get_openai_callback() as cb:
         result = chain(
-            {"question": question, "chat_history": st.session_state.chat_history}
+            {"question": question, "chat_history": st.session_state.chat_history, "source": source_doc_names_str}
         )
 
         with st.expander("tokens"):
             st.write(cb)
         print(cb)
+        print("\n")
+        print(retriever.get_relevant_documents(question, search_kwargs={"k": 2}))
 
         tokens = {
             "total_tokens": cb.total_tokens,
