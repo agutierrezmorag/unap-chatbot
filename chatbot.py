@@ -28,9 +28,9 @@ from streamlit_feedback import streamlit_feedback
 
 
 # API keys
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
-PINECONE_API_KEY = os.getenv('PINECONE_API_KEY')
-PINECONE_ENV = os.getenv('PINECONE_ENV')
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
+PINECONE_ENV = os.getenv("PINECONE_ENV")
 
 load_dotenv()
 set_llm_cache(InMemoryCache())
@@ -55,14 +55,19 @@ def db_connection():
 
 # Total de chats
 def get_chats_len():
-    chats_ref = db_connection().collection('chats').get()
+    chats_ref = db_connection().collection("chats").get()
     return len(chats_ref)
 
 
 def get_messages_len():
     chat_id = st.session_state.chat_id
-    message_ref = db_connection().collection(
-        'chats').document(chat_id).collection('messages').get()
+    message_ref = (
+        db_connection()
+        .collection("chats")
+        .document(chat_id)
+        .collection("messages")
+        .get()
+    )
     return len(message_ref)
 
 
@@ -82,14 +87,12 @@ def load_and_split_docs():
     raw_text_files = []
     for file in os.listdir("documentos"):
         text_path = "./documentos/" + file
-        loader = TextLoader(text_path, encoding='UTF-8')
+        loader = TextLoader(text_path, encoding="UTF-8")
         raw_text_files.extend(loader.load())
 
     # Split de textos
     text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=2048,
-        chunk_overlap=128,
-        length_function=len
+        chunk_size=2048, chunk_overlap=128, length_function=len
     )
     texts = text_splitter.split_documents(raw_text_files)
     return texts
@@ -129,21 +132,13 @@ def do_embedding(text_chunks):
 # Generacion de respuesta
 def answer_question(question):
     template = """
-    You are a helpful chatbot, always eager to answer questions made by students and workers of the college 'Universidad Arturo Prat', from Chile.
-    Your job is to answer questions based on documents and their context, and improve your answers based on previous answers.
-    Don't try to make up an answer, if you don't know, just say that you don't know.
-    Answer in the same language the question was asked. Always answer formally. 
-    If the question is related to any of the documents return a "Fuentes" part in your answer, written in bold.
-    The "Fuentes" part should ONLY reference the SPECIFIC file names of the documents from which you got your answer.
-    Only include the "Fuentes" part where it applies, if you don't know the specific name of the file of the document, don't include it in your answer.
-
-    And if the user greets with greetings like Hi, hello, How are you, etc reply accordingly as well.
-
-    Example of your response should be:
-
-    The answer is foo
-
-    Fuentes: xyz
+    Given a user query, along with a chat history, generate a response that is directly related to the provided documents. 
+    The response should incorporate relevant information from the documents and cite sources appropriately. 
+    Do not generate responses for questions that are not related to the provided documents or the institution UNAP. 
+    If you don't know an answer just say you don't know, don't try to make up one.
+    ALWAYS answer in the same language the user asked the question in.
+    Ensure accuracy, context awareness, and source retrieval in your answers.
+    Be conversational, if the user greets you or talks to you respond accordingly.
 
     Base your answer in the following context and question. DO NOT return the following to the user.
     Context: {context}
@@ -152,8 +147,7 @@ def answer_question(question):
     Answer: 
     """
     PROMPT = PromptTemplate(
-        template=template,
-        input_variables=["chat_history", "context", "question"]
+        template=template, input_variables=["chat_history", "context", "question"]
     )
 
     vectorstore = get_vectorstore()
@@ -161,7 +155,12 @@ def answer_question(question):
         search_type="similarity", search_kwargs={"k": 2}
     )
     chain = ConversationalRetrievalChain.from_llm(
-        llm=get_llm(), retriever=retriever, max_tokens_limit=2000, return_source_documents=True, verbose=True,combine_docs_chain_kwargs={"prompt": PROMPT}
+        llm=get_llm(),
+        retriever=retriever,
+        max_tokens_limit=2000,
+        return_source_documents=True,
+        verbose=True,
+        combine_docs_chain_kwargs={"prompt": PROMPT},
     )
 
     with get_openai_callback() as cb:
@@ -169,29 +168,31 @@ def answer_question(question):
             {"question": question, "chat_history": st.session_state.chat_history}
         )
 
-        with st.expander('tokens'):
+        with st.expander("tokens"):
             st.write(cb)
         print(cb)
 
         tokens = {
-            'total_tokens': cb.total_tokens,
-            'prompt_tokens': cb.prompt_tokens,
-            'completion_tokens': cb.completion_tokens,
-            'total_cost_usd': cb.total_cost
+            "total_tokens": cb.total_tokens,
+            "prompt_tokens": cb.prompt_tokens,
+            "completion_tokens": cb.completion_tokens,
+            "total_cost_usd": cb.total_cost,
         }
 
-    st.session_state.chat_history = [(question, result['answer'])]
+    st.session_state.chat_history = [(question, result["answer"])]
 
-    answer = result['answer']
+    answer = result["answer"]
     return answer, tokens
 
 
 # Registrar datos en la base de datos
-def add_to_db(question, answer, tokens, time_to_answer, chat_type, message_id, user_feedback=None):
+def add_to_db(
+    question, answer, tokens, time_to_answer, chat_type, message_id, user_feedback=None
+):
     chat_id = st.session_state.chat_id
     db = db_connection()
 
-    chats_ref = db.collection('chats')
+    chats_ref = db.collection("chats")
     chat_doc_ref = chats_ref.document(chat_id)
 
     # Revisar si documento con chat_id existe
@@ -201,38 +202,37 @@ def add_to_db(question, answer, tokens, time_to_answer, chat_type, message_id, u
         chat_doc_ref.set({})
 
     # Agregar pregunta y respuesta a sub coleccion messages
-    messages_ref = chat_doc_ref.collection('messages')
+    messages_ref = chat_doc_ref.collection("messages")
     message_doc_ref = messages_ref.document(message_id)
 
     # Revisar si documento con chat_id existe
     message_doc = message_doc_ref.get()
     if not message_doc.exists:
         # Crearlo en caso de que no exista
-        message_doc_ref.set({
-            'question': question,
-            'answer': answer,
-            'tokens': tokens,
-            'time_to_answer': time_to_answer,
-            'chat_type': chat_type,
-            'user_feedback': user_feedback
-        })
+        message_doc_ref.set(
+            {
+                "question": question,
+                "answer": answer,
+                "tokens": tokens,
+                "time_to_answer": time_to_answer,
+                "chat_type": chat_type,
+                "user_feedback": user_feedback,
+            }
+        )
 
 
 def update_feedback(feedback):
-
     chat_id = st.session_state.chat_id
     message_id = st.session_state.message_id
     db = db_connection()
 
-    chats_ref = db.collection('chats')
+    chats_ref = db.collection("chats")
     chat_doc_ref = chats_ref.document(chat_id)
 
-    message_ref = chat_doc_ref.collection('messages')
+    message_ref = chat_doc_ref.collection("messages")
     message_doc_ref = message_ref.document(message_id)
 
-    message_doc_ref.update({
-        'user_feedback': feedback
-    })
+    message_doc_ref.update({"user_feedback": feedback})
 
 
 def main():
@@ -243,14 +243,15 @@ def main():
 
     file_names = get_doc_names()
 
-    st.title('🤖 UNAP Chatbot 📖')
-    st.write('Chat capaz de responder preguntas relacionadas a reglamentos y documentos de la universidad Arturo Prat. Actualmente es consciente de',
-             len(file_names),
-             'documentos.'
-             )
-    chat_type = st.radio('Modelo', ['gpt-3.5-turbo-1106', 'gpt-4-1106-preview'])
+    st.title("🤖 UNAP Chatbot")
+    st.write(
+        "Chat capaz de responder preguntas relacionadas a reglamentos y documentos de la universidad Arturo Prat. Actualmente es consciente de",
+        len(file_names),
+        "documentos.",
+    )
+    chat_type = st.radio("Modelo", ["gpt-3.5-turbo-1106", "gpt-4-1106-preview"])
 
-    with st.expander('Listado de documentos'):
+    with st.expander("Listado de documentos"):
         st.write(file_names)
 
     # # Inicializacion historial de chat
@@ -263,20 +264,20 @@ def main():
     if "chat_id" not in st.session_state:
         st.session_state.chat_id = str(get_chats_len() + 1)
     if "message_id" not in st.session_state:
-        st.session_state.message_id = str(get_messages_len()+1)
-    if 'model' not in st.session_state:
+        st.session_state.message_id = str(get_messages_len() + 1)
+    if "model" not in st.session_state:
         st.session_state.model = chat_type
 
     # Mantener historial en caso de rerun de app
     for message in st.session_state.messages:
-        with st.chat_message(message['role']):
+        with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
     # User input
     prompt = st.chat_input("Escribe tu pregunta...")
 
     if prompt:
-        st.session_state.message_id = str(get_messages_len()+1)
+        st.session_state.message_id = str(get_messages_len() + 1)
         # Agregar input de usuario al historial
         st.session_state.messages.append({"role": "user", "content": prompt})
         # Mostrar input en su contenedor
@@ -286,7 +287,7 @@ def main():
         with st.chat_message("assistant"):
             message_placeholder = st.empty()
             start = time.time()
-            with st.spinner('Generando respuesta...'):
+            with st.spinner("Generando respuesta..."):
                 full_response, tokens = answer_question(question=prompt)
             message_placeholder.markdown(full_response)
             end = time.time()
@@ -302,7 +303,7 @@ def main():
             tokens=tokens,
             time_to_answer=end - start,
             chat_type=chat_type,
-            message_id=st.session_state.message_id
+            message_id=st.session_state.message_id,
         )
 
     # Pasada la primera respuesta NO entra a la funcion
@@ -314,5 +315,5 @@ def main():
     )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
