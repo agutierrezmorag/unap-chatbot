@@ -11,11 +11,9 @@ from langchain.cache import InMemoryCache
 from langchain.callbacks import get_openai_callback
 from langchain.chains import ConversationalRetrievalChain
 from langchain.chat_models import ChatOpenAI
-from langchain.document_loaders import TextLoader
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.globals import set_llm_cache
 from langchain.prompts import PromptTemplate
-from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Pinecone
 from streamlit_feedback import streamlit_feedback
 from trubrics.integrations.streamlit import FeedbackCollector
@@ -73,25 +71,6 @@ def get_doc_names():
     return file_names
 
 
-# Carga y split de textos
-@st.cache_resource
-def load_and_split_docs():
-    # Carga de documentos
-    raw_text_files = []
-    for file in os.listdir("documentos"):
-        text_path = "./documentos/" + file
-        loader = TextLoader(text_path, encoding="UTF-8")
-        raw_text_files.extend(loader.load())
-
-    # Split de textos
-    text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=2048, chunk_overlap=128, length_function=len
-    )
-    texts = text_splitter.split_documents(raw_text_files)
-    return texts
-
-
-# Embeddings
 # Importar vectorstore
 @st.cache_resource(show_spinner=False)
 def get_vectorstore():
@@ -103,22 +82,6 @@ def get_vectorstore():
     index_name = "chatbot-unap"
 
     vectorstore = Pinecone.from_existing_index(index_name, embeddings)
-    return vectorstore
-
-
-# Crear vectorstore
-def do_embedding(text_chunks):
-    embeddings = OpenAIEmbeddings()
-    pinecone.init(
-        api_key=PINECONE_API_KEY,
-        environment=PINECONE_ENV,
-    )
-    index_name = "chatbot-unap"
-
-    pinecone.create_index(name=index_name, metric="cosine", dimension=1536)
-    vectorstore = Pinecone.from_documents(
-        text_chunks, embeddings, index_name=index_name
-    )
     return vectorstore
 
 
