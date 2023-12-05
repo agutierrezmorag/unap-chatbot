@@ -30,6 +30,12 @@ set_llm_cache(InMemoryCache())
 # Instanciar llm
 @st.cache_resource(show_spinner=False)
 def get_llm():
+    """
+    Get the language model for the chatbot.
+
+    Returns:
+        llm (ChatOpenAI): The language model for the chatbot.
+    """
     model = st.session_state.model
     llm = ChatOpenAI(model=model, max_tokens=1000)
     return llm
@@ -51,6 +57,12 @@ def get_chats_len():
 
 
 def get_messages_len():
+    """
+    Get the length of the messages in a chat.
+
+    Returns:
+        int: The number of messages in the chat.
+    """
     chat_id = st.session_state.chat_id
     message_ref = (
         db_connection()
@@ -65,6 +77,12 @@ def get_messages_len():
 # Listado de nombres de documentos
 @st.cache_data
 def get_doc_names():
+    """
+    Retrieves the names of all the documents in the 'documentos' directory.
+
+    Returns:
+        A list of file names.
+    """
     file_names = []
     for file in os.listdir("documentos"):
         file_names.append(file)
@@ -74,6 +92,12 @@ def get_doc_names():
 # Importar vectorstore
 @st.cache_resource(show_spinner=False)
 def get_vectorstore():
+    """
+    Retrieves the vector store for the chatbot.
+
+    Returns:
+        vectorstore (Pinecone): The vector store object.
+    """
     embeddings = OpenAIEmbeddings()
     pinecone.init(
         api_key=PINECONE_API_KEY,
@@ -87,6 +111,16 @@ def get_vectorstore():
 
 # Generacion de respuesta
 def answer_question(question):
+    """
+    Generate a response to a user's question based on a given chat history and context.
+
+    Args:
+        question (str): The user's question.
+
+    Returns:
+        tuple: A tuple containing the generated answer and token information.
+    """
+
     template = """
     Given a user query, along with a chat history, generate a response that is directly related to the provided documents. 
     The response should incorporate relevant information from the documents and cite sources appropriately. 
@@ -145,6 +179,19 @@ def answer_question(question):
 def add_to_db(
     question, answer, tokens, time_to_answer, chat_type, message_id, user_feedback=None
 ):
+    """
+    Add a question and answer to the database.
+
+    Parameters:
+    - question (str): The question to be added.
+    - answer (str): The answer to the question.
+    - tokens (list): List of tokens associated with the question.
+    - time_to_answer (float): Time taken to answer the question.
+    - chat_type (str): Type of chat.
+    - message_id (str): ID of the message.
+    - user_feedback (str, optional): Feedback provided by the user. Defaults to None.
+    """
+
     chat_id = st.session_state.chat_id
     db = db_connection()
 
@@ -178,6 +225,16 @@ def add_to_db(
 
 
 def update_feedback(feedback):
+    """
+    Updates the user feedback for a specific message in the chat.
+
+    Parameters:
+    feedback (str): The user feedback to be updated.
+
+    Returns:
+    None
+    """
+
     chat_id = st.session_state.chat_id
     message_id = st.session_state.message_id
     db = db_connection()
@@ -195,20 +252,18 @@ def main():
     st.set_page_config(
         page_title="UNAP Chatbot 📖",
         page_icon="🤖",
+        initial_sidebar_state="collapsed",
+        menu_items={
+            "About": f"Chat capaz de responder preguntas relacionadas a reglamentos y documentos de la universidad Arturo Prat."
+        },
     )
-
-    file_names = get_doc_names()
 
     st.title("🤖 UNAP Chatbot")
-    st.write(
-        "Chat capaz de responder preguntas relacionadas a reglamentos y documentos de la universidad Arturo Prat. Actualmente es consciente de",
-        len(file_names),
-        "documentos.",
-    )
+
     chat_type = st.radio("Modelo", ["gpt-3.5-turbo-1106", "gpt-4-1106-preview"])
 
     with st.expander("Listado de documentos"):
-        st.write(file_names)
+        st.write(get_doc_names())
 
     # # Inicializacion historial de chat
     if "messages" not in st.session_state:
