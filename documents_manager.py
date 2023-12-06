@@ -10,6 +10,7 @@ from github.GithubObject import NotSet
 from langchain.document_loaders import TextLoader
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from st_pages import show_pages_from_config
 
 load_dotenv()
 
@@ -97,14 +98,15 @@ def add_files_to_repo(file_list, container, commit_message="Add file via Streaml
         try:
             existing_file = repo.get_contents(file_path, ref=REPO_BRANCH)
             container.warning(
-                f"Documento '{uploaded_file.name}' ya existe. Omitiendo..."
+                f"Documento '{uploaded_file.name}' ya existe. Omitiendo...", icon="⚠️"
             )
             time.sleep(2)
             continue
         except GithubException as e:
             if e.status != 404:
                 container.error(
-                    f"Error al obtener el documento '{uploaded_file.name}': {e}"
+                    f"Error al obtener el documento '{uploaded_file.name}': {e}",
+                    icon="❌",
                 )
                 continue
 
@@ -176,9 +178,11 @@ def main():
         page_title="Documentos",
         layout="wide",
     )
-    st.title("Listado de documentos")
+    st.title("📖 Listado de documentos")
 
-    info_placeholder = st.empty()
+    show_pages_from_config()
+
+    container_placeholder = st.empty()
 
     if "upload_key" not in st.session_state:
         st.session_state.upload_key = str(uuid.uuid4())
@@ -200,13 +204,13 @@ def main():
                 if delete_doc(item.path):
                     st.success(
                         f"Documento '{document_name}' eliminado exitosamente.",
-                        icon="✔",
+                        icon="✅",
                     )
                     st.rerun()
                 else:
                     st.error(f"Hubo un error al intentar eliminar '{document_name}'.")
     else:
-        st.info("⚠️ No hay documentos en el repositorio.")
+        st.info("ℹ️ No hay documentos en el repositorio.")
 
     uploaded_files = st.file_uploader(
         "Sube un nuevo documento",
@@ -219,7 +223,7 @@ def main():
     if uploaded_files:
         if st.button("Subir archivos"):
             if uploaded_files:
-                add_files_to_repo(uploaded_files, info_placeholder)
+                add_files_to_repo(uploaded_files, container_placeholder)
                 st.session_state.upload_key = str(uuid.uuid4())
                 st.rerun()
 

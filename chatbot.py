@@ -15,6 +15,7 @@ from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.globals import set_llm_cache
 from langchain.prompts import PromptTemplate
 from langchain.vectorstores import Pinecone
+from st_pages import add_page_title, show_pages_from_config
 from streamlit_feedback import streamlit_feedback
 from trubrics.integrations.streamlit import FeedbackCollector
 
@@ -259,6 +260,8 @@ def main():
     )
 
     st.title("🤖 UNAP Chatbot")
+
+    show_pages_from_config()
 
     chat_type = st.radio("Modelo", ["gpt-3.5-turbo-1106", "gpt-4-1106-preview"])
 
