@@ -4,7 +4,6 @@ import time
 
 import pinecone
 import streamlit as st
-from dotenv import load_dotenv
 from google.cloud import firestore
 from google.oauth2 import service_account
 from langchain.cache import InMemoryCache
@@ -20,11 +19,10 @@ from streamlit_feedback import streamlit_feedback
 from trubrics.integrations.streamlit import FeedbackCollector
 
 # API keys
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
-PINECONE_ENV = os.getenv("PINECONE_ENV")
+OPENAI_API_KEY = st.secrets.openai.api_key
+PINECONE_API_KEY = st.secrets.pinecone.api_key
+PINECONE_ENV = st.secrets.pinecone.env
 
-load_dotenv()
 set_llm_cache(InMemoryCache())
 
 
@@ -38,14 +36,14 @@ def get_llm():
         llm (ChatOpenAI): The language model for the chatbot.
     """
     model = st.session_state.model
-    llm = ChatOpenAI(model=model, max_tokens=1000)
+    llm = ChatOpenAI(model=model, openai_api_key=OPENAI_API_KEY, max_tokens=1000)
     return llm
 
 
 # Conectar con firestore
 @st.cache_resource
 def db_connection():
-    key_dict = json.loads(st.secrets["textkey"])
+    key_dict = json.loads(st.secrets.firestore.textkey)
     creds = service_account.Credentials.from_service_account_info(key_dict)
     db = firestore.Client(credentials=creds)
     return db
@@ -99,7 +97,7 @@ def get_vectorstore():
     Returns:
         vectorstore (Pinecone): The vector store object.
     """
-    embeddings = OpenAIEmbeddings()
+    embeddings = OpenAIEmbeddings(openai_api_key=OPENAI_API_KEY)
     pinecone.init(
         api_key=PINECONE_API_KEY,
         environment=PINECONE_ENV,

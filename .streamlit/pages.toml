@@ -1,0 +1,9 @@
+[[pages]]
+path = "chatbot.py"
+name = "Chatbot"
+icon = "🤖"
+
+[[pages]]
+path = "documents_manager.py"
+name = "Documentos"
+icon = "📖"

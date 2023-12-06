@@ -4,7 +4,6 @@ import uuid
 
 import pinecone
 import streamlit as st
-from dotenv import load_dotenv
 from github import Auth, Github, GithubException
 from github.GithubObject import NotSet
 from langchain.document_loaders import TextLoader
@@ -12,23 +11,21 @@ from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from st_pages import show_pages_from_config
 
-load_dotenv()
-
 # API keys
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
-PINECONE_ENV = os.getenv("PINECONE_ENV")
+OPENAI_API_KEY = st.secrets.openai.api_key
+PINECONE_API_KEY = st.secrets.pinecone.api_key
+PINECONE_ENV = st.secrets.pinecone.env
 
 # GitHub API keys
-REPO_OWNER = os.getenv("REPO_OWNER")
-REPO_NAME = os.getenv("REPO_NAME")
-REPO_BRANCH = os.getenv("REPO_BRANCH")
-DIRECTORY_PATH = os.getenv("DIRECTORY_PATH")
-ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")
+REPO_OWNER = st.secrets.github.repo_owner
+REPO_NAME = st.secrets.github.repo_name
+REPO_BRANCH = st.secrets.github.repo_branch
+DIRECTORY_PATH = st.secrets.github.directory_path
+ACCESS_TOKEN = st.secrets.github.access_token
 
 
 @st.cache_resource
-def get_repo():
+def get_repo(show_loader=False):
     """
     Retrieves the GitHub repository object based on the provided access token, repository owner, and repository name.
 
@@ -158,7 +155,7 @@ def do_embedding(text_chunks):
     Returns:
         vectorstore (Pinecone.VectorStore): The embedded text chunks stored in a Pinecone VectorStore.
     """
-    embeddings = OpenAIEmbeddings()
+    embeddings = OpenAIEmbeddings(openai_api_key=OPENAI_API_KEY)
     pinecone.init(
         api_key=PINECONE_API_KEY,
         environment=PINECONE_ENV,
