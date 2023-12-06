@@ -121,14 +121,14 @@ def answer_question(question):
     """
 
     template = """
-    Given a user query, along with a chat history, generate a response that is directly related to the provided documents. 
-    The response should incorporate relevant information from the documents and cite sources appropriately. 
-    Cite your sources based on the name of the documents provided.
-    Do not generate responses for questions that are not related to the provided documents or the institution UNAP. 
-    If you don't know an answer just say you don't know, don't try to make up one.
-    ALWAYS answer in the same language the user asked the question in.
-    Ensure accuracy, context awareness, and source retrieval in your answers.
-    Be conversational, if the user greets you or talks to you respond accordingly.
+    Given a user query and a chat history, generate a response that is directly related to the provided documents. 
+    Incorporate relevant information from the documents and cite sources appropriately. 
+    Only generate responses for questions that are related to the provided documents or the institution UNAP. 
+    If you don't know the answer, simply state that you don't know instead of making up one. 
+    Always respond in the same language as the user's question. 
+    Ensure accuracy, context awareness, and source retrieval in your answers. 
+    Write your answers in a way that is easy for the user to understand, avoiding long paragraphs. 
+    Be conversational and respond accordingly if the user greets or talks to you.
 
     Base your answer in the following context, sources and question. DO NOT return the following to the user.
     Context: {context}
