@@ -123,20 +123,23 @@ def answer_question(question):
     template = """
     Given a user query, along with a chat history, generate a response that is directly related to the provided documents. 
     The response should incorporate relevant information from the documents and cite sources appropriately. 
+    Cite your sources based on the name of the documents provided.
     Do not generate responses for questions that are not related to the provided documents or the institution UNAP. 
     If you don't know an answer just say you don't know, don't try to make up one.
     ALWAYS answer in the same language the user asked the question in.
     Ensure accuracy, context awareness, and source retrieval in your answers.
     Be conversational, if the user greets you or talks to you respond accordingly.
 
-    Base your answer in the following context and question. DO NOT return the following to the user.
+    Base your answer in the following context, sources and question. DO NOT return the following to the user.
     Context: {context}
+    Sources: {sources}
     
     Question: {question}
     Answer: 
     """
     PROMPT = PromptTemplate(
-        template=template, input_variables=["chat_history", "context", "question"]
+        template=template,
+        input_variables=["chat_history", "context", "question", "sources"],
     )
 
     vectorstore = get_vectorstore()
@@ -149,12 +152,35 @@ def answer_question(question):
         retriever=retriever,
         max_tokens_limit=2000,
         verbose=True,
+        return_source_documents=True,
         combine_docs_chain_kwargs={"prompt": PROMPT},
     )
 
+    docs = retriever.get_relevant_documents(question, search_kwargs={"k": 2})
+
+    source_doc_names = set()
+    for document in docs:
+        file_path = document.metadata["source"]
+        file_name = os.path.splitext(os.path.basename(file_path))[0]
+        formatted_name = " ".join(word.capitalize() for word in file_name.split("_"))
+
+        # Check if the name has already been printed
+        if formatted_name not in source_doc_names:
+            print(formatted_name)
+            source_doc_names.add(formatted_name)
+
+    if len(source_doc_names) == 1:
+        source_doc_names_str = next(iter(source_doc_names))
+    else:
+        source_doc_names_str = ", ".join(source_doc_names)
+
     with get_openai_callback() as cb:
         result = chain(
-            {"question": question, "chat_history": st.session_state.chat_history}
+            {
+                "question": question,
+                "chat_history": st.session_state.chat_history,
+                "sources": source_doc_names_str,
+            }
         )
 
         with st.expander("tokens"):
