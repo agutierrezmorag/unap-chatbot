@@ -1,8 +1,10 @@
 import json
 import os
 import time
+from datetime import datetime
 
 import pinecone
+import pytz
 import streamlit as st
 from google.cloud import firestore
 from google.oauth2 import service_account
@@ -236,6 +238,8 @@ def add_to_db(
     # Revisar si documento con chat_id existe
     message_doc = message_doc_ref.get()
     if not message_doc.exists:
+        local_tz = pytz.timezone("America/Santiago")
+        local_time = datetime.now(local_tz)
         # Crearlo en caso de que no exista
         message_doc_ref.set(
             {
@@ -245,6 +249,7 @@ def add_to_db(
                 "time_to_answer": time_to_answer,
                 "chat_type": chat_type,
                 "user_feedback": user_feedback,
+                "submission_time": local_time,
             }
         )
 
