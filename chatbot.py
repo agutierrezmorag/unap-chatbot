@@ -20,10 +20,7 @@ from st_pages import add_page_title, show_pages_from_config
 from streamlit_feedback import streamlit_feedback
 from trubrics.integrations.streamlit import FeedbackCollector
 
-# API keys
-OPENAI_API_KEY = st.secrets.openai.api_key
-PINECONE_API_KEY = st.secrets.pinecone.api_key
-PINECONE_ENV = st.secrets.pinecone.env
+from utils import config
 
 set_llm_cache(InMemoryCache())
 
@@ -38,14 +35,14 @@ def get_llm():
         llm (ChatOpenAI): The language model for the chatbot.
     """
     model = st.session_state.model
-    llm = ChatOpenAI(model=model, openai_api_key=OPENAI_API_KEY, max_tokens=1000)
+    llm = ChatOpenAI(model=model, openai_api_key=config.OPENAI_API_KEY, max_tokens=1000)
     return llm
 
 
 # Conectar con firestore
 @st.cache_resource
 def db_connection():
-    key_dict = json.loads(st.secrets.firestore.textkey)
+    key_dict = json.loads(config.FIRESTORE_TEXT_KEY)
     creds = service_account.Credentials.from_service_account_info(key_dict)
     db = firestore.Client(credentials=creds)
     return db
@@ -99,14 +96,13 @@ def get_vectorstore():
     Returns:
         vectorstore (Pinecone): The vector store object.
     """
-    embeddings = OpenAIEmbeddings(openai_api_key=OPENAI_API_KEY)
+    embeddings = OpenAIEmbeddings(openai_api_key=config.OPENAI_API_KEY)
     pinecone.init(
-        api_key=PINECONE_API_KEY,
-        environment=PINECONE_ENV,
+        api_key=config.PINECONE_API_KEY,
+        environment=config.PINECONE_ENV,
     )
-    index_name = "chatbot-unap"
 
-    vectorstore = Pinecone.from_existing_index(index_name, embeddings)
+    vectorstore = Pinecone.from_existing_index(config.PINECONE_INDEX_NAME, embeddings)
     return vectorstore
 
 
@@ -123,19 +119,26 @@ def answer_question(question):
     """
 
     template = """
-    Given a user query and a chat history, generate a response that is directly related to the provided documents. 
-    Incorporate relevant information from the documents and cite sources appropriately. 
-    Only generate responses for questions that are related to the provided documents or the institution UNAP. 
-    If you don't know the answer, simply state that you don't know instead of making up one. 
-    Always respond in the same language as the user's question. 
-    Ensure accuracy, context awareness, and source retrieval in your answers. 
-    Write your answers in a way that is easy for the user to understand, avoiding long paragraphs. 
-    Be conversational and respond accordingly if the user greets or talks to you.
+    Given a user query and a chat history, generate a response that is directly related to the provided documents. \
+    Incorporate relevant information from the documents and always cite sources when you provide information from them. \ 
+    Only generate responses for questions that are related to the provided documents or the institution UNAP.  \
+    If you don't know the answer, simply state that you don't know instead of making up one.  \
+    Always respond in the same language as the user's question. \
+    Ensure accuracy, context awareness, and source retrieval in your answers. \
+
+    Aim to provide concise, clear, and easy-to-understand answers. Avoid long paragraphs. Instead, break down information \
+    into shorter sentences or bullet points if possible. \
+
+    Be conversational and respond accordingly if the user greets or talks to you. \
+
+    Remember to cite the source of your information in your answer. For example, if the information comes from a specific article, \
+    mention the article's number in your answer. \
+    Place the cites at the end of the sentence where you used the information from the article. Not at the end of the answer. \
 
     Base your answer in the following context, sources and question. DO NOT return the following to the user.
     Context: {context}
     Sources: {sources}
-    
+
     Question: {question}
     Answer: 
     """
@@ -284,7 +287,7 @@ def main():
         page_icon="🤖",
         initial_sidebar_state="collapsed",
         menu_items={
-            "About": f"Chat capaz de responder preguntas relacionadas a reglamentos y documentos de la universidad Arturo Prat."
+            "About": "Chat capaz de responder preguntas relacionadas a reglamentos y documentos de la universidad Arturo Prat."
         },
     )
 
@@ -297,7 +300,7 @@ def main():
     with st.expander("Listado de documentos"):
         st.write(get_doc_names())
 
-    # # Inicializacion historial de chat
+    # Inicializacion historial de chat
     if "messages" not in st.session_state:
         st.session_state.messages = [
             {"role": "assistant", "content": "¡Hola! ¿Como te puedo ayudar?"}
