@@ -2,26 +2,18 @@ import os
 import time
 import uuid
 
+import pandas as pd
 import pinecone
 import streamlit as st
 from github import Auth, Github, GithubException
 from github.GithubObject import NotSet
-from langchain.document_loaders import TextLoader
+from langchain.document_loaders import GitLoader, TextLoader
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.vectorstores import Pinecone
 from st_pages import show_pages_from_config
 
-# API keys
-OPENAI_API_KEY = st.secrets.openai.api_key
-PINECONE_API_KEY = st.secrets.pinecone.api_key
-PINECONE_ENV = st.secrets.pinecone.env
-
-# GitHub API keys
-REPO_OWNER = st.secrets.github.repo_owner
-REPO_NAME = st.secrets.github.repo_name
-REPO_BRANCH = st.secrets.github.repo_branch
-DIRECTORY_PATH = st.secrets.github.directory_path
-ACCESS_TOKEN = st.secrets.github.access_token
+from utils import config
 
 
 @st.cache_resource
@@ -32,9 +24,9 @@ def get_repo(show_loader=False):
     Returns:
         repo (github.Repository.Repository): The GitHub repository object.
     """
-    auth = Auth.Token(ACCESS_TOKEN)
+    auth = Auth.Token(config.GITHUB_ACCESS_TOKEN)
     g = Github(auth=auth)
-    repo = g.get_repo(REPO_OWNER + "/" + REPO_NAME)
+    repo = g.get_repo(config.REPO_OWNER + "/" + config.REPO_NAME)
     return repo
 
 
@@ -47,7 +39,7 @@ def get_repo_documents():
     """
     try:
         repo = get_repo()
-        docs = repo.get_contents(DIRECTORY_PATH, ref=REPO_BRANCH)
+        docs = repo.get_contents(config.REPO_DIRECTORY_PATH, ref=config.REPO_BRANCH)
         return docs
     except GithubException as e:
         print(f"Error: {e}")
@@ -67,9 +59,12 @@ def delete_doc(file_path, commit_message="Delete file via Streamlit"):
     """
     repo = get_repo()
     try:
-        doc = repo.get_contents(file_path, ref=REPO_BRANCH)
+        doc = repo.get_contents(file_path, ref=config.REPO_BRANCH)
         resp = repo.delete_file(
-            path=doc.path, message=commit_message, sha=doc.sha, branch=REPO_BRANCH
+            path=doc.path,
+            message=commit_message,
+            sha=doc.sha,
+            branch=config.REPO_BRANCH,
         )
         return "commit" in resp
     except GithubException as e:
@@ -90,10 +85,10 @@ def add_files_to_repo(file_list, container, commit_message="Add file via Streaml
     for uploaded_file in file_list:
         content = uploaded_file.read().decode("utf-8")
 
-        file_path = f"{DIRECTORY_PATH}/{uploaded_file.name}"
+        file_path = f"{config.REPO_DIRECTORY_PATH}/{uploaded_file.name}"
 
         try:
-            existing_file = repo.get_contents(file_path, ref=REPO_BRANCH)
+            existing_file = repo.get_contents(file_path, ref=config.REPO_BRANCH)
             container.warning(
                 f"Documento '{uploaded_file.name}' ya existe. Omitiendo...", icon="⚠️"
             )
@@ -112,7 +107,7 @@ def add_files_to_repo(file_list, container, commit_message="Add file via Streaml
                 path=file_path,
                 message=commit_message,
                 content=content,
-                branch=REPO_BRANCH,
+                branch=config.REPO_BRANCH,
             )
             container.success(
                 f"Documento '{uploaded_file.name}' añadido exitosamente.", icon="✅"
@@ -130,17 +125,21 @@ def load_and_split_docs():
     Returns:
         texts (list): A list of split text documents.
     """
-    raw_text_files = []
-    for file in os.listdir("documentos"):
-        text_path = "./documentos/" + file
-        loader = TextLoader(text_path, encoding="UTF-8")
-        raw_text_files.extend(loader.load())
+
+    loader = GitLoader(
+        clone_url=config.REPO_URL,
+        repo_path="./documentos",
+        branch=config.REPO_BRANCH,
+        file_filter=lambda x: x.endswith(".txt"),
+    )
+    docs = loader.load()
 
     # Split de textos
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=2048, chunk_overlap=128, length_function=len
     )
-    texts = text_splitter.split_documents(raw_text_files)
+    texts = text_splitter.split_documents(docs)
+
     return texts
 
 
@@ -155,16 +154,23 @@ def do_embedding(text_chunks):
     Returns:
         vectorstore (Pinecone.VectorStore): The embedded text chunks stored in a Pinecone VectorStore.
     """
-    embeddings = OpenAIEmbeddings(openai_api_key=OPENAI_API_KEY)
+    embeddings = OpenAIEmbeddings(openai_api_key=config.OPENAI_API_KEY)
     pinecone.init(
-        api_key=PINECONE_API_KEY,
-        environment=PINECONE_ENV,
+        api_key=config.PINECONE_API_KEY,
+        environment=config.PINECONE_ENV,
     )
-    index_name = "chatbot-unap"
 
-    pinecone.create_index(name=index_name, metric="cosine", dimension=1536)
+    # Revisar si el index ya existe
+    if config.PINECONE_INDEX_NAME in pinecone.list_indexes():
+        # Borrarlo en caso de que exista
+        pinecone.delete_index(config.PINECONE_INDEX_NAME)
+
+    # Crear un nuevo index
+    pinecone.create_index(
+        name=config.PINECONE_INDEX_NAME, metric="cosine", dimension=1536
+    )
     vectorstore = Pinecone.from_documents(
-        text_chunks, embeddings, index_name=index_name
+        text_chunks, embeddings, index_name=config.PINECONE_INDEX_NAME
     )
     return vectorstore
 
@@ -173,41 +179,117 @@ def main():
     st.set_page_config(
         page_icon="📑",
         page_title="Documentos",
-        layout="wide",
     )
-    st.title("📖 Listado de documentos")
+
+    st.title("📄 Documentos")
+    st.write(
+        "En esta pagina se podran gestionar los documentos que se utilizaran para la generacion de respuestas en el chatbot."
+    )
+    st.markdown(
+        """
+        ## 📋 Instrucciones
+        ### Cargar nuevos documentos
+        - Se debe subir uno o mas archivos de texto (.txt).
+        - Presionar el boton 'Subir archivos'.
+        - Se dispone de un boton 'Limpiar' para limpiar la lista de archivos subidos.
+
+        ### Eliminar documentos
+        - Seleccionar el/los documentos a eliminar.
+        - Presionar el boton 'Eliminar documentos seleccionados'.
+        - Confirmar la eliminacion de los documentos.
+
+        ### Guardar cambios
+        - Presionar el boton 'Cargar documentos'.
+        - Esperar a que se carguen los documentos añadidos/eliminados. Esto puede tardar unos minutos dependiendo de la cantidad de documentos.
+        - Una vez cargados los documentos, el chatbot estara listo para responder acorde a los documentos cargados.
+        """
+    )
 
     show_pages_from_config()
+
+    st.markdown("## ⚙️ Gestión de documentos")
 
     container_placeholder = st.empty()
 
     if "upload_key" not in st.session_state:
         st.session_state.upload_key = str(uuid.uuid4())
+    if "delete_selected" not in st.session_state:
+        st.session_state.delete_selected = False
 
     repo_contents = get_repo_documents()
 
     if repo_contents:
+        # Create a list to store the documents data
+        documents_data = []
+
         for item in repo_contents:
-            document_path = item.path.replace(DIRECTORY_PATH, "").lstrip("/")
+            document_path = item.path.replace(config.REPO_DIRECTORY_PATH, "").lstrip(
+                "/"
+            )
             document_name, _ = os.path.splitext(document_path)
 
-            col1, col2 = st.columns([0.9, 0.1])
-            with col1:
-                st.write(f"📑 {document_name}")
-            with col2:
-                delete_button = st.button("⛔", key=document_name)
+            # Append a dictionary with the document data to the list
+            documents_data.append(
+                {
+                    "Document Name": document_name,
+                    "File Path": item.path,
+                    "Selected": False,
+                }
+            )
 
-            if delete_button:
-                if delete_doc(item.path):
-                    st.success(
-                        f"Documento '{document_name}' eliminado exitosamente.",
-                        icon="✅",
-                    )
-                    st.rerun()
-                else:
-                    st.error(f"Hubo un error al intentar eliminar '{document_name}'.")
+        # Create a DataFrame from the documents data
+        documents_df = pd.DataFrame(documents_data)
+
+        # Create a dictionary to store the checkbox states
+        checkbox_states = {}
+
+        # Display the DataFrame with checkboxes
+        with st.container(border=True):
+            for i in range(len(documents_df)):
+                checkbox_states[i] = st.checkbox(
+                    documents_df.loc[i, "Document Name"], key=i
+                )
+
+        # Create placeholders for the buttons
+        confirm_dialog = st.empty()
+        action_button = st.empty()
+        cancel_button = st.empty()
+
+        # Display the appropriate action button
+        if st.session_state.get("delete_selected"):
+            confirm_dialog.markdown(
+                ":red[¿Estás seguro de que deseas eliminar los documentos seleccionados?]",
+            )
+            if action_button.button("Confirmar"):
+                for i, selected in checkbox_states.items():
+                    if selected:
+                        document_to_delete = documents_df.loc[i, "File Path"]
+                        if delete_doc(document_to_delete):
+                            st.success(
+                                f"Documento '{documents_df.loc[i, 'Document Name']}' eliminado exitosamente."
+                            )
+                        else:
+                            st.error(
+                                f"Hubo un error al intentar eliminar '{documents_df.loc[i, 'Document Name']}'."
+                            )
+                st.session_state.delete_selected = False
+                time.sleep(2)
+                st.rerun()
+            elif cancel_button.button("Cancelar"):
+                st.session_state.delete_selected = False
+                st.rerun()
+        else:
+            action_button = st.button(
+                "Eliminar documentos seleccionados",
+                disabled=not any(checkbox_states.values()),
+            )
+            if action_button:
+                st.session_state.delete_selected = True
+                st.rerun()
     else:
         st.info("ℹ️ No hay documentos en el repositorio.")
+
+    st.markdown("## 🔗 Subir documentos")
 
     uploaded_files = st.file_uploader(
         "Sube un nuevo documento",
@@ -227,6 +309,16 @@ def main():
         if st.button("Limpiar"):
             st.session_state.upload_key = str(uuid.uuid4())
             st.rerun()
+
+    st.markdown("## 💾 Guardar cambios")
+
+    if st.button("Guardar cambios"):
+        texts = load_and_split_docs()
+        if do_embedding(texts):
+            st.success("✅ Documentos cargados exitosamente.")
+            st.rerun()
+        else:
+            st.error("❌ Hubo un error al cargar los documentos.")
 
 
 if __name__ == "__main__":

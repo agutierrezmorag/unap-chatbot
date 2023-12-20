@@ -72,21 +72,6 @@ def get_messages_len():
     return len(message_ref)
 
 
-# Listado de nombres de documentos
-@st.cache_data
-def get_doc_names():
-    """
-    Retrieves the names of all the documents in the 'documentos' directory.
-
-    Returns:
-        A list of file names.
-    """
-    file_names = []
-    for file in os.listdir("documentos"):
-        file_names.append(file)
-    return file_names
-
-
 # Importar vectorstore
 @st.cache_resource(show_spinner=False)
 def get_vectorstore():
@@ -296,9 +281,6 @@ def main():
     show_pages_from_config()
 
     chat_type = st.radio("Modelo", ["gpt-3.5-turbo-1106", "gpt-4-1106-preview"])
-
-    with st.expander("Listado de documentos"):
-        st.write(get_doc_names())
 
     # Inicializacion historial de chat
     if "messages" not in st.session_state:
