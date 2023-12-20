@@ -11,6 +11,9 @@ from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from st_pages import show_pages_from_config
 
+import streamlit_authenticator as stauth
+from register import sign_up, fetch_users
+
 # API keys
 OPENAI_API_KEY = st.secrets.openai.api_key
 PINECONE_API_KEY = st.secrets.pinecone.api_key
@@ -170,63 +173,109 @@ def do_embedding(text_chunks):
 
 
 def main():
-    st.set_page_config(
-        page_icon="📑",
-        page_title="Documentos",
-        layout="wide",
-    )
-    st.title("📖 Listado de documentos")
+    st.set_page_config(page_title='Documentos', page_icon='📖', initial_sidebar_state='collapsed', layout="wide")
 
-    show_pages_from_config()
 
-    container_placeholder = st.empty()
+    try:
+        users = fetch_users()
+        emails = []
+        usernames = []
+        passwords = []
 
-    if "upload_key" not in st.session_state:
-        st.session_state.upload_key = str(uuid.uuid4())
+        for user in users:
+            emails.append(user['email'])
+            usernames.append(user['username'].lower())
+            passwords.append(user['password'])
 
-    repo_contents = get_repo_documents()
+        credentials = {'usernames': {}}
+        for index in range(len(emails)):
+            credentials['usernames'][usernames[index]] = {'name': emails[index], 'password': passwords[index]}
 
-    if repo_contents:
-        for item in repo_contents:
-            document_path = item.path.replace(DIRECTORY_PATH, "").lstrip("/")
-            document_name, _ = os.path.splitext(document_path)
+        Authenticator = stauth.Authenticate(credentials, cookie_name='Streamlit', key='abcdef', cookie_expiry_days=1)
 
-            col1, col2 = st.columns([0.9, 0.1])
-            with col1:
-                st.write(f"📑 {document_name}")
-            with col2:
-                delete_button = st.button("⛔", key=document_name)
+        email, authentication_status, username = Authenticator.login(':white[Login]', 'main')
 
-            if delete_button:
-                if delete_doc(item.path):
-                    st.success(
-                        f"Documento '{document_name}' eliminado exitosamente.",
-                        icon="✅",
+        info, info1 = st.columns(2)
+
+        #Para querer registrar una cuenta.
+        #if not authentication_status:
+            #sign_up()
+
+        if username:
+            if username in usernames:
+                if authentication_status:
+                    # let User see app
+                    
+                    st.title("📖 Listado de documentos")
+                    
+                    st.sidebar.subheader(f'Bienvenido {username}')
+                    Authenticator.logout('Cerrar Sesión', 'sidebar')
+
+                    show_pages_from_config()
+
+                    container_placeholder = st.empty()
+
+                    if "upload_key" not in st.session_state:
+                        st.session_state.upload_key = str(uuid.uuid4())
+
+                    repo_contents = get_repo_documents()
+
+                    if repo_contents:
+                        for item in repo_contents:
+                            document_path = item.path.replace(DIRECTORY_PATH, "").lstrip("/")
+                            document_name, _ = os.path.splitext(document_path)
+
+                            col1, col2 = st.columns([0.9, 0.1])
+                            with col1:
+                                st.write(f"📑 {document_name}")
+                            with col2:
+                                delete_button = st.button("⛔", key=document_name)
+
+                            if delete_button:
+                                if delete_doc(item.path):
+                                    st.success(
+                                        f"Documento '{document_name}' eliminado exitosamente.",
+                                        icon="✅",
+                                    )
+                                    st.rerun()
+                                else:
+                                    st.error(f"Hubo un error al intentar eliminar '{document_name}'.")
+                    else:
+                        st.info("ℹ️ No hay documentos en el repositorio.")
+
+                    uploaded_files = st.file_uploader(
+                        "Sube un nuevo documento",
+                        type="txt",
+                        accept_multiple_files=True,
+                        help="Selecciona uno o más archivos de texto. Solo se permiten archivos .txt.",
+                        key=st.session_state.upload_key,
                     )
-                    st.rerun()
+
+                    if uploaded_files:
+                        if st.button("Subir archivos"):
+                            if uploaded_files:
+                                add_files_to_repo(uploaded_files, container_placeholder)
+                                st.session_state.upload_key = str(uuid.uuid4())
+                                st.rerun()
+
+                        if st.button("Limpiar"):
+                            st.session_state.upload_key = str(uuid.uuid4())
+                            st.rerun()
+
+
+                elif not authentication_status:
+                    with info:
+                        st.error('Contraseña o Usuario incorrectos.')
                 else:
-                    st.error(f"Hubo un error al intentar eliminar '{document_name}'.")
-    else:
-        st.info("ℹ️ No hay documentos en el repositorio.")
+                    with info:
+                        st.warning('Porfavor ingrese las credenciales.')
+            else:
+                with info:
+                    st.warning('Usuario no existente.')
 
-    uploaded_files = st.file_uploader(
-        "Sube un nuevo documento",
-        type="txt",
-        accept_multiple_files=True,
-        help="Selecciona uno o más archivos de texto. Solo se permiten archivos .txt.",
-        key=st.session_state.upload_key,
-    )
 
-    if uploaded_files:
-        if st.button("Subir archivos"):
-            if uploaded_files:
-                add_files_to_repo(uploaded_files, container_placeholder)
-                st.session_state.upload_key = str(uuid.uuid4())
-                st.rerun()
-
-        if st.button("Limpiar"):
-            st.session_state.upload_key = str(uuid.uuid4())
-            st.rerun()
+    except:
+        st.success('Refresca la pagina.')
 
 
 if __name__ == "__main__":
