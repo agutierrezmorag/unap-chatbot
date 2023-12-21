@@ -181,8 +181,6 @@ def main():
     st.set_page_config(
         page_title="Documentos",
         page_icon="📖",
-        initial_sidebar_state="collapsed",
-        layout="wide",
     )
 
     if "upload_key" not in st.session_state:
@@ -216,8 +214,6 @@ def main():
             ":white[Login]", "main"
         )
 
-        info, info1 = st.columns(2)
-
         # Para querer registrar una cuenta.
         # if not authentication_status:
         # sign_up()
@@ -226,37 +222,29 @@ def main():
             if username in usernames:
                 if authentication_status:
                     # let User see app
-
-                    st.title("📖 Listado de documentos")
-                    st.write(
-                        "En esta pagina se podran gestionar los documentos que se utilizaran para la generacion de respuestas en el chatbot."
-                    )
-                    st.markdown(
-                        """
-                        ## 📋 Instrucciones
-                        ### Cargar nuevos documentos
-                        - Se debe subir uno o mas archivos de texto (.txt).
-                        - Presionar el boton 'Subir archivos'.
-                        - Se dispone de un boton 'Limpiar' para limpiar la lista de archivos subidos.
-
-                        ### Eliminar documentos
-                        - Seleccionar el/los documentos a eliminar.
-                        - Presionar el boton 'Eliminar documentos seleccionados'.
-                        - Confirmar la eliminacion de los documentos.
-
-                        ### Guardar cambios
-                        - Presionar el boton 'Cargar documentos'.
-                        - Esperar a que se carguen los documentos añadidos/eliminados. Esto puede tardar unos minutos dependiendo de la cantidad de documentos.
-                        - Una vez cargados los documentos, el chatbot estara listo para responder acorde a los documentos cargados.
-                        """
-                    )
-
                     st.sidebar.subheader(f"Bienvenido {username}")
                     Authenticator.logout("Cerrar Sesión", "sidebar")
 
-                    st.markdown("## ⚙️ Gestión de documentos")
+                    st.title("⚙️ Gestión de documentos")
+                    with st.expander("ℹ️ Información"):
+                        st.markdown(
+                            """
+                            ## 📋 Instrucciones
+                            ### Cargar nuevos documentos
+                            - Se debe subir uno o mas archivos de texto (.txt).
+                            - Presionar el boton 'Subir archivos'.
+                            - Se dispone de un boton 'Limpiar' para limpiar la lista de archivos subidos.
+
+                            ### Eliminar documentos
+                            - Seleccionar el/los documentos a eliminar.
+                            - Presionar el boton 'Eliminar documentos seleccionados'.
+                            - Confirmar la eliminacion de los documentos.
+                            """
+                        )
 
                     show_pages_from_config()
+
+                    st.markdown("## 📂 Documentos en el repositorio")
 
                     container_placeholder = st.empty()
 
@@ -335,8 +323,6 @@ def main():
                     else:
                         st.info("ℹ️ No hay documentos en el repositorio.")
 
-                    st.markdown("## 🔗 Subir documentos")
-
                     uploaded_files = st.file_uploader(
                         "Sube un nuevo documento",
                         type="txt",
@@ -345,25 +331,29 @@ def main():
                         key=st.session_state.upload_key,
                     )
 
-                    st.markdown("## 💾 Guardar cambios")
+                    st.markdown("## 💾 Registrar cambios")
 
-                    if st.button("Guardar cambios"):
+                    st.markdown(
+                        "Cuando presionas el botón `Registrar cambios`, los documentos que se hayan subido se procesan y \
+                        se integran en la base de conocimientos de la IA. A partir de ese momento, la IA podrá responder \
+                        preguntas basándose en la información contenida en estos documentos. \
+                        **Es importante recordar que el procesamiento puede llevar algún tiempo, dependiendo del tamaño y la cantidad de los documentos subidos.**"
+                    )
+
+                    if st.button("Registrar cambios"):
                         texts = load_and_split_docs()
                         if do_embedding(texts):
-                            st.success("✅ Documentos cargados exitosamente.")
+                            st.success("✅ Documentos registrados exitosamente.")
                             st.rerun()
                         else:
-                            st.error("❌ Hubo un error al cargar los documentos.")
+                            st.error("❌ Hubo un error al registrar los documentos.")
 
                 elif not authentication_status:
-                    with info:
-                        st.error("Contraseña o Usuario incorrectos.")
+                    st.error("Contraseña o Usuario incorrectos.")
                 else:
-                    with info:
-                        st.warning("Porfavor ingrese las credenciales.")
+                    st.warning("Por favor, ingrese sus credenciales.")
             else:
-                with info:
-                    st.warning("Usuario no existente.")
+                st.warning("Usuario no existente.")
 
     except:
         st.success("Refresca la pagina.")
