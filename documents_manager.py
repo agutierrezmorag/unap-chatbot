@@ -331,6 +331,17 @@ def main():
                         key=st.session_state.upload_key,
                     )
 
+                    if uploaded_files:
+                        if st.button("Subir archivos"):
+                            if uploaded_files:
+                                add_files_to_repo(uploaded_files, container_placeholder)
+                                st.session_state.upload_key = str(uuid.uuid4())
+                                st.rerun()
+
+                        if st.button("Limpiar"):
+                            st.session_state.upload_key = str(uuid.uuid4())
+                            st.rerun()
+
                     st.markdown("## 💾 Registrar cambios")
 
                     st.markdown(
@@ -356,7 +367,7 @@ def main():
                 st.warning("Usuario no existente.")
 
     except:
-        st.success("Refresca la pagina.")
+        st.rerun()
 
 
 if __name__ == "__main__":
