@@ -5,6 +5,7 @@ import uuid
 import pandas as pd
 import pinecone
 import streamlit as st
+import streamlit_authenticator as stauth
 from github import Auth, Github, GithubException
 from github.GithubObject import NotSet
 from langchain.document_loaders import GitLoader, TextLoader
@@ -13,6 +14,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Pinecone
 from st_pages import show_pages_from_config
 
+from register import fetch_users, sign_up
 from utils import config
 
 
@@ -177,148 +179,194 @@ def do_embedding(text_chunks):
 
 def main():
     st.set_page_config(
-        page_icon="📑",
         page_title="Documentos",
+        page_icon="📖",
+        initial_sidebar_state="collapsed",
+        layout="wide",
     )
-
-    st.title("📄 Documentos")
-    st.write(
-        "En esta pagina se podran gestionar los documentos que se utilizaran para la generacion de respuestas en el chatbot."
-    )
-    st.markdown(
-        """
-        ## 📋 Instrucciones
-        ### Cargar nuevos documentos
-        - Se debe subir uno o mas archivos de texto (.txt).
-        - Presionar el boton 'Subir archivos'.
-        - Se dispone de un boton 'Limpiar' para limpiar la lista de archivos subidos.
-
-        ### Eliminar documentos
-        - Seleccionar el/los documentos a eliminar.
-        - Presionar el boton 'Eliminar documentos seleccionados'.
-        - Confirmar la eliminacion de los documentos.
-
-        ### Guardar cambios
-        - Presionar el boton 'Cargar documentos'.
-        - Esperar a que se carguen los documentos añadidos/eliminados. Esto puede tardar unos minutos dependiendo de la cantidad de documentos.
-        - Una vez cargados los documentos, el chatbot estara listo para responder acorde a los documentos cargados.
-        """
-    )
-
-    show_pages_from_config()
-
-    st.markdown("## ⚙️ Gestión de documentos")
-
-    container_placeholder = st.empty()
 
     if "upload_key" not in st.session_state:
         st.session_state.upload_key = str(uuid.uuid4())
     if "delete_selected" not in st.session_state:
         st.session_state.delete_selected = False
 
-    repo_contents = get_repo_documents()
+    try:
+        users = fetch_users()
+        emails = []
+        usernames = []
+        passwords = []
 
-    if repo_contents:
-        # Create a list to store the documents data
-        documents_data = []
+        for user in users:
+            emails.append(user["email"])
+            usernames.append(user["username"].lower())
+            passwords.append(user["password"])
 
-        for item in repo_contents:
-            document_path = item.path.replace(config.REPO_DIRECTORY_PATH, "").lstrip(
-                "/"
-            )
-            document_name, _ = os.path.splitext(document_path)
+        credentials = {"usernames": {}}
+        for index in range(len(emails)):
+            credentials["usernames"][usernames[index]] = {
+                "name": emails[index],
+                "password": passwords[index],
+            }
 
-            # Append a dictionary with the document data to the list
-            documents_data.append(
-                {
-                    "Document Name": document_name,
-                    "File Path": item.path,
-                    "Selected": False,
-                }
-            )
+        Authenticator = stauth.Authenticate(
+            credentials, cookie_name="Streamlit", key="abcdef", cookie_expiry_days=1
+        )
 
-        # Create a DataFrame from the documents data
-        documents_df = pd.DataFrame(documents_data)
+        email, authentication_status, username = Authenticator.login(
+            ":white[Login]", "main"
+        )
 
-        # Create a dictionary to store the checkbox states
-        checkbox_states = {}
+        info, info1 = st.columns(2)
 
-        # Display the DataFrame with checkboxes
-        with st.container(border=True):
-            for i in range(len(documents_df)):
-                checkbox_states[i] = st.checkbox(
-                    documents_df.loc[i, "Document Name"], key=i
-                )
+        # Para querer registrar una cuenta.
+        # if not authentication_status:
+        # sign_up()
 
-        # Create placeholders for the buttons
-        confirm_dialog = st.empty()
-        action_button = st.empty()
-        cancel_button = st.empty()
+        if username:
+            if username in usernames:
+                if authentication_status:
+                    # let User see app
 
-        # Display the appropriate action button
-        if st.session_state.get("delete_selected"):
-            confirm_dialog.markdown(
-                ":red[¿Estás seguro de que deseas eliminar los documentos seleccionados?]",
-            )
-            if action_button.button("Confirmar"):
-                for i, selected in checkbox_states.items():
-                    if selected:
-                        document_to_delete = documents_df.loc[i, "File Path"]
-                        if delete_doc(document_to_delete):
-                            st.success(
-                                f"Documento '{documents_df.loc[i, 'Document Name']}' eliminado exitosamente."
+                    st.title("📖 Listado de documentos")
+                    st.write(
+                        "En esta pagina se podran gestionar los documentos que se utilizaran para la generacion de respuestas en el chatbot."
+                    )
+                    st.markdown(
+                        """
+                        ## 📋 Instrucciones
+                        ### Cargar nuevos documentos
+                        - Se debe subir uno o mas archivos de texto (.txt).
+                        - Presionar el boton 'Subir archivos'.
+                        - Se dispone de un boton 'Limpiar' para limpiar la lista de archivos subidos.
+
+                        ### Eliminar documentos
+                        - Seleccionar el/los documentos a eliminar.
+                        - Presionar el boton 'Eliminar documentos seleccionados'.
+                        - Confirmar la eliminacion de los documentos.
+
+                        ### Guardar cambios
+                        - Presionar el boton 'Cargar documentos'.
+                        - Esperar a que se carguen los documentos añadidos/eliminados. Esto puede tardar unos minutos dependiendo de la cantidad de documentos.
+                        - Una vez cargados los documentos, el chatbot estara listo para responder acorde a los documentos cargados.
+                        """
+                    )
+
+                    st.sidebar.subheader(f"Bienvenido {username}")
+                    Authenticator.logout("Cerrar Sesión", "sidebar")
+
+                    st.markdown("## ⚙️ Gestión de documentos")
+
+                    show_pages_from_config()
+
+                    container_placeholder = st.empty()
+
+                    repo_contents = get_repo_documents()
+
+                    if repo_contents:
+                        # Create a list to store the documents data
+                        documents_data = []
+
+                        for item in repo_contents:
+                            document_path = item.path.replace(
+                                config.REPO_DIRECTORY_PATH, ""
+                            ).lstrip("/")
+                            document_name, _ = os.path.splitext(document_path)
+
+                            # Append a dictionary with the document data to the list
+                            documents_data.append(
+                                {
+                                    "Document Name": document_name,
+                                    "File Path": item.path,
+                                    "Selected": False,
+                                }
                             )
+
+                        # Create a DataFrame from the documents data
+                        documents_df = pd.DataFrame(documents_data)
+
+                        # Create a dictionary to store the checkbox states
+                        checkbox_states = {}
+
+                        # Display the DataFrame with checkboxes
+                        with st.container(border=True):
+                            for i in range(len(documents_df)):
+                                checkbox_states[i] = st.checkbox(
+                                    documents_df.loc[i, "Document Name"], key=i
+                                )
+
+                        # Create placeholders for the buttons
+                        confirm_dialog = st.empty()
+                        action_button = st.empty()
+                        cancel_button = st.empty()
+
+                        # Display the appropriate action button
+                        if st.session_state.get("delete_selected"):
+                            confirm_dialog.markdown(
+                                ":red[¿Estás seguro de que deseas eliminar los documentos seleccionados?]",
+                            )
+                            if action_button.button("Confirmar"):
+                                for i, selected in checkbox_states.items():
+                                    if selected:
+                                        document_to_delete = documents_df.loc[
+                                            i, "File Path"
+                                        ]
+                                        if delete_doc(document_to_delete):
+                                            st.success(
+                                                f"Documento '{documents_df.loc[i, 'Document Name']}' eliminado exitosamente."
+                                            )
+                                        else:
+                                            st.error(
+                                                f"Hubo un error al intentar eliminar '{documents_df.loc[i, 'Document Name']}'."
+                                            )
+                                st.session_state.delete_selected = False
+                                time.sleep(2)
+                                st.rerun()
+                            elif cancel_button.button("Cancelar"):
+                                st.session_state.delete_selected = False
+                                st.rerun()
                         else:
-                            st.error(
-                                f"Hubo un error al intentar eliminar '{documents_df.loc[i, 'Document Name']}'."
+                            action_button = st.button(
+                                "Eliminar documentos seleccionados",
+                                disabled=not any(checkbox_states.values()),
                             )
-                st.session_state.delete_selected = False
-                time.sleep(2)
-                st.rerun()
-            elif cancel_button.button("Cancelar"):
-                st.session_state.delete_selected = False
-                st.rerun()
-        else:
-            action_button = st.button(
-                "Eliminar documentos seleccionados",
-                disabled=not any(checkbox_states.values()),
-            )
-            if action_button:
-                st.session_state.delete_selected = True
-                st.rerun()
-    else:
-        st.info("ℹ️ No hay documentos en el repositorio.")
+                            if action_button:
+                                st.session_state.delete_selected = True
+                                st.rerun()
+                    else:
+                        st.info("ℹ️ No hay documentos en el repositorio.")
 
-    st.markdown("## 🔗 Subir documentos")
+                    st.markdown("## 🔗 Subir documentos")
 
-    uploaded_files = st.file_uploader(
-        "Sube un nuevo documento",
-        type="txt",
-        accept_multiple_files=True,
-        help="Selecciona uno o más archivos de texto. Solo se permiten archivos .txt.",
-        key=st.session_state.upload_key,
-    )
+                    uploaded_files = st.file_uploader(
+                        "Sube un nuevo documento",
+                        type="txt",
+                        accept_multiple_files=True,
+                        help="Selecciona uno o más archivos de texto. Solo se permiten archivos .txt.",
+                        key=st.session_state.upload_key,
+                    )
 
-    if uploaded_files:
-        if st.button("Subir archivos"):
-            if uploaded_files:
-                add_files_to_repo(uploaded_files, container_placeholder)
-                st.session_state.upload_key = str(uuid.uuid4())
-                st.rerun()
+                    st.markdown("## 💾 Guardar cambios")
 
-        if st.button("Limpiar"):
-            st.session_state.upload_key = str(uuid.uuid4())
-            st.rerun()
+                    if st.button("Guardar cambios"):
+                        texts = load_and_split_docs()
+                        if do_embedding(texts):
+                            st.success("✅ Documentos cargados exitosamente.")
+                            st.rerun()
+                        else:
+                            st.error("❌ Hubo un error al cargar los documentos.")
 
-    st.markdown("## 💾 Guardar cambios")
+                elif not authentication_status:
+                    with info:
+                        st.error("Contraseña o Usuario incorrectos.")
+                else:
+                    with info:
+                        st.warning("Porfavor ingrese las credenciales.")
+            else:
+                with info:
+                    st.warning("Usuario no existente.")
 
-    if st.button("Guardar cambios"):
-        texts = load_and_split_docs()
-        if do_embedding(texts):
-            st.success("✅ Documentos cargados exitosamente.")
-            st.rerun()
-        else:
-            st.error("❌ Hubo un error al cargar los documentos.")
+    except:
+        st.success("Refresca la pagina.")
 
 
 if __name__ == "__main__":
