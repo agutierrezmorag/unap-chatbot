@@ -277,6 +277,9 @@ def main():
     )
 
     st.title("🤖 UNAP Chatbot")
+    st.caption(
+        "Este chatbot puede cometer errores. Si encuentras inexactitudes, reformula tu pregunta o consulta los documentos oficiales."
+    )
 
     show_pages_from_config()
 
