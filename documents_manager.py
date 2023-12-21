@@ -342,16 +342,22 @@ def main():
                             st.session_state.upload_key = str(uuid.uuid4())
                             st.rerun()
 
+                    st.divider()
+
                     st.markdown("## 💾 Registrar cambios")
 
                     st.markdown(
-                        "Cuando presionas el botón `Registrar cambios`, los documentos que se hayan subido se procesan y \
+                        "Cuando se presione el botón `Registrar cambios`, los documentos que se hayan subido se procesan y \
                         se integran en la base de conocimientos de la IA. A partir de ese momento, la IA podrá responder \
-                        preguntas basándose en la información contenida en estos documentos. \
-                        **Es importante recordar que el procesamiento puede llevar algún tiempo, dependiendo del tamaño y la cantidad de los documentos subidos.**"
+                        preguntas basándose en la información contenida en estos documentos."
                     )
 
-                    if st.button("Registrar cambios"):
+                    st.info(
+                        "**Es importante recordar que el procesamiento puede llevar algún tiempo, dependiendo del tamaño y la cantidad de los documentos subidos.**",
+                        icon="📢",
+                    )
+
+                    if st.columns(3)[1].button("Registrar cambios"):
                         texts = load_and_split_docs()
                         if do_embedding(texts):
                             st.success("✅ Documentos registrados exitosamente.")
