@@ -17,6 +17,7 @@ from st_pages import show_pages_from_config
 from register import fetch_users, sign_up
 from utils import config
 
+logo_path = "logos/unap_negativo.png"
 
 @st.cache_resource
 def get_repo(show_loader=False):
@@ -182,6 +183,24 @@ def main():
         page_title="Documentos",
         page_icon="📖",
     )
+
+    st.markdown(
+        """
+        <style>
+            [data-testid=stSidebar] [data-testid=stImage]{
+                text-align: center;
+                display: block;
+                margin-left: auto;
+                margin-right: auto;
+                margin-top: auto;
+                width: 100%;
+            }
+        </style>
+        """, unsafe_allow_html=True
+    )
+
+    with st.sidebar:
+        st.image(logo_path, use_column_width=True)
 
     if "upload_key" not in st.session_state:
         st.session_state.upload_key = str(uuid.uuid4())
