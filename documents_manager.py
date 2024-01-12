@@ -63,9 +63,10 @@ def delete_doc(file_path, commit_message="Delete file via Streamlit"):
     repo = get_repo()
     try:
         doc = repo.get_contents(file_path, ref=config.REPO_BRANCH)
+        message = f"Eliminado el documento '{doc.name}'."
         resp = repo.delete_file(
             path=doc.path,
-            message=commit_message,
+            message=message,
             sha=doc.sha,
             branch=config.REPO_BRANCH,
         )
@@ -75,7 +76,7 @@ def delete_doc(file_path, commit_message="Delete file via Streamlit"):
         return False
 
 
-def add_files_to_repo(file_list, container, commit_message="Add file via Streamlit"):
+def add_files_to_repo(file_list, container):
     """
     Adds files to a repository.
 
@@ -106,9 +107,10 @@ def add_files_to_repo(file_list, container, commit_message="Add file via Streaml
                 continue
 
         try:
+            message = f"Añadido el documento '{uploaded_file.name}'."
             repo.create_file(
                 path=file_path,
-                message=commit_message,
+                message=message,
                 content=content,
                 branch=config.REPO_BRANCH,
             )
