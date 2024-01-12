@@ -107,6 +107,7 @@ def answer_question(question):
     template = """
     You are an AI model trained to provide accurate and concise answers to user queries. \
     Your responses should be based on the provided documents and relevant to the institution UNAP. 
+    If the question is not relevant to UNAP, simply state that you are not able to answer such questions. 
 
     If the answer to a question is not found in the documents, simply state that you don't have the information. \
     Always respond in the same language as the user's question. 
