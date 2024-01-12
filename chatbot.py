@@ -16,9 +16,8 @@ from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.globals import set_llm_cache
 from langchain.prompts import PromptTemplate
 from langchain.vectorstores import Pinecone
-from st_pages import add_page_title, show_pages_from_config
+from st_pages import show_pages_from_config
 from streamlit_feedback import streamlit_feedback
-from trubrics.integrations.streamlit import FeedbackCollector
 
 from utils import config
 
@@ -104,28 +103,22 @@ def answer_question(question):
     """
 
     template = """
-    Given a user query and a chat history, generate a response that is directly related to the provided documents. \
-    Incorporate relevant information from the documents and always cite sources when you provide information from them. \ 
-    Only generate responses for questions that are related to the provided documents or the institution UNAP.  \
-    If you don't know the answer, simply state that you don't know instead of making up one.  \
-    Always respond in the same language as the user's question. \
-    Ensure accuracy, context awareness, and source retrieval in your answers. \
+    You are an AI model trained to provide accurate and concise answers to user queries. \
+    Your responses should be based on the provided documents and relevant to the institution UNAP. 
 
-    Aim to provide concise, clear, and easy-to-understand answers. Avoid long paragraphs. Instead, break down information \
-    into shorter sentences or bullet points if possible. \
+    If the answer to a question is not found in the documents, simply state that you don't have the information. \
+    Always respond in the same language as the user's question. 
 
-    Be conversational and respond accordingly if the user greets or talks to you. \
+    Your goal is to provide clear, easy-to-understand answers. \
+    Avoid long paragraphs and break down information into shorter sentences or bullet points if possible. 
 
-    Remember to cite the source of your information in your answer. For example, if the information comes from a specific article, \
-    mention the article's number in your answer. \
-    Place the cites at the end of the sentence where you used the information from the article. Not at the end of the answer. \
+    When you provide information from the documents, always cite the source. 
 
-    Base your answer in the following context, sources and question. DO NOT return the following to the user.
-    Context: {context}
-    Sources: {sources}
+    Here is the chat history: {context}
+    Here is the user's question: {question}
+    And here are the documents you should use: {sources}
 
-    Question: {question}
-    Answer: 
+    Please generate a response following these instructions.
     """
     PROMPT = PromptTemplate(
         template=template,
@@ -134,7 +127,7 @@ def answer_question(question):
 
     vectorstore = get_vectorstore()
     retriever = vectorstore.as_retriever(
-        search_type="similarity", search_kwargs={"k": 2}
+        search_type="similarity", search_kwargs={"k": 5}
     )
 
     chain = ConversationalRetrievalChain.from_llm(
@@ -146,7 +139,7 @@ def answer_question(question):
         combine_docs_chain_kwargs={"prompt": PROMPT},
     )
 
-    docs = retriever.get_relevant_documents(question, search_kwargs={"k": 2})
+    docs = retriever.get_relevant_documents(question, search_kwargs={"k": 5})
 
     source_doc_names = set()
     for document in docs:
@@ -173,8 +166,6 @@ def answer_question(question):
             }
         )
 
-        with st.expander("tokens"):
-            st.write(cb)
         print(cb)
 
         tokens = {

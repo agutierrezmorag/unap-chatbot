@@ -7,14 +7,13 @@ import pinecone
 import streamlit as st
 import streamlit_authenticator as stauth
 from github import Auth, Github, GithubException
-from github.GithubObject import NotSet
-from langchain.document_loaders import GitLoader, TextLoader
+from langchain.document_loaders import GitLoader
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Pinecone
 from st_pages import show_pages_from_config
 
-from register import fetch_users, sign_up
+from register import fetch_users
 from utils import config
 
 
@@ -372,7 +371,8 @@ def main():
             else:
                 st.warning("Usuario no existente.")
 
-    except:
+    except stauth.StreamlitAuthenticationException as e:
+        print(e)
         st.rerun()
 
 
