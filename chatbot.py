@@ -1,5 +1,4 @@
 import json
-import os
 import time
 from datetime import datetime
 
@@ -8,6 +7,7 @@ import pytz
 import streamlit as st
 from google.cloud import firestore
 from google.oauth2 import service_account
+from icecream import ic
 from langchain.cache import InMemoryCache
 from langchain.callbacks import get_openai_callback
 from langchain.chains import ConversationalRetrievalChain
@@ -106,26 +106,27 @@ def answer_question(question):
 
     template = """
     You are an AI model trained to provide accurate and concise answers to user queries. \
-    Your responses should be based on the provided documents and relevant to the institution UNAP. 
+    Your responses should be based on the provided documents and relevant to the institution Universidad Arturo Prat (UNAP). 
     If the question is not relevant to UNAP, simply state that you are not able to answer such questions. 
 
-    If the answer to a question is not found in the documents, simply state that you don't have the information. \
+    If you don't know the answer to a question, simply state that you don't have the information. \
     Always respond in the same language as the user's question. 
 
     Your goal is to provide clear, easy-to-understand answers. \
     Avoid long paragraphs and break down information into shorter sentences or bullet points if possible. 
 
-    When you provide information from the documents, always cite the source. 
+    When you provide information from the documents, remember to always cite the source.
+    Always cite at the end of the sentence where it applies, not at the end of the paragraph.
+    This is an example of how to cite a source: (Reglamento de Estudiantes, Articulo 1, 2).
 
     Here is the chat history: {context}
     Here is the user's question: {question}
-    And here are the documents you should use: {sources}
 
     Please generate a response following these instructions.
     """
     PROMPT = PromptTemplate(
         template=template,
-        input_variables=["chat_history", "context", "question", "sources"],
+        input_variables=["chat_history", "context", "question"],
     )
 
     vectorstore = get_vectorstore()
@@ -142,34 +143,15 @@ def answer_question(question):
         combine_docs_chain_kwargs={"prompt": PROMPT},
     )
 
-    docs = retriever.get_relevant_documents(question, search_kwargs={"k": 5})
-
-    source_doc_names = set()
-    for document in docs:
-        file_path = document.metadata["source"]
-        file_name = os.path.splitext(os.path.basename(file_path))[0]
-        formatted_name = " ".join(word.capitalize() for word in file_name.split("_"))
-
-        # Check if the name has already been printed
-        if formatted_name not in source_doc_names:
-            print(formatted_name)
-            source_doc_names.add(formatted_name)
-
-    if len(source_doc_names) == 1:
-        source_doc_names_str = next(iter(source_doc_names))
-    else:
-        source_doc_names_str = ", ".join(source_doc_names)
-
     with get_openai_callback() as cb:
         result = chain(
             {
                 "question": question,
                 "chat_history": st.session_state.chat_history,
-                "sources": source_doc_names_str,
             }
         )
 
-        print(cb)
+        ic(cb)
 
         tokens = {
             "total_tokens": cb.total_tokens,
@@ -332,7 +314,11 @@ def main():
             message_placeholder = st.empty()
             start = time.time()
             with st.spinner("Generando respuesta..."):
-                full_response, tokens = answer_question(question=prompt)
+                try:
+                    full_response, tokens = answer_question(question=prompt)
+                except Exception as e:
+                    ic(e)
+                    st.warning("No se pudo generar respuesta. Intente nuevamente.")
             message_placeholder.markdown(full_response)
             end = time.time()
 
