@@ -23,6 +23,7 @@ from utils import config
 
 set_llm_cache(InMemoryCache())
 
+logo_path = "logos/unap_negativo.png"
 
 # Instanciar llm
 @st.cache_resource(show_spinner=False)
@@ -255,7 +256,7 @@ def update_feedback(feedback):
     message_doc_ref = message_ref.document(message_id)
 
     message_doc_ref.update({"user_feedback": feedback})
-
+    
 
 def main():
     st.set_page_config(
@@ -266,6 +267,25 @@ def main():
             "About": "Chat capaz de responder preguntas relacionadas a reglamentos y documentos de la universidad Arturo Prat."
         },
     )
+
+    
+    st.markdown(
+    """
+    <style>
+        [data-testid=stSidebar] [data-testid=stImage]{
+            text-align: center;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            margin-top: auto;
+            width: 100%;
+        }
+    </style>
+    """, unsafe_allow_html=True
+)
+
+    with st.sidebar:
+        st.image(logo_path)
 
     st.title("🤖 UNAP Chatbot")
     st.caption(
