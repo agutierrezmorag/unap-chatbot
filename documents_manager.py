@@ -18,6 +18,7 @@ from utils import config
 
 logo_path = "logos/unap_negativo.png"
 
+
 @st.cache_resource
 def get_repo(show_loader=False):
     """
@@ -195,7 +196,8 @@ def main():
                 width: 100%;
             }
         </style>
-        """, unsafe_allow_html=True
+        """,
+        unsafe_allow_html=True,
     )
 
     with st.sidebar:
@@ -390,7 +392,7 @@ def main():
             else:
                 st.warning("Usuario no existente.")
 
-    except stauth.StreamlitAuthenticationException as e:
+    except Exception as e:
         print(e)
         st.rerun()
 

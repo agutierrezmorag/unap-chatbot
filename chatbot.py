@@ -25,6 +25,7 @@ set_llm_cache(InMemoryCache())
 
 logo_path = "logos/unap_negativo.png"
 
+
 # Instanciar llm
 @st.cache_resource(show_spinner=False)
 def get_llm():
@@ -256,7 +257,7 @@ def update_feedback(feedback):
     message_doc_ref = message_ref.document(message_id)
 
     message_doc_ref.update({"user_feedback": feedback})
-    
+
 
 def main():
     st.set_page_config(
@@ -268,9 +269,8 @@ def main():
         },
     )
 
-    
     st.markdown(
-    """
+        """
     <style>
         [data-testid=stSidebar] [data-testid=stImage]{
             text-align: center;
@@ -281,8 +281,9 @@ def main():
             width: 100%;
         }
     </style>
-    """, unsafe_allow_html=True
-)
+    """,
+        unsafe_allow_html=True,
+    )
 
     with st.sidebar:
         st.image(logo_path)
