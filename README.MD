@@ -11,6 +11,7 @@ Disponible en: <https://unap-chatbot.streamlit.app/>
 - [**Streamlit**](https://streamlit.io/) para el frontend y deploy de la herramienta.
 
 ## To-Do
+
 - [ ] Implementar **base de datos de vectores** local y verificar si existe diferencia significativa con Pinecone.
 - [ ] Reemplazar los **embeddings** de OpenAI *(OpenAIEmbeddings)* con embeddings gratuitos y comprobar si existe alguna diferencia significativa.
 - [ ] Realizar **pruebas de rendimiento** del chat, para tener un aproximado de cuantos usuarios simultaneos permite la pag. web.
