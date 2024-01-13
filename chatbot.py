@@ -1,4 +1,5 @@
 import json
+
 import time
 from datetime import datetime
 
@@ -166,6 +167,38 @@ def answer_question(question):
     return answer, tokens
 
 
+def process_question(prompt, chat_type):
+    st.session_state.message_id = str(get_messages_len() + 1)
+    st.session_state.messages.append({"role": "user", "content": prompt})
+
+    with st.chat_message("user"):
+        st.markdown(prompt)
+
+    with st.chat_message("assistant"):
+        message_placeholder = st.empty()
+        start = time.time()
+        with st.spinner("Generating response..."):
+            try:
+                full_response, tokens = answer_question(question=prompt)
+            except Exception as e:
+                ic(e)
+                st.warning("Could not generate response. Try again.")
+        message_placeholder.markdown(full_response)
+        end = time.time()
+
+    # Agregar respuesta a historial de chat
+    st.session_state.messages.append({"role": "assistant", "content": full_response})
+
+    add_to_db(
+        question=prompt,
+        answer=full_response,
+        tokens=tokens,
+        time_to_answer=end - start,
+        chat_type=chat_type,
+        message_id=st.session_state.message_id,
+    )
+
+
 # Registrar datos en la base de datos
 def add_to_db(
     question, answer, tokens, time_to_answer, chat_type, message_id, user_feedback=None
@@ -282,9 +315,7 @@ def main():
 
     # Inicializacion historial de chat
     if "messages" not in st.session_state:
-        st.session_state.messages = [
-            {"role": "assistant", "content": "¡Hola! ¿Como te puedo ayudar?"}
-        ]
+        st.session_state.messages = []
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
     if "chat_id" not in st.session_state:
@@ -299,42 +330,22 @@ def main():
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
+    questions = [
+        "¿Cuales son las tareas del decano?",
+        "¿Que hago si repruebo una asignatura?",
+    ]
+
+    if len(st.session_state.messages) == 0:
+        for question in questions:
+            if st.button(question):
+                process_question(question, chat_type)
+                st.rerun()
+
     # User input
     prompt = st.chat_input("Escribe tu pregunta...")
 
     if prompt:
-        st.session_state.message_id = str(get_messages_len() + 1)
-        # Agregar input de usuario al historial
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        # Mostrar input en su contenedor
-        with st.chat_message("user"):
-            st.markdown(prompt)
-        # Mostrar respuesta del LLM
-        with st.chat_message("assistant"):
-            message_placeholder = st.empty()
-            start = time.time()
-            with st.spinner("Generando respuesta..."):
-                try:
-                    full_response, tokens = answer_question(question=prompt)
-                except Exception as e:
-                    ic(e)
-                    st.warning("No se pudo generar respuesta. Intente nuevamente.")
-            message_placeholder.markdown(full_response)
-            end = time.time()
-
-        # Agregar respuesta del LLM al historial
-        st.session_state.messages.append(
-            {"role": "assistant", "content": full_response}
-        )
-
-        add_to_db(
-            question=prompt,
-            answer=full_response,
-            tokens=tokens,
-            time_to_answer=end - start,
-            chat_type=chat_type,
-            message_id=st.session_state.message_id,
-        )
+        process_question(prompt, chat_type)
 
     # Pasada la primera respuesta NO entra a la funcion
     streamlit_feedback(
