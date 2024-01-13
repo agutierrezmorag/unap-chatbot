@@ -196,6 +196,7 @@ def process_question(prompt, chat_type):
         chat_type=chat_type,
         message_id=st.session_state.message_id,
     )
+    st.rerun()
 
 
 # Registrar datos en la base de datos
@@ -324,11 +325,6 @@ def main():
     if "model" not in st.session_state:
         st.session_state.model = chat_type
 
-    # Mantener historial en caso de rerun de app
-    for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
-
     questions = [
         "¿Cuales son las tareas del decano?",
         "¿Que hago si repruebo una asignatura?",
@@ -338,7 +334,11 @@ def main():
         for question in questions:
             if st.button(question):
                 process_question(question, chat_type)
-                st.rerun()
+
+    # Mantener historial en caso de rerun de app
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
 
     # User input
     prompt = st.chat_input("Escribe tu pregunta...")
