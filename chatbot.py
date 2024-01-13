@@ -1,5 +1,4 @@
 import json
-
 import time
 from datetime import datetime
 
@@ -118,7 +117,7 @@ def answer_question(question):
 
     When you provide information from the documents, remember to always cite the source.
     Always cite at the end of the sentence where it applies, not at the end of the paragraph.
-    This is an example of how to cite a source: (Reglamento de Estudiantes, Articulo 1, 2).
+    This is an example of how to cite a source: "(Reglamento de Estudiantes, Articulo 1, 2)."
 
     Here is the chat history: {context}
     Here is the user's question: {question}
@@ -177,12 +176,12 @@ def process_question(prompt, chat_type):
     with st.chat_message("assistant"):
         message_placeholder = st.empty()
         start = time.time()
-        with st.spinner("Generating response..."):
+        with st.spinner("Generando respuesta..."):
             try:
                 full_response, tokens = answer_question(question=prompt)
             except Exception as e:
                 ic(e)
-                st.warning("Could not generate response. Try again.")
+                st.warning("No se pudo generar una respuesta. Intente nuevamente.")
         message_placeholder.markdown(full_response)
         end = time.time()
 
