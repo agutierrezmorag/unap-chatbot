@@ -182,10 +182,10 @@ def process_question(prompt, chat_type):
     st.session_state.message_id = str(get_messages_len() + 1)
     st.session_state.messages.append({"role": "user", "content": prompt})
 
-    with st.chat_message("user"):
+    with st.chat_message("user", avatar="🧑‍💻"):
         st.markdown(prompt)
 
-    with st.chat_message("assistant"):
+    with st.chat_message("assistant", avatar=logo_path):
         message_placeholder = st.empty()
         start = time.time()
         with st.spinner("Generando respuesta..."):
@@ -349,7 +349,12 @@ def main():
 
     # Mantener historial en caso de rerun de app
     for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
+        if message["role"] == "user":
+            avatar = "🧑‍💻"
+        else:
+            avatar = logo_path
+
+        with st.chat_message(message["role"], avatar=avatar):
             st.markdown(message["content"])
 
     # User input
