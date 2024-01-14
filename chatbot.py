@@ -117,7 +117,8 @@ def answer_question(question):
 
     When you provide information from the documents, remember to always cite the source.
     Always cite at the end of the sentence where it applies, not at the end of the paragraph.
-    This is an example of how to cite a source: "(Reglamento de Estudiantes, Articulo 1, 2)."
+    This is an example of how to cite a source: "(Reglamento X, Articulo Y, Z)."
+    Replace X with the name of the document, and Y and Z with the number of the articles, where it applies.
 
     Here is the chat history: {context}
     Here is the user's question: {question}
@@ -127,6 +128,16 @@ def answer_question(question):
     PROMPT = PromptTemplate(
         template=template,
         input_variables=["chat_history", "context", "question"],
+    )
+
+    document_template = """
+    Source: {source}
+    Document name: {file_name}
+    """
+
+    DOCUMENT_PROMPT = PromptTemplate(
+        template=document_template,
+        input_variables=["source", "file_name"],
     )
 
     vectorstore = get_vectorstore()
@@ -140,7 +151,10 @@ def answer_question(question):
         max_tokens_limit=2000,
         verbose=True,
         return_source_documents=True,
-        combine_docs_chain_kwargs={"prompt": PROMPT},
+        combine_docs_chain_kwargs={
+            "prompt": PROMPT,
+            "document_prompt": DOCUMENT_PROMPT,
+        },
     )
 
     with get_openai_callback() as cb:
@@ -151,7 +165,7 @@ def answer_question(question):
             }
         )
 
-        ic(cb)
+        ic(result)
 
         tokens = {
             "total_tokens": cb.total_tokens,
