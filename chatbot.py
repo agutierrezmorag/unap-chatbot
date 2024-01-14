@@ -92,32 +92,21 @@ def get_vectorstore():
     return vectorstore
 
 
-# Generacion de respuesta
-def answer_question(question):
-    """
-    Generate a response to a user's question based on a given chat history and context.
-
-    Args:
-        question (str): The user's question.
-
-    Returns:
-        tuple: A tuple containing the generated answer and token information.
-    """
-
+@st.cache_resource
+def get_chain():
     template = """
-    You are an AI model trained to provide accurate and concise answers to user queries. \
+    You are an AI model trained to provide accurate and concise answers to user queries. 
     Your responses should be based on the provided documents and relevant to the institution Universidad Arturo Prat (UNAP). 
     If the question is not relevant to UNAP, simply state that you are not able to answer such questions. 
 
-    If you don't know the answer to a question, simply state that you don't have the information. \
+    If you don't know the answer to a question, simply state that you don't have the information. 
     Always respond in the same language as the user's question. 
 
-    Your goal is to provide clear, easy-to-understand answers. \
+    Your goal is to provide clear, easy-to-understand answers. 
     Avoid long paragraphs and break down information into shorter sentences or bullet points if possible. 
 
-    When you provide information from the documents, remember to always cite the source.
-    Always cite at the end of the sentence where it applies, not at the end of the paragraph.
-    This is an example of how to cite a source: "(Reglamento X, Articulo Y, Z)."
+    When you provide information from the documents explicitly, remember to always cite the source. 
+    This is an example of how to cite a source: "(Reglamento X, Articulo Y, Z)." 
     Replace X with the name of the document, and Y and Z with the number of the articles, where it applies.
 
     Here is the chat history: {context}
@@ -157,6 +146,23 @@ def answer_question(question):
         },
     )
 
+    return chain
+
+
+# Generacion de respuesta
+def answer_question(question):
+    """
+    Generate a response to a user's question based on a given chat history and context.
+
+    Args:
+        question (str): The user's question.
+
+    Returns:
+        tuple: A tuple containing the generated answer and token information.
+    """
+
+    chain = get_chain()
+
     with get_openai_callback() as cb:
         result = chain(
             {
@@ -164,6 +170,8 @@ def answer_question(question):
                 "chat_history": st.session_state.chat_history,
             }
         )
+
+        ic(result)
 
         tokens = {
             "total_tokens": cb.total_tokens,
@@ -189,11 +197,7 @@ def process_question(prompt, chat_type):
         message_placeholder = st.empty()
         start = time.time()
         with st.spinner("Generando respuesta..."):
-            try:
-                full_response, tokens = answer_question(question=prompt)
-            except Exception as e:
-                ic(e)
-                st.warning("No se pudo generar una respuesta. Intente nuevamente.")
+            full_response, tokens = answer_question(question=prompt)
         message_placeholder.markdown(full_response)
         end = time.time()
 
@@ -208,7 +212,9 @@ def process_question(prompt, chat_type):
         chat_type=chat_type,
         message_id=st.session_state.message_id,
     )
-    st.rerun()
+
+    if len(st.session_state.messages) == 1:
+        st.rerun()
 
 
 # Registrar datos en la base de datos
@@ -346,6 +352,7 @@ def main():
         for question in questions:
             if st.button(question):
                 process_question(question, chat_type)
+                st.rerun()
 
     # Mantener historial en caso de rerun de app
     for message in st.session_state.messages:
