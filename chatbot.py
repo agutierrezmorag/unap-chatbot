@@ -165,8 +165,6 @@ def answer_question(question):
             }
         )
 
-        ic(result)
-
         tokens = {
             "total_tokens": cb.total_tokens,
             "prompt_tokens": cb.prompt_tokens,
