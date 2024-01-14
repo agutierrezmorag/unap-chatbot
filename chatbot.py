@@ -358,13 +358,13 @@ def main():
     if prompt:
         process_question(prompt, chat_type)
 
-    # Pasada la primera respuesta NO entra a la funcion
-    streamlit_feedback(
-        feedback_type="thumbs",
-        optional_text_label="Proporciona feedback adicional (Opcional)",
-        key=st.session_state.message_id,
-        on_submit=update_feedback,
-    )
+    if len(st.session_state.messages) > 0:
+        streamlit_feedback(
+            feedback_type="thumbs",
+            optional_text_label="Proporciona feedback adicional (Opcional)",
+            key=st.session_state.message_id,
+            on_submit=update_feedback,
+        )
 
 
 if __name__ == "__main__":
