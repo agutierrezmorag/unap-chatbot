@@ -43,6 +43,12 @@ def get_llm():
 # Conectar con firestore
 @st.cache_resource
 def db_connection():
+    """
+    Establishes a connection to the Firestore database.
+
+    Returns:
+        db (google.cloud.firestore.Client): The Firestore database client.
+    """
     key_dict = json.loads(config.FIRESTORE_TEXT_KEY)
     creds = service_account.Credentials.from_service_account_info(key_dict)
     db = firestore.Client(credentials=creds)
@@ -51,6 +57,12 @@ def db_connection():
 
 # Total de chats
 def get_chats_len():
+    """
+    Returns the number of chats in the 'chats' collection.
+
+    Returns:
+        int: The number of chats in the collection.
+    """
     chats_ref = db_connection().collection("chats").get()
     return len(chats_ref)
 
@@ -94,6 +106,12 @@ def get_vectorstore():
 
 @st.cache_resource
 def get_chain():
+    """
+    Retrieves the conversational retrieval chain for the chatbot.
+
+    Returns:
+        ConversationalRetrievalChain: The conversational retrieval chain object.
+    """
     template = """
     You are an AI model trained to provide accurate and concise answers to user queries. 
     Your responses should be based on the provided documents and relevant to the institution Universidad Arturo Prat (UNAP). 
@@ -187,6 +205,16 @@ def answer_question(question):
 
 
 def process_question(prompt, chat_type):
+    """
+    Process a user's question in the chatbot.
+
+    Args:
+        prompt (str): The user's question.
+        chat_type (str): The type of chat.
+
+    Returns:
+        None
+    """
     st.session_state.message_id = str(get_messages_len() + 1)
     st.session_state.messages.append({"role": "user", "content": prompt})
 
