@@ -196,12 +196,12 @@ def answer_question(question):
             "prompt_tokens": cb.prompt_tokens,
             "completion_tokens": cb.completion_tokens,
             "total_cost_usd": cb.total_cost,
-        }
+        }        
 
     st.session_state.chat_history = [(question, result["answer"])]
 
     answer = result["answer"]
-    return answer, tokens
+    return answer, tokens, result['source_documents']
 
 
 def process_question(prompt, chat_type):
@@ -225,7 +225,7 @@ def process_question(prompt, chat_type):
         message_placeholder = st.empty()
         start = time.time()
         with st.spinner("Generando respuesta..."):
-            full_response, tokens = answer_question(question=prompt)
+            full_response, tokens, sources = answer_question(question=prompt)
         message_placeholder.markdown(full_response)
         end = time.time()
 
@@ -239,15 +239,26 @@ def process_question(prompt, chat_type):
         time_to_answer=end - start,
         chat_type=chat_type,
         message_id=st.session_state.message_id,
+        sources = sources
     )
 
     if len(st.session_state.messages) == 1:
         st.rerun()
 
 
+#Funcion generador de id unico
+def unique_id_gen(subcollection_ref, base_id):
+    i = 1
+    while True:
+        document_id = f"{base_id}_{i}"
+        document_ref = subcollection_ref.document(document_id)
+        if not document_ref.get().exists:
+            return document_id
+        i += 1
+
 # Registrar datos en la base de datos
 def add_to_db(
-    question, answer, tokens, time_to_answer, chat_type, message_id, user_feedback=None
+    question, answer, tokens, time_to_answer, chat_type, message_id, sources, user_feedback=None
 ):
     """
     Add a question and answer to the database.
@@ -260,6 +271,7 @@ def add_to_db(
     - chat_type (str): Type of chat.
     - message_id (str): ID of the message.
     - user_feedback (str, optional): Feedback provided by the user. Defaults to None.
+    - sources (dic): Documents source names and context.
     """
 
     chat_id = st.session_state.chat_id
@@ -295,6 +307,26 @@ def add_to_db(
                 "submission_time": local_time,
             }
         )
+    
+    #Crea un documento por contexto, en caso de haber 2 o mas contextos provinientes del mismo documento los almacena en documentos diferentes
+    sources_ref = message_doc_ref.collection("sources")
+    
+    for document in sources:
+        source_name = document.metadata['file_name']
+
+        unique_id = unique_id_gen(sources_ref, source_name[:-4])
+
+        source_doc_ref = sources_ref.document(unique_id)
+        source_docs = source_doc_ref.get()
+
+        if not source_docs.exists:
+            source_doc_ref.set(
+                {
+                    "source_name": source_name[:-4],
+                    "context": document.page_content,
+                }
+            )
+
 
 
 def update_feedback(feedback):
