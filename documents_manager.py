@@ -382,7 +382,10 @@ def main():
                     if st.columns(3)[1].button("Registrar cambios"):
                         texts = load_and_split_docs()
                         if do_embedding(texts):
-                            st.success("✅ Documentos registrados exitosamente.")
+                            st.success(
+                                "✅ Documentos registrados exitosamente. Ahora es posible realizar consultas sobre los nuevos documentos."
+                            )
+                            time.sleep(2)
                             st.rerun()
                         else:
                             st.error("❌ Hubo un error al registrar los documentos.")
