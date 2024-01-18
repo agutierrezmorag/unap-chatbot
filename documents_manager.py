@@ -374,9 +374,14 @@ def main():
                         preguntas basándose en la información contenida en estos documentos."
                     )
 
-                    st.info(
-                        "**Es importante recordar que el procesamiento puede llevar algún tiempo, dependiendo del tamaño y la cantidad de los documentos subidos.**",
+                    st.warning(
+                        "**Importante**: La IA solo sera consciente de que ha habido modificaciones en los documentos una vez se registren los cambios.",
                         icon="📢",
+                    )
+
+                    st.info(
+                        "El proceso de registro de cambios puede tardar varios minutos. No refresque la página mientras se esté realizando el registro.",
+                        icon="💡",
                     )
 
                     if st.columns(3)[1].button("Registrar cambios"):
@@ -385,7 +390,7 @@ def main():
                             st.success(
                                 "✅ Documentos registrados exitosamente. Ahora es posible realizar consultas sobre los nuevos documentos."
                             )
-                            time.sleep(2)
+                            time.sleep(5)
                             st.rerun()
                         else:
                             st.error("❌ Hubo un error al registrar los documentos.")
