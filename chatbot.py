@@ -375,7 +375,7 @@ def update_feedback(feedback):
 
 def main():
     st.set_page_config(
-        page_title="UNAP Chatbot 📖",
+        page_title="Chatbot UNAP 📖",
         page_icon="🤖",
         initial_sidebar_state="collapsed",
         menu_items={
@@ -402,7 +402,7 @@ def main():
     with st.sidebar:
         st.image(logo_path)
 
-    st.title("🤖 UNAP Chatbot")
+    st.title("🤖 Chatbot UNAP")
     st.caption(
         "Este chatbot puede cometer errores. Si encuentras inexactitudes, reformula tu pregunta o consulta los documentos oficiales."
     )
