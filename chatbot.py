@@ -19,6 +19,7 @@ from langchain.vectorstores import Pinecone
 from st_pages import show_pages_from_config
 from streamlit_feedback import streamlit_feedback
 
+from documents_manager import get_repo_documents
 from utils import config
 
 set_llm_cache(InMemoryCache())
@@ -405,6 +406,11 @@ def main():
     st.caption(
         "Este chatbot puede cometer errores. Si encuentras inexactitudes, reformula tu pregunta o consulta los documentos oficiales."
     )
+
+    docs = get_repo_documents()
+    with st.expander("Puedes realizar consultas sobre los siguientes documentos:"):
+        for doc in docs:
+            st.caption(doc.path.strip("documentos/").strip(".txt"))
 
     show_pages_from_config()
 
