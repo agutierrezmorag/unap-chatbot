@@ -126,7 +126,8 @@ def get_chain():
 
     Cuando proporciones información de los documentos explícitamente, recuerda siempre citar la fuente.
     Este es un ejemplo de cómo citar una fuente: "(Reglamento X, Artículo Y, Z)".
-    Reemplaza X con el nombre del documento, e Y y Z con el número de los artículos, donde corresponda, u omite estos valores en caso de que no aplique.
+    Reemplaza X con el nombre del documento, e Y y Z con el número de los artículos, donde corresponda.
+    Si no hay un artículo específico, simplemente indica el nombre del documento.
 
     Aquí está el historial de chat: {context}
     Aquí está la pregunta del usuario: {question}
@@ -139,13 +140,13 @@ def get_chain():
     )
 
     document_template = """
-    Source: {source}
+    Context: {page_content}
     Document name: {file_name}
     """
 
     DOCUMENT_PROMPT = PromptTemplate(
         template=document_template,
-        input_variables=["source", "file_name"],
+        input_variables=["page_content", "file_name"],
     )
 
     vectorstore = get_vectorstore()
@@ -242,9 +243,6 @@ def process_question(prompt, chat_type):
         message_id=st.session_state.message_id,
         sources=sources,
     )
-
-    if len(st.session_state.messages) == 1:
-        st.rerun()
 
 
 # Funcion generador de id unico
@@ -430,14 +428,13 @@ def main():
 
     questions = [
         "¿Cuales son las tareas del decano?",
-        "¿Que hago si repruebo una asignatura?",
+        "¿Que hago en caso de reprobar una asignatura?",
+        "Explica en que consiste el trabajo de titulo",
+        "¿Cuales son los requisitos para titularse?",
     ]
 
-    if len(st.session_state.messages) == 0:
-        for question in questions:
-            if st.button(question):
-                process_question(question, chat_type)
-                st.rerun()
+    qcol1, qcol2 = st.columns(2)
+    ex_prompt = ""
 
     # Mantener historial en caso de rerun de app
     for message in st.session_state.messages:
@@ -452,7 +449,18 @@ def main():
     # User input
     prompt = st.chat_input("Escribe tu pregunta...")
 
-    if prompt:
+    for question in questions[:2]:
+        with qcol1:
+            if st.button(question, use_container_width=True):
+                ex_prompt = question
+    for question in questions[2:]:
+        with qcol2:
+            if st.button(question, use_container_width=True):
+                ex_prompt = question
+
+    if ex_prompt:
+        prompt = ex_prompt
+    if prompt or ex_prompt:
         process_question(prompt, chat_type)
 
     if len(st.session_state.messages) > 0:
