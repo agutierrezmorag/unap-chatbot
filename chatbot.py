@@ -134,8 +134,9 @@ def get_chain():
     Este es un ejemplo de cómo citar una fuente: "(Reglamento X, Artículo Y, Z)".
     Reemplaza X con el nombre del documento, e Y y Z con el número de los artículos, donde corresponda.
     Si no hay un artículo específico, simplemente indica el nombre del documento.
+    Si ya has citado una fuente, no es necesario volver a citarla. Puedes simplemente indicar que la información proviene de la misma fuente. 
 
-    Aquí está el historial de chat: {context}
+    Formula tu respuesta a partir de los siguientes documentos: {context}
     Aquí está la pregunta del usuario: {question}
 
     Por favor, genera una respuesta siguiendo estas instrucciones.
@@ -146,8 +147,8 @@ def get_chain():
     )
 
     document_template = """
-    Context: {page_content}
-    Document name: {file_name}
+    Contenido del documento: {page_content}
+    Nombre del documento, usalo cuando cites: {file_name}
     """
 
     DOCUMENT_PROMPT = PromptTemplate(
@@ -235,6 +236,7 @@ def process_question(prompt, chat_type):
     with st.chat_message("assistant", avatar=logo_path):
         start = time.time()
         stream_handler = StreamHandler(st.empty())
+        print(stream_handler.text)
         full_response, tokens, sources = answer_question(
             question=prompt, stream_handler=stream_handler
         )
