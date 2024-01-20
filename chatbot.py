@@ -9,6 +9,8 @@ from langchain.chains import ConversationalRetrievalChain
 from langchain.chat_models import ChatOpenAI
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.globals import set_llm_cache
+from langchain.memory import ConversationBufferMemory
+from langchain.memory.chat_message_histories import StreamlitChatMessageHistory
 from langchain.prompts import PromptTemplate
 from langchain.vectorstores import Pinecone
 from st_pages import show_pages_from_config
@@ -16,7 +18,7 @@ from streamlit_feedback import streamlit_feedback
 
 from documents_manager import get_repo_documents
 from utils import config
-from utils.callbacks import StreamHandler
+from utils.callbacks import PrintRetrievalHandler, StreamHandler
 from utils.firestore import add_to_db, get_chats_len, get_messages_len, update_feedback
 
 set_llm_cache(InMemoryCache())
@@ -99,7 +101,7 @@ def get_chain():
 
     document_template = """
     Contenido del documento: {page_content}
-    Nombre del documento, usalo cuando cites: {file_name}
+    Nombre del documento, formatealo adecuadamente y usalo cuando cites: {file_name}
     """
 
     DOCUMENT_PROMPT = PromptTemplate(
@@ -112,12 +114,14 @@ def get_chain():
         search_type="similarity", search_kwargs={"k": 5}
     )
 
+    memory = st.session_state.memory
+
     chain = ConversationalRetrievalChain.from_llm(
         llm=get_llm(),
         retriever=retriever,
+        memory=memory,
         max_tokens_limit=2000,
         verbose=True,
-        return_source_documents=True,
         combine_docs_chain_kwargs={
             "prompt": PROMPT,
             "document_prompt": DOCUMENT_PROMPT,
@@ -128,7 +132,7 @@ def get_chain():
 
 
 # Generacion de respuesta
-def answer_question(question, stream_handler):
+def answer_question(question, stream_handler, retrieval_handler):
     """
     Answers a given question using a chatbot model.
 
@@ -147,12 +151,9 @@ def answer_question(question, stream_handler):
         result = chain(
             {
                 "question": question,
-                "chat_history": st.session_state.chat_history,
             },
-            callbacks=[stream_handler],
+            callbacks=[stream_handler, retrieval_handler],
         )
-
-        ic(result)
 
         tokens = {
             "total_tokens": cb.total_tokens,
@@ -161,51 +162,10 @@ def answer_question(question, stream_handler):
             "total_cost_usd": cb.total_cost,
         }
 
-    st.session_state.chat_history = [(question, result["answer"])]
+        ic(cb)
 
     answer = result["answer"]
-    return answer, tokens, result["source_documents"]
-
-
-def process_question(prompt, chat_type):
-    """
-    Process a user's question in the chatbot.
-
-    Args:
-        prompt (str): The user's question.
-        chat_type (str): The type of chat.
-
-    Returns:
-        None
-    """
-    st.session_state.message_id = str(get_messages_len(st.session_state.chat_id) + 1)
-    st.session_state.messages.append({"role": "user", "content": prompt})
-
-    with st.chat_message("user", avatar="🧑‍💻"):
-        st.markdown(prompt)
-
-    with st.chat_message("assistant", avatar=logo_path):
-        start = time.time()
-        stream_handler = StreamHandler(st.empty())
-        print(stream_handler.text)
-        full_response, tokens, sources = answer_question(
-            question=prompt, stream_handler=stream_handler
-        )
-        end = time.time()
-
-    # Agregar respuesta a historial de chat
-    st.session_state.messages.append({"role": "assistant", "content": full_response})
-
-    add_to_db(
-        chat_id=st.session_state.chat_id,
-        question=prompt,
-        answer=full_response,
-        tokens=tokens,
-        time_to_answer=end - start,
-        chat_type=chat_type,
-        message_id=st.session_state.message_id,
-        sources=sources,
-    )
+    return answer, tokens
 
 
 def main():
@@ -217,6 +177,8 @@ def main():
             "About": "Chat capaz de responder preguntas relacionadas a reglamentos y documentos de la universidad Arturo Prat."
         },
     )
+
+    show_pages_from_config()
 
     st.markdown(
         """
@@ -242,20 +204,36 @@ def main():
         "Este chatbot puede cometer errores. Si encuentras inexactitudes, reformula tu pregunta o consulta los documentos oficiales."
     )
 
+    # Presentar documentos disponibles para consulta
     docs = get_repo_documents()
     with st.expander("Puedes realizar consultas sobre los siguientes documentos:"):
         for doc in docs:
             st.caption(doc.path.strip("documentos/").strip(".txt"))
 
-    show_pages_from_config()
-
+    # Seleccion de modelo, ELIMINAR EN PRODUCCION
     chat_type = st.radio("Modelo", ["gpt-3.5-turbo-1106", "gpt-4-1106-preview"])
 
-    # Inicializacion historial de chat
-    if "messages" not in st.session_state:
-        st.session_state.messages = []
-    if "chat_history" not in st.session_state:
-        st.session_state.chat_history = []
+    # Set de preguntas predefinidas
+    questions = [
+        "¿Cuales son las tareas del decano?",
+        "¿Que hago en caso de reprobar una asignatura?",
+        "Explica en que consiste el trabajo de titulo",
+        "¿Cuales son los requisitos para titularse?",
+    ]
+    qcol1, qcol2 = st.columns(2)
+    ex_prompt = ""
+
+    # Inicializacion variables de sesion
+    if "msgs" not in st.session_state:
+        st.session_state.msgs = StreamlitChatMessageHistory()
+    if "memory" not in st.session_state:
+        st.session_state.memory = ConversationBufferMemory(
+            memory_key="chat_history",
+            chat_memory=st.session_state.msgs,
+            return_messages=True,
+        )
+
+    # Variables de sesion necesarias para firestore, ELIMINAR EN PRODUCCION
     if "chat_id" not in st.session_state:
         st.session_state.chat_id = str(get_chats_len() + 1)
     if "message_id" not in st.session_state:
@@ -265,28 +243,12 @@ def main():
     if "model" not in st.session_state:
         st.session_state.model = chat_type
 
-    questions = [
-        "¿Cuales son las tareas del decano?",
-        "¿Que hago en caso de reprobar una asignatura?",
-        "Explica en que consiste el trabajo de titulo",
-        "¿Cuales son los requisitos para titularse?",
-    ]
+    if len(st.session_state.msgs.messages) == 0:
+        st.session_state.msgs.add_ai_message("¡Hola! ¿en que puedo ayudarte?")
 
-    qcol1, qcol2 = st.columns(2)
-    ex_prompt = ""
-
-    # Mantener historial en caso de rerun de app
-    for message in st.session_state.messages:
-        if message["role"] == "user":
-            avatar = "🧑‍💻"
-        else:
-            avatar = logo_path
-
-        with st.chat_message(message["role"], avatar=avatar):
-            st.markdown(message["content"])
-
-    # User input
-    prompt = st.chat_input("Escribe tu pregunta...")
+    avatars = {"human": "🧑‍💻", "ai": logo_path}
+    for msg in st.session_state.msgs.messages:
+        st.chat_message(msg.type, avatar=avatars[msg.type]).write(msg.content)
 
     for question in questions[:2]:
         with qcol1:
@@ -297,12 +259,22 @@ def main():
             if st.button(question, use_container_width=True):
                 ex_prompt = question
 
+    # Input de usuario
+    prompt = st.chat_input("Escribe tu pregunta...")
+
     if ex_prompt:
         prompt = ex_prompt
     if prompt or ex_prompt:
-        process_question(prompt, chat_type)
+        st.chat_message("user", avatar="🧑‍💻").write(prompt)
 
-    if len(st.session_state.messages) > 0:
+        with st.chat_message("assistant", avatar=logo_path):
+            start = time.time()
+            retrieval_handler = PrintRetrievalHandler(st.container())
+            stream_handler = StreamHandler(st.empty())
+            answer, tokens = answer_question(prompt, stream_handler, retrieval_handler)
+            end = time.time()
+
+    if len(st.session_state.msgs.messages) > 0:
         streamlit_feedback(
             feedback_type="thumbs",
             optional_text_label="Proporciona feedback adicional (Opcional)",
