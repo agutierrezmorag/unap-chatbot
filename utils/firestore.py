@@ -16,7 +16,7 @@ def db_connection():
     Establishes a connection to the Firestore database.
 
     Returns:
-        db (google.cloud.firestore.Client): The Firestore database client.
+        db (google.cloud.firestore.Client): The Firestore client object.
     """
     key_dict = json.loads(config.FIRESTORE_TEXT_KEY)
     creds = service_account.Credentials.from_service_account_info(key_dict)
@@ -27,10 +27,10 @@ def db_connection():
 # Total de chats
 def get_chats_len():
     """
-    Returns the number of chats in the 'chats' collection.
+    Get the number of chats in the Firestore database.
 
     Returns:
-        int: The number of chats in the collection.
+        int: The number of chats.
     """
     chats_ref = db_connection().collection("chats").get()
     return len(chats_ref)
@@ -38,13 +38,14 @@ def get_chats_len():
 
 def get_messages_len(chat_id):
     """
-    Get the length of the messages in a chat.
+    Get the number of messages in a chat.
+
+    Args:
+        chat_id (str): The ID of the chat.
 
     Returns:
         int: The number of messages in the chat.
     """
-    # chat_id = st.session_state.chat_id
-
     message_ref = (
         db_connection()
         .collection("chats")
@@ -58,10 +59,10 @@ def get_messages_len(chat_id):
 # Funcion generador de id unico
 def unique_id_gen(subcollection_ref, base_id):
     """
-    Generates a unique ID for a document in a subcollection.
+    Generate a unique ID for a document in a Firestore subcollection.
 
     Args:
-        subcollection_ref (SubcollectionReference): Reference to the subcollection.
+        subcollection_ref (firestore.CollectionReference): Reference to the subcollection.
         base_id (str): Base ID for the document.
 
     Returns:
@@ -90,21 +91,19 @@ def add_to_db(
     user_feedback=None,
 ):
     """
-    Add a question and answer to the database.
+    Adds a chat message to the Firestore database.
 
     Parameters:
-    - question (str): The question to be added.
+    - chat_id (str): The ID of the chat.
+    - question (str): The question asked in the chat message.
     - answer (str): The answer to the question.
-    - tokens (list): List of tokens associated with the question.
-    - time_to_answer (float): Time taken to answer the question.
-    - chat_type (str): Type of chat.
-    - message_id (str): ID of the message.
-    - user_feedback (str, optional): Feedback provided by the user. Defaults to None.
-    - sources (dic): Documents source names and context.
+    - tokens (list): The tokens extracted from the question.
+    - time_to_answer (float): The time taken to answer the question.
+    - chat_type (str): The type of chat.
+    - message_id (str): The ID of the chat message.
+    - sources (list): The sources associated with the chat message.
+    - user_feedback (str, optional): The feedback provided by the user. Defaults to None.
     """
-
-    # chat_id = st.session_state.chat_id
-
     db = db_connection()
 
     chats_ref = db.collection("chats")
@@ -161,17 +160,16 @@ def add_to_db(
 
 def update_feedback(feedback, chat_id, message_id):
     """
-    Updates the user feedback for a specific message in the chat.
+    Updates the user feedback for a specific message in a chat.
 
-    Parameters:
-    feedback (str): The user feedback to be updated.
+    Args:
+        feedback (str): The user feedback to be updated.
+        chat_id (str): The ID of the chat.
+        message_id (str): The ID of the message.
 
     Returns:
-    None
+        None
     """
-
-    # chat_id = st.session_state.chat_id
-    # message_id = st.session_state.message_id
     db = db_connection()
 
     chats_ref = db.collection("chats")
