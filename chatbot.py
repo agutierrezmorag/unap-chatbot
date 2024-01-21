@@ -139,6 +139,17 @@ def get_chain():
 
 # Generacion de respuesta
 def answer_question(question, stream_handler, retrieval_handler):
+    """
+    Answers a given question using a chatbot model.
+
+    Args:
+        question (str): The question to be answered.
+        stream_handler: The stream handler for processing chatbot responses.
+        retrieval_handler: The retrieval handler for retrieving relevant documents.
+
+    Returns:
+        None
+    """
     chain = get_chain()
     start = time.time()
     with get_openai_callback() as cb:
