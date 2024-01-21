@@ -1,7 +1,59 @@
 import os
+from typing import Any, Dict, List
 
 import streamlit as st
 from langchain.callbacks.base import BaseCallbackHandler
+from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
+from langchain.schema import LLMResult
+from langchain.callbacks.openai_info import get_openai_token_cost_for_model
+from langchain.schema.messages import BaseMessage
+from tiktoken import encoding_for_model
+
+
+class TokenUsageTrackingCallbackHandler(StreamingStdOutCallbackHandler):
+    def __init__(self, model_name: str) -> None:
+        self.model_name = model_name
+        self.tiktoken = encoding_for_model(model_name)
+        self.tokens_sent = 0
+
+    def always_verbose(self) -> bool:
+        return True
+
+    def on_llm_start(
+        self, serialized: Dict[str, Any], prompts: List[str], *args, **kwargs
+    ) -> Any:
+        self.tokens_sent += sum(
+            [len(self.tiktoken.encode(prompt)) for prompt in prompts]
+        )
+
+    def on_chat_model_start(
+        self,
+        serialized: Dict[str, Any],
+        messages: List[List[BaseMessage]],
+        **kwargs: Any,
+    ) -> None:
+        self.tokens_sent += sum(
+            [len(self.tiktoken.encode(prompt[0].content)) for prompt in messages]
+        )
+
+    def on_llm_end(self, response: LLMResult, **kwargs) -> None:
+        tokens_received = sum(
+            [
+                len(self.tiktoken.encode(g.text))
+                for generations in response.generations
+                for g in generations
+            ]
+        )
+        input_token_cost = get_openai_token_cost_for_model(
+            model_name=self.model_name, num_tokens=self.tokens_sent
+        )
+        output_token_cost = get_openai_token_cost_for_model(
+            model_name=self.model_name, num_tokens=tokens_received, is_completion=True
+        )
+        total_cost = input_token_cost + output_token_cost
+        print(
+            f"\n[{self.model_name}]\n\tTokens sent: {self.tokens_sent}\n\tTokens received: {tokens_received}\nTotal Cost (USD): ${total_cost}"
+        )
 
 
 class StreamHandler(BaseCallbackHandler):
@@ -10,11 +62,12 @@ class StreamHandler(BaseCallbackHandler):
     ):
         self.container = container
         self.text = initial_text
-        self.run_id_ignore_token = None
+        self.tokens = 0
 
     def on_llm_new_token(self, token: str, **kwargs) -> None:
         self.text += token
         self.container.markdown(self.text)
+        self.tokens += 1
 
 
 class PrintRetrievalHandler(BaseCallbackHandler):
