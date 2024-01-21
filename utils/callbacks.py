@@ -5,7 +5,7 @@ import streamlit as st
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain.schema import LLMResult
-from langchain.callbacks.openai_info import get_openai_token_cost_for_model
+from langchain_community.callbacks.openai_info import get_openai_token_cost_for_model
 from langchain.schema.messages import BaseMessage
 from tiktoken import encoding_for_model
 

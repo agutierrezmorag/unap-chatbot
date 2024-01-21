@@ -4,15 +4,14 @@ import pinecone
 import streamlit as st
 from icecream import ic
 from langchain.cache import InMemoryCache
-from langchain.callbacks import get_openai_callback
+from langchain_community.callbacks import get_openai_callback
 from langchain.chains import ConversationalRetrievalChain
-from langchain.chat_models import ChatOpenAI
-from langchain.embeddings.openai import OpenAIEmbeddings
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain.globals import set_llm_cache
 from langchain.memory import ConversationBufferMemory
-from langchain.memory.chat_message_histories import StreamlitChatMessageHistory
+from langchain_community.chat_message_histories import StreamlitChatMessageHistory
 from langchain.prompts import PromptTemplate
-from langchain.vectorstores import Pinecone
+from langchain_community.vectorstores import Pinecone
 from st_pages import show_pages_from_config
 from streamlit_feedback import streamlit_feedback
 
