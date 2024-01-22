@@ -8,9 +8,9 @@ from langchain_community.callbacks import get_openai_callback
 from langchain.chains import ConversationalRetrievalChain
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain.globals import set_llm_cache
-from langchain.memory import ConversationBufferMemory
+from langchain.memory import ConversationBufferWindowMemory
 from langchain_community.chat_message_histories import StreamlitChatMessageHistory
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 from langchain_community.vectorstores import Pinecone
 from st_pages import show_pages_from_config
 from streamlit_feedback import streamlit_feedback
@@ -243,8 +243,10 @@ def main():
     # Inicializacion variables de sesion
     if "msgs" not in st.session_state:
         st.session_state.msgs = StreamlitChatMessageHistory()
+    # El chat sera capaz de recordar las ultimas 3 interacciones
     if "memory" not in st.session_state:
-        st.session_state.memory = ConversationBufferMemory(
+        st.session_state.memory = ConversationBufferWindowMemory(
+            k=3,
             memory_key="chat_history",
             input_key="question",
             output_key="answer",
