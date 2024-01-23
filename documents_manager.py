@@ -7,9 +7,9 @@ import pinecone
 import streamlit as st
 import streamlit_authenticator as stauth
 from github import Auth, Github, GithubException
-from langchain_community.document_loaders import GitLoader
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_community.document_loaders import GitLoader
 from langchain_community.vectorstores import Pinecone
 from st_pages import show_pages_from_config
 
