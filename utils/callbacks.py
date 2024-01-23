@@ -49,9 +49,6 @@ class TokenUsageTrackingCallbackHandler(StreamingStdOutCallbackHandler):
             model_name=self.model_name, num_tokens=tokens_received, is_completion=True
         )
         total_cost = input_token_cost + output_token_cost
-        print(
-            f"\n[{self.model_name}]\n\tTokens sent: {self.tokens_sent}\n\tTokens received: {tokens_received}\nTotal Cost (USD): ${total_cost}"
-        )
         self.session_state.update(
             {
                 "total_tokens": self.tokens_sent + tokens_received,
@@ -60,6 +57,7 @@ class TokenUsageTrackingCallbackHandler(StreamingStdOutCallbackHandler):
                 "total_cost_usd": total_cost,
             }
         )
+        print(f"\n{self.session_state}")
 
 
 class StreamHandler(BaseCallbackHandler):
@@ -84,14 +82,17 @@ class PrintRetrievalHandler(BaseCallbackHandler):
         self.status = container.status("**Consultando documentos**")
 
     def on_retriever_start(self, serialized: dict, query: str, **kwargs):
-        self.status.markdown("### Consulta:")
-        self.status.write(query)
+        self.status.markdown("### 🧑‍🏫 Consulta")
+        self.status.markdown(query)
         self.status.update(label=f"**Generando respuesta para:** {query}")
-        self.status.write("### Fuentes:")
+        self.status.markdown("### 🗃️ Fuentes")
+        self.status.markdown(
+            "La respuesta fue generada a partir de los siguientes textos:"
+        )
 
     def on_retriever_end(self, documents, **kwargs):
         for doc in documents:
             source = os.path.splitext(os.path.basename(doc.metadata["source"]))[0]
-            self.status.write(f"Extracto de **{source}**")
-            self.status.code(doc.page_content)
+            self.status.markdown(f"Extracto de **{source}**")
+            self.status.code(doc.page_content, language=None, line_numbers=True)
         self.status.update(label="Respuesta generada", state="complete")
