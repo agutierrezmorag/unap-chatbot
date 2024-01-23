@@ -18,3 +18,9 @@ GITHUB_ACCESS_TOKEN = st.secrets.github.access_token
 
 # Firestore keys
 FIRESTORE_TEXT_KEY = st.secrets.firestore.textkey
+
+# LangSmith data
+LANGCHAIN_TRACING_V2 = st.secrets.langsmith.tracing
+LANGCHAIN_ENDPOINT = st.secrets.langsmith.endpoint
+LANGCHAIN_API_KEY = st.secrets.langsmith.api_key
+LANGCHAIN_PROJECT = st.secrets.langsmith.project
