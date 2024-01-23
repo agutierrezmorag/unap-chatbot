@@ -4,14 +4,13 @@ import pinecone
 import streamlit as st
 from icecream import ic
 from langchain.cache import InMemoryCache
-from langchain_community.callbacks import get_openai_callback
 from langchain.chains import ConversationalRetrievalChain
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain.globals import set_llm_cache
 from langchain.memory import ConversationBufferWindowMemory
 from langchain_community.chat_message_histories import StreamlitChatMessageHistory
-from langchain_core.prompts import PromptTemplate
 from langchain_community.vectorstores import Pinecone
+from langchain_core.prompts import PromptTemplate
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from st_pages import show_pages_from_config
 from streamlit_feedback import streamlit_feedback
 
@@ -28,9 +27,24 @@ set_llm_cache(InMemoryCache())
 
 logo_path = "logos/unap_negativo.png"
 
+st.markdown(
+    """
+    <style>
+        [data-testid=stSidebar] [data-testid=stImage]{
+            text-align: center;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            margin-top: auto;
+            width: 100%;
+        }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 
 # Instanciar llm
-@st.cache_resource(show_spinner=False)
 def get_llm():
     """
     Get the language model for the chatbot.
@@ -44,13 +58,16 @@ def get_llm():
         openai_api_key=config.OPENAI_API_KEY,
         max_tokens=1000,
         streaming=True,
-        callbacks=[TokenUsageTrackingCallbackHandler(model_name=model)],
+        callbacks=[
+            TokenUsageTrackingCallbackHandler(
+                model_name=model, session_state=st.session_state.cost
+            )
+        ],
     )
     return llm
 
 
 # Importar vectorstore
-@st.cache_resource(show_spinner=False)
 def get_vectorstore():
     """
     Retrieves the vector store for the chatbot.
@@ -68,7 +85,6 @@ def get_vectorstore():
     return vectorstore
 
 
-@st.cache_resource(show_spinner=False)
 def get_chain():
     """
     Retrieves the conversational retrieval chain for the chatbot.
@@ -150,24 +166,14 @@ def answer_question(question, stream_handler, retrieval_handler):
         None
     """
     chain = get_chain()
+
     start = time.time()
-    with get_openai_callback() as cb:
-        result = chain(
-            {
-                "question": question,
-            },
-            callbacks=[stream_handler, retrieval_handler],
-        )
-
-        tokens = {
-            "total_tokens": cb.total_tokens,
-            "prompt_tokens": cb.prompt_tokens,
-            "completion_tokens": cb.completion_tokens,
-            "total_cost_usd": cb.total_cost,
-        }
-
-        ic(result)
-        ic(cb)
+    result = chain(
+        {
+            "question": question,
+        },
+        callbacks=[stream_handler, retrieval_handler],
+    )
     end = time.time()
 
     answer = result["answer"]
@@ -177,7 +183,7 @@ def answer_question(question, stream_handler, retrieval_handler):
         st.session_state.chat_id,
         question,
         answer,
-        tokens,
+        st.session_state.cost,
         end - start,
         st.session_state.model,
         st.session_state.message_id,
@@ -196,22 +202,6 @@ def main():
     )
 
     show_pages_from_config()
-
-    st.markdown(
-        """
-    <style>
-        [data-testid=stSidebar] [data-testid=stImage]{
-            text-align: center;
-            display: block;
-            margin-left: auto;
-            margin-right: auto;
-            margin-top: auto;
-            width: 100%;
-        }
-    </style>
-    """,
-        unsafe_allow_html=True,
-    )
 
     with st.sidebar:
         st.image(logo_path)
@@ -263,6 +253,8 @@ def main():
         )
     if "model" not in st.session_state:
         st.session_state.model = chat_type
+    if "cost" not in st.session_state:
+        st.session_state.cost = {}
 
     if len(st.session_state.msgs.messages) == 0:
         st.session_state.msgs.add_ai_message("¡Hola! ¿en que puedo ayudarte?")

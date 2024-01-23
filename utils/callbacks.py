@@ -5,16 +5,17 @@ import streamlit as st
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain.schema import LLMResult
-from langchain_community.callbacks.openai_info import get_openai_token_cost_for_model
 from langchain.schema.messages import BaseMessage
+from langchain_community.callbacks.openai_info import get_openai_token_cost_for_model
 from tiktoken import encoding_for_model
 
 
 class TokenUsageTrackingCallbackHandler(StreamingStdOutCallbackHandler):
-    def __init__(self, model_name: str) -> None:
+    def __init__(self, model_name: str, session_state) -> None:
         self.model_name = model_name
         self.tiktoken = encoding_for_model(model_name)
         self.tokens_sent = 0
+        self.session_state = session_state
 
     def always_verbose(self) -> bool:
         return True
@@ -53,6 +54,14 @@ class TokenUsageTrackingCallbackHandler(StreamingStdOutCallbackHandler):
         total_cost = input_token_cost + output_token_cost
         print(
             f"\n[{self.model_name}]\n\tTokens sent: {self.tokens_sent}\n\tTokens received: {tokens_received}\nTotal Cost (USD): ${total_cost}"
+        )
+        self.session_state.update(
+            {
+                "total_tokens": self.tokens_sent + tokens_received,
+                "prompt_tokens": self.tokens_sent,
+                "completion_tokens": tokens_received,
+                "total_cost_usd": total_cost,
+            }
         )
 
 
