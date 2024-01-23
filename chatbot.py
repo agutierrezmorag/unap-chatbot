@@ -27,22 +27,6 @@ set_llm_cache(InMemoryCache())
 
 logo_path = "logos/unap_negativo.png"
 
-st.markdown(
-    """
-    <style>
-        [data-testid=stSidebar] [data-testid=stImage]{
-            text-align: center;
-            display: block;
-            margin-left: auto;
-            margin-right: auto;
-            margin-top: auto;
-            width: 100%;
-        }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
-
 
 # Instanciar llm
 def get_llm():
@@ -202,6 +186,22 @@ def main():
     )
 
     show_pages_from_config()
+
+    st.markdown(
+        """
+    <style>
+        [data-testid=stSidebar] [data-testid=stImage]{
+            text-align: center;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            margin-top: auto;
+            width: 100%;
+        }
+    </style>
+    """,
+        unsafe_allow_html=True,
+    )
 
     with st.sidebar:
         st.image(logo_path)
