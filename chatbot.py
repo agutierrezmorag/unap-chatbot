@@ -82,9 +82,6 @@ def get_chain():
     Si la pregunta no es relevante para la universidad o los documentos, no respondas.
     Se conversacional, y si no sabes la respuesta, di que no sabes.
     
-    Documentos: {context}
-    Pregunta: {question}
-    
     Siempre que respondas segun los documentos, cita el documento y el numero de articulo, donde corresponda.
     Genera tu respuesta en formato Markdown y utiliza footnotes para las referencias.
     
@@ -96,6 +93,10 @@ def get_chain():
     
     Escribe el nombre del documento con un formato adecuado cuando cites.
     Sigue estas instrucciones y genera una respuesta para la pregunta.
+    
+    Documentos: {context}
+    Pregunta: {question}
+    Respuesta:
     """
     PROMPT = PromptTemplate(
         template=template,
