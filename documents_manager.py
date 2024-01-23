@@ -33,6 +33,9 @@ def get_repo(show_loader=False):
     return repo
 
 
+@st.cache_resource(
+    ttl=60 * 60 * 24, show_spinner="Recuperando listado de documentos..."
+)
 def get_repo_documents():
     """
     Retrieves the documents from the repository.
