@@ -62,7 +62,6 @@ class StreamHandler(BaseCallbackHandler):
     ):
         self.container = container
         self.text = initial_text
-        self.tokens = 0
         self.question_passed = False
 
     # Solucion a lo bruto a modo de parche, se seguira buscando una solucion mas optima.
@@ -70,7 +69,6 @@ class StreamHandler(BaseCallbackHandler):
         if self.question_passed:
             self.text += token
             self.container.markdown(self.text)
-            self.tokens += 1
         elif token == "?":
             self.question_passed = True
 
