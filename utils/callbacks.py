@@ -63,19 +63,16 @@ class StreamHandler(BaseCallbackHandler):
         self.container = container
         self.text = initial_text
         self.tokens = 0
-        self.question = 0
+        self.question_passed = False
 
-    #Solucion a lo bruto a modo de parche, se seguira buscando una solucion mas optima.
+    # Solucion a lo bruto a modo de parche, se seguira buscando una solucion mas optima.
     def on_llm_new_token(self, token: str, **kwargs) -> None:
-        
-        if(token =="¿" or token =="?" and self.question != 2):
-            self.question +=1
-        elif(self.question != 2 ):
-            pass
-        else:
+        if self.question_passed:
             self.text += token
             self.container.markdown(self.text)
             self.tokens += 1
+        elif token == "?":
+            self.question_passed = True
 
 
 class PrintRetrievalHandler(BaseCallbackHandler):
