@@ -17,9 +17,6 @@ class TokenUsageTrackingCallbackHandler(StreamingStdOutCallbackHandler):
         self.tokens_sent = 0
         self.session_state = session_state
 
-    def always_verbose(self) -> bool:
-        return True
-
     def on_llm_start(
         self, serialized: Dict[str, Any], prompts: List[str], *args, **kwargs
     ) -> Any:

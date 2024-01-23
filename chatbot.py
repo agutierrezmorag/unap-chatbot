@@ -77,26 +77,25 @@ def get_chain():
         ConversationalRetrievalChain: The conversational retrieval chain object.
     """
     template = """
-    Eres un modelo de IA entrenado para proporcionar respuestas precisas y concisas a las consultas de los usuarios.
-    Tus respuestas deben basarse en los documentos proporcionados y ser relevantes para la institución Universidad Arturo Prat (UNAP).
-    Si la pregunta no es relevante para la UNAP, simplemente indica que no puedes responder a dichas preguntas.
-
-    Si no conoces la respuesta a una pregunta, simplemente indica que no tienes la información.
-    Siempre responde en el mismo idioma que la pregunta del usuario.
-
-    Tu objetivo es proporcionar respuestas claras y fáciles de entender.
-    Evita los párrafos largos y desglosa la información en oraciones más cortas o puntos si es posible.
-
-    Cuando proporciones información de los documentos explícitamente, recuerda siempre citar la fuente.
-    Este es un ejemplo de cómo citar una fuente: "(Reglamento X, Artículo Y, Z)".
-    Reemplaza X con el nombre del documento, e Y y Z con el número de los artículos, donde corresponda.
-    Si no hay un artículo específico, simplemente indica el nombre del documento.
-    Si ya has citado una fuente, no es necesario volver a citarla. Puedes simplemente indicar que la información proviene de la misma fuente. 
-
-    Formula tu respuesta a partir de los siguientes documentos: {context}
-    Aquí está la pregunta del usuario: {question}
-
-    Por favor, genera una respuesta siguiendo estas instrucciones.
+    Eres un modelo de IA que puede responder preguntas sobre documentos de la universidad Arturo Prat.
+    Busca en tu memoria para ver si ya has respondido esta pregunta antes. Si no, busca en tu base de datos de documentos.
+    Si la pregunta no es relevante para la universidad o los documentos, no respondas.
+    Se conversacional, y si no sabes la respuesta, di que no sabes.
+    
+    Documentos: {context}
+    Pregunta: {question}
+    
+    Siempre que respondas segun los documentos, cita el documento y el numero de articulo, donde corresponda.
+    Genera tu respuesta en formato Markdown y utiliza footnotes para las referencias.
+    
+    Este es un ejemplo de como deberia verse una respuesta:
+    'El decano es el encargado de la administracion de la facultad. [^1]
+    
+    ### Referencias
+    [^1]: Reglamento de la facultad de ingenieria, articulo 1.'
+    
+    Escribe el nombre del documento con un formato adecuado cuando cites.
+    Sigue estas instrucciones y genera una respuesta para la pregunta.
     """
     PROMPT = PromptTemplate(
         template=template,
@@ -126,7 +125,6 @@ def get_chain():
         memory=memory,
         return_source_documents=True,
         max_tokens_limit=2000,
-        verbose=True,
         combine_docs_chain_kwargs={
             "prompt": PROMPT,
             "document_prompt": DOCUMENT_PROMPT,
@@ -198,6 +196,17 @@ def main():
             margin-top: auto;
             width: 100%;
         }
+    </style>
+    """,
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        """
+    <style>
+    #footnotes {
+        display: none
+    }
     </style>
     """,
         unsafe_allow_html=True,
