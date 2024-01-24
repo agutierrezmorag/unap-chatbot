@@ -19,6 +19,7 @@ from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langsmith import Client
 from streamlit_feedback import streamlit_feedback
 
+from documents_manager import get_repo_documents
 from utils import config
 
 os.environ["LANGCHAIN_TRACING_V2"] = config.LANGCHAIN_TRACING_V2
@@ -29,6 +30,15 @@ os.environ["LANGCHAIN_PROJECT"] = config.LANGCHAIN_PROJECT
 
 def format_docs(docs):
     return "\n\n".join(doc.page_content for doc in docs)
+
+
+@st.cache_resource(show_spinner=False)
+def get_langsmith_client():
+    client = Client(
+        api_url=config.LANGCHAIN_ENDPOINT,
+        api_key=config.LANGCHAIN_API_KEY,
+    )
+    return client
 
 
 @st.cache_resource(show_spinner=False)
@@ -115,20 +125,10 @@ def get_chain():
     return rag_chain_with_source
 
 
-@st.cache_resource(show_spinner=False)
-def get_langsmith_client():
-    client = Client(
-        api_url=config.LANGCHAIN_ENDPOINT,
-        api_key=config.LANGCHAIN_API_KEY,
-    )
-    return client
-
-
 def process_chain_stream(prompt, sources_placeholder, response_placeholder):
     chain = get_chain()
     full_response = ""
 
-    input_dict = {"question": prompt}
     with collect_runs() as cb:
         for chunk in chain.stream(prompt, config={"tags": ["Test Chat"]}):
             if "answer" in chunk:
@@ -148,7 +148,9 @@ def process_chain_stream(prompt, sources_placeholder, response_placeholder):
 
             sources_placeholder.update(label="Respuesta generada", state="complete")
         st.session_state.run_id = cb.traced_runs[0].id
-    st.session_state.memory.save_context(input_dict, {"answer": full_response})
+    st.session_state.memory.save_context(
+        {"question": prompt}, {"answer": full_response}
+    )
 
     return full_response
 
@@ -163,8 +165,6 @@ if __name__ == "__main__":
         },
     )
 
-    set_llm_cache(InMemoryCache())
-
     st.markdown(
         """
     <style>
@@ -175,21 +175,27 @@ if __name__ == "__main__":
     """,
         unsafe_allow_html=True,
     )
-
+    set_llm_cache(InMemoryCache())
     logo_path = "logos/unap_negativo.png"
+    client = get_langsmith_client()
 
     st.title("🤖 Chatbot UNAP")
     st.caption(
         "Este chatbot puede cometer errores. Si encuentras inexactitudes, reformula tu pregunta o consulta los documentos oficiales."
     )
 
-    client = get_langsmith_client()
+    # Lista de documentos disponibles para consultar
+    docs = get_repo_documents()
+    with st.expander("Puedes realizar consultas sobre los siguientes documentos:"):
+        for doc in docs:
+            st.caption(doc.path.strip("documentos/").strip(".txt"))
 
     if st.button("borrar cache"):
         get_chain.clear()
         get_llm.clear()
         get_retriever.clear()
 
+    # Inicializacion de variables de estado
     if "run_id" not in st.session_state:
         st.session_state.run_id = ""
     if "memory" not in st.session_state:
@@ -202,10 +208,12 @@ if __name__ == "__main__":
             return_messages=True,
         )
 
+    # Historial de mensajes
     avatars = {"human": "🧑‍💻", "ai": logo_path}
     for msg in st.session_state.msgs:
         st.chat_message(msg.type, avatar=avatars[msg.type]).write(msg.content)
 
+    # Interaccion con el chatbot
     if prompt := st.chat_input(placeholder="Ask me a question!"):
         st.chat_message("user", avatar="🧑‍💻").write(prompt)
         with st.chat_message("assistant", avatar=logo_path):
@@ -216,6 +224,7 @@ if __name__ == "__main__":
             )
         response_placeholder.markdown(full_response)
 
+    # Botones de feedback
     if len(st.session_state.msgs) > 0:
         feedback = streamlit_feedback(
             feedback_type="thumbs",
@@ -223,9 +232,9 @@ if __name__ == "__main__":
             key=f"feedback_{st.session_state.run_id}",
         )
 
+    # Registro de feedback
     if st.session_state.run_id:
         score_mappings = {"thumbs": {"👍": 1, "👎": 0}}
-
         scores = score_mappings["thumbs"]
 
         if feedback:
