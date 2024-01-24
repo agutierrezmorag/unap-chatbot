@@ -4,6 +4,7 @@ import uuid
 import pinecone
 import streamlit as st
 from icecream import ic
+from langchain import hub
 from langchain.cache import InMemoryCache
 from langchain.callbacks.manager import collect_runs
 from langchain.globals import set_llm_cache
@@ -11,10 +12,6 @@ from langchain.memory import ConversationBufferWindowMemory
 from langchain_community.chat_message_histories import StreamlitChatMessageHistory
 from langchain_community.vectorstores import Pinecone
 from langchain_core.output_parsers import StrOutputParser
-from langchain_core.prompts import (
-    ChatPromptTemplate,
-    MessagesPlaceholder,
-)
 from langchain_core.runnables import RunnableParallel, RunnablePassthrough
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langsmith import Client
@@ -72,42 +69,11 @@ def get_retriever():
 
 @st.cache_resource(show_spinner=False)
 def get_chain():
-    template = """
-    Eres un asistente para tareas de respuesta a preguntas. 
-    Manten un tono conversacional, si el usuario te saluda, responde adecuadamente.
-    Si la pregunta no es relevante para los documentos, responde 'Solo puedo responder preguntas sobre documentos de la universidad Arturo Prat.'
-    
-    Evita parrafos largos, responde mediante punteos y listas para facilitar la lectura.
-    Siempre que respondas segun los documentos, cita el documento y el numero de articulo, donde corresponda.
-    Genera tu respuesta en formato Markdown y utiliza footnotes para las referencias.
-    
-    Este es un ejemplo de como deberia verse una respuesta generada a partir de documentos:
-        'El decano es el encargado de la administracion de la facultad. [^1]
-        
-        ### Referencias
-        [^1]: Reglamento de la facultad de ingenieria, articulo 1.'
-    
-    Escribe el nombre del documento con un formato adecuado cuando lo cites.
-    Sigue estas instrucciones y genera una respuesta para la pregunta.
-    
-    Utiliza los siguientes fragmentos de contexto recuperado para responder a la pregunta:
-    {context}
-    
-    Pregunta: {question}
-    Respuesta:
-    """
-
     memory = st.session_state.memory
     retriever = get_retriever()
     llm = get_llm()
 
-    prompt = ChatPromptTemplate.from_messages(
-        [
-            ("system", template),
-            MessagesPlaceholder(variable_name="chat_history"),
-            ("human", "{question}"),
-        ]
-    )
+    prompt = hub.pull("unap-chatbot/unap-chatbot-rag")
 
     rag_chain = (
         RunnablePassthrough.assign(context=(lambda x: format_docs(x["context"])))
