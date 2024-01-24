@@ -18,6 +18,7 @@ from langsmith import Client
 from st_pages import show_pages_from_config
 from streamlit_feedback import streamlit_feedback
 
+from utils.callbacks import TokenUsageTrackingCallbackHandler
 from documents_manager import get_repo_documents
 from utils import config
 
@@ -47,6 +48,11 @@ def get_llm():
         openai_api_key=config.OPENAI_API_KEY,
         max_tokens=1000,
         streaming=True,
+        callbacks=[
+            TokenUsageTrackingCallbackHandler(
+                model_name="gpt-3.5-turbo-1106", session_state=st.session_state.cost
+            )
+        ],
     )
     return llm
 
@@ -175,6 +181,8 @@ if __name__ == "__main__":
     # Inicializacion de variables de estado
     if "session_id" not in st.session_state:
         st.session_state.session_id = str(uuid.uuid4())
+    if "cost" not in st.session_state:
+        st.session_state.cost = {}
     if "run_id" not in st.session_state:
         st.session_state.run_id = ""
     if "memory" not in st.session_state:
