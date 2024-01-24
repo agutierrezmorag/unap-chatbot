@@ -1,4 +1,5 @@
 import os
+import uuid
 
 import pinecone
 import streamlit as st
@@ -17,6 +18,7 @@ from langchain_core.prompts import (
 from langchain_core.runnables import RunnableParallel, RunnablePassthrough
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langsmith import Client
+from st_pages import show_pages_from_config
 from streamlit_feedback import streamlit_feedback
 
 from documents_manager import get_repo_documents
@@ -130,7 +132,13 @@ def process_chain_stream(prompt, sources_placeholder, response_placeholder):
     full_response = ""
 
     with collect_runs() as cb:
-        for chunk in chain.stream(prompt, config={"tags": ["Test Chat"]}):
+        for chunk in chain.stream(
+            prompt,
+            config={
+                "tags": ["Test Chat"],
+                "metadata": {"user_session": st.session_state.session_id},
+            },
+        ):
             if "answer" in chunk:
                 full_response += chunk["answer"]
                 response_placeholder.markdown(full_response + "▌")
@@ -164,6 +172,7 @@ if __name__ == "__main__":
             "About": "Chat capaz de responder preguntas relacionadas a reglamentos y documentos de la universidad Arturo Prat."
         },
     )
+    show_pages_from_config()
 
     st.markdown(
         """
@@ -178,6 +187,8 @@ if __name__ == "__main__":
     set_llm_cache(InMemoryCache())
     logo_path = "logos/unap_negativo.png"
     client = get_langsmith_client()
+    with st.sidebar:
+        st.image(logo_path)
 
     st.title("🤖 Chatbot UNAP")
     st.caption(
@@ -196,6 +207,8 @@ if __name__ == "__main__":
         get_retriever.clear()
 
     # Inicializacion de variables de estado
+    if "session_id" not in st.session_state:
+        st.session_state.session_id = str(uuid.uuid4())
     if "run_id" not in st.session_state:
         st.session_state.run_id = ""
     if "memory" not in st.session_state:
