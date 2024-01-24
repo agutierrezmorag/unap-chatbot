@@ -4,7 +4,6 @@ import pinecone
 import streamlit as st
 from icecream import ic
 from langchain.cache import InMemoryCache
-from langchain.callbacks import get_openai_callback
 from langchain.callbacks.manager import collect_runs
 from langchain.globals import set_llm_cache
 from langchain.memory import ConversationBufferWindowMemory
@@ -15,8 +14,10 @@ from langchain_core.prompts import (
     ChatPromptTemplate,
     MessagesPlaceholder,
 )
+from langsmith import Client
 from langchain_core.runnables import RunnableParallel, RunnablePassthrough
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from streamlit_feedback import streamlit_feedback
 
 from utils import config
 
@@ -114,40 +115,48 @@ def get_chain():
     return rag_chain_with_source
 
 
+@st.cache_resource(show_spinner=False)
+def get_langsmith_client():
+    client = Client(
+        api_url=config.LANGCHAIN_ENDPOINT,
+        api_key=config.LANGCHAIN_API_KEY,
+    )
+    return client
+
+
 def process_chain_stream(prompt, sources_placeholder, response_placeholder):
     chain = get_chain()
     output = {}
     full_response = ""
 
     input_dict = {"question": prompt}
-    for chunk in chain.stream(
-        prompt,
-        config={"tags": ["Streamlit Chat"]},
-    ):
-        if "answer" in chunk:
-            full_response += chunk["answer"]
-            response_placeholder.markdown(full_response)
+    with collect_runs() as cb:
+        for chunk in chain.stream(prompt, config={"tags": ["Test Chat"]}):
+            if "answer" in chunk:
+                full_response += chunk["answer"]
+                response_placeholder.markdown(full_response)
 
-        if "context" in chunk:
-            sources_placeholder.markdown("### 📚 Fuentes")
-            sources_placeholder.markdown(
-                "La respuesta fue generada a partir de los siguientes textos:"
-            )
-            for doc in chunk["context"]:
-                file_name = doc.metadata["file_name"]
-                page_content = doc.page_content
-                sources_placeholder.caption(f"Extracto de **{file_name}**:")
-                sources_placeholder.code(page_content)
+            if "context" in chunk:
+                sources_placeholder.markdown("### 📚 Fuentes")
+                sources_placeholder.markdown(
+                    "La respuesta fue generada a partir de los siguientes textos:"
+                )
+                for doc in chunk["context"]:
+                    file_name = doc.metadata["file_name"]
+                    page_content = doc.page_content
+                    sources_placeholder.caption(f"Extracto de **{file_name}**:")
+                    sources_placeholder.code(page_content)
 
-        for key in chunk:
-            if key not in output:
-                output[key] = chunk[key]
-            else:
-                output[key] += chunk[key]
+            for key in chunk:
+                if key not in output:
+                    output[key] = chunk[key]
+                else:
+                    output[key] += chunk[key]
 
-        sources_placeholder.update(label="Respuesta generada", state="complete")
-
+            sources_placeholder.update(label="Respuesta generada", state="complete")
+        st.session_state.run_id = cb.traced_runs[0].id
     st.session_state.memory.save_context(input_dict, {"answer": full_response})
+
     return full_response
 
 
@@ -181,11 +190,15 @@ if __name__ == "__main__":
         "Este chatbot puede cometer errores. Si encuentras inexactitudes, reformula tu pregunta o consulta los documentos oficiales."
     )
 
+    client = get_langsmith_client()
+
     if st.button("borrar cache"):
         get_chain.clear()
         get_llm.clear()
         get_retriever.clear()
 
+    if "run_id" not in st.session_state:
+        st.session_state.run_id = ""
     if "memory" not in st.session_state:
         st.session_state.memory = ConversationBufferWindowMemory(
             k=3,
@@ -209,3 +222,34 @@ if __name__ == "__main__":
                 prompt, sources_placeholder, response_placeholder
             )
         response_placeholder.markdown(full_response)
+
+    if len(st.session_state.msgs) > 0:
+        feedback = streamlit_feedback(
+            feedback_type="thumbs",
+            optional_text_label="Proporciona feedback adicional (opcional):",
+            key=f"feedback_{st.session_state.run_id}",
+        )
+
+    if st.session_state.run_id:
+        score_mappings = {"thumbs": {"👍": 1, "👎": 0}}
+
+        scores = score_mappings["thumbs"]
+
+        if feedback:
+            score = scores.get(feedback["score"])
+
+            if score is not None:
+                feedback_type_str = f"thumbs {feedback['score']}"
+
+                feedback_record = client.create_feedback(
+                    st.session_state.run_id,
+                    feedback_type_str,
+                    score=score,
+                    comment=feedback.get("text"),
+                )
+                st.session_state.feedback = {
+                    "feedback_id": str(feedback_record.id),
+                    "score": score,
+                }
+            else:
+                st.warning("Invalid feedback score.")
