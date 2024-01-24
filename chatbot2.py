@@ -14,9 +14,9 @@ from langchain_core.prompts import (
     ChatPromptTemplate,
     MessagesPlaceholder,
 )
-from langsmith import Client
 from langchain_core.runnables import RunnableParallel, RunnablePassthrough
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from langsmith import Client
 from streamlit_feedback import streamlit_feedback
 
 from utils import config
@@ -126,7 +126,6 @@ def get_langsmith_client():
 
 def process_chain_stream(prompt, sources_placeholder, response_placeholder):
     chain = get_chain()
-    output = {}
     full_response = ""
 
     input_dict = {"question": prompt}
@@ -134,7 +133,7 @@ def process_chain_stream(prompt, sources_placeholder, response_placeholder):
         for chunk in chain.stream(prompt, config={"tags": ["Test Chat"]}):
             if "answer" in chunk:
                 full_response += chunk["answer"]
-                response_placeholder.markdown(full_response)
+                response_placeholder.markdown(full_response + "▌")
 
             if "context" in chunk:
                 sources_placeholder.markdown("### 📚 Fuentes")
@@ -146,12 +145,6 @@ def process_chain_stream(prompt, sources_placeholder, response_placeholder):
                     page_content = doc.page_content
                     sources_placeholder.caption(f"Extracto de **{file_name}**:")
                     sources_placeholder.code(page_content)
-
-            for key in chunk:
-                if key not in output:
-                    output[key] = chunk[key]
-                else:
-                    output[key] += chunk[key]
 
             sources_placeholder.update(label="Respuesta generada", state="complete")
         st.session_state.run_id = cb.traced_runs[0].id
