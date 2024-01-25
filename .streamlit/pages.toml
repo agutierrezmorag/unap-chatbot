@@ -1,5 +1,5 @@
 [[pages]]
-path = "chatbot2.py"
+path = "chat_ui.py"
 name = "Chatbot"
 icon = "🤖"
 
