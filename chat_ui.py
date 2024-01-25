@@ -11,7 +11,7 @@ from streamlit_feedback import streamlit_feedback
 
 from chat_logic import get_chain, get_langsmith_client
 from documents_manager import get_repo_documents
-from utils import config, set_envs
+from utils import config
 
 
 def process_chain_stream(prompt, sources_placeholder, response_placeholder):
@@ -133,7 +133,7 @@ if __name__ == "__main__":
         "¿Cuales son las tareas del decano?",
         "¿Que hago en caso de reprobar una asignatura?",
         "Explica en que consiste el trabajo de titulo",
-        "¿Cuales son los requisitos para titularse?",
+        "¿Cuáles son los tipos de exámenes a los que un estudiante puede optar según el reglamento general de estudios?",
     ]
     qcol1, qcol2 = st.columns(2)
     ex_prompt = ""
