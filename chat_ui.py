@@ -31,29 +31,37 @@ def process_chain_stream(prompt, sources_placeholder, response_placeholder):
 
     # Collect runs nos da el id del tracing en langsmith
     with collect_runs() as cb:
-        for chunk in chain.stream(
-            prompt,
-            config={
-                "tags": [config.CHAT_ENVIRONMENT],
-                "metadata": {"user_session": st.session_state.session_id},
-            },
-        ):
-            if "answer" in chunk:
-                full_response += chunk["answer"]
-                response_placeholder.markdown(full_response + "▌")
+        try:
+            for chunk in chain.stream(
+                prompt,
+                config={
+                    "tags": [config.CHAT_ENVIRONMENT],
+                    "metadata": {"user_session": st.session_state.session_id},
+                },
+            ):
+                if "answer" in chunk:
+                    full_response += chunk["answer"]
+                    response_placeholder.markdown(full_response + "▌")
 
-            if "context" in chunk:
-                sources_placeholder.markdown("### 📚 Fuentes")
-                sources_placeholder.markdown(
-                    "La respuesta fue generada a partir de los siguientes textos:"
-                )
-                for doc in chunk["context"]:
-                    file_name = doc.metadata["file_name"]
-                    page_content = doc.page_content
-                    sources_placeholder.caption(f"Extracto de **{file_name}**:")
-                    sources_placeholder.code(page_content)
+                if "context" in chunk:
+                    sources_placeholder.markdown("### 📚 Fuentes")
+                    sources_placeholder.markdown(
+                        "La respuesta fue generada a partir de los siguientes textos:"
+                    )
+                    for doc in chunk["context"]:
+                        file_name = doc.metadata["file_name"]
+                        page_content = doc.page_content
+                        sources_placeholder.caption(f"Extracto de **{file_name}**:")
+                        sources_placeholder.code(page_content)
 
-            sources_placeholder.update(label="Respuesta generada", state="complete")
+                sources_placeholder.update(label="Respuesta generada", state="complete")
+
+        except Exception as e:
+            print(e)
+            st.error(
+                "Hubo un error al generar la respuesta. Por favor, recarga la página y vuelve a intentarlo."
+            )
+            return
         st.session_state.run_id = cb.traced_runs[0].id
 
     # Guardar pregunta y respuesta en memoria
