@@ -1,91 +1,17 @@
-import os
 import uuid
 
-import pinecone
 import streamlit as st
-from langchain import hub
 from langchain.cache import InMemoryCache
 from langchain.callbacks.manager import collect_runs
 from langchain.globals import set_llm_cache
 from langchain.memory import ConversationBufferWindowMemory
 from langchain_community.chat_message_histories import StreamlitChatMessageHistory
-from langchain_community.vectorstores import Pinecone
-from langchain_core.output_parsers import StrOutputParser
-from langchain_core.runnables import RunnableParallel, RunnablePassthrough
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
-from langsmith import Client
 from st_pages import show_pages_from_config
 from streamlit_feedback import streamlit_feedback
 
 from documents_manager import get_repo_documents
 from utils import config, set_envs  # noqa: F401
-
-
-def format_docs(docs):
-    return "\n\n".join(doc.page_content for doc in docs)
-
-
-@st.cache_resource(show_spinner=False)
-def get_langsmith_client():
-    client = Client(
-        api_url=config.LANGCHAIN_ENDPOINT,
-        api_key=config.LANGCHAIN_API_KEY,
-    )
-    return client
-
-
-@st.cache_resource(show_spinner=False)
-def get_llm():
-    llm = ChatOpenAI(
-        model="gpt-3.5-turbo-1106",
-        openai_api_key=config.OPENAI_API_KEY,
-        temperature=0.7,
-        max_tokens=1000,
-        streaming=True,
-    )
-    return llm
-
-
-@st.cache_resource(show_spinner=False)
-def get_retriever():
-    pinecone.init(
-        api_key=config.PINECONE_API_KEY,
-        environment=config.PINECONE_ENV,
-    )
-    embeddings = OpenAIEmbeddings(openai_api_key=config.OPENAI_API_KEY)
-    vectorstore = Pinecone.from_existing_index(
-        index_name=config.PINECONE_INDEX_NAME, embedding=embeddings
-    )
-    retriever = vectorstore.as_retriever(
-        search_type="similarity", search_kwargs={"k": 5}
-    )
-    return retriever
-
-
-@st.cache_resource(show_spinner=False)
-def get_chain():
-    memory = st.session_state.memory
-    retriever = get_retriever()
-    llm = get_llm()
-
-    prompt = hub.pull("unap-chatbot/unap-chatbot-rag")
-
-    rag_chain = (
-        RunnablePassthrough.assign(context=(lambda x: format_docs(x["context"])))
-        | prompt
-        | llm
-        | StrOutputParser()
-    )
-
-    rag_chain_with_source = RunnableParallel(
-        {
-            "context": retriever,
-            "question": RunnablePassthrough(),
-            "chat_history": lambda x: memory.load_memory_variables(x)["chat_history"],
-        }
-    ).assign(answer=rag_chain)
-
-    return rag_chain_with_source
+from chat_logic import get_chain, get_langsmith_client
 
 
 def process_chain_stream(prompt, sources_placeholder, response_placeholder):
