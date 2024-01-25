@@ -3,7 +3,6 @@ import uuid
 
 import pinecone
 import streamlit as st
-from icecream import ic
 from langchain import hub
 from langchain.cache import InMemoryCache
 from langchain.callbacks.manager import collect_runs
