@@ -24,3 +24,4 @@ LANGCHAIN_TRACING_V2 = st.secrets.langsmith.tracing
 LANGCHAIN_ENDPOINT = st.secrets.langsmith.endpoint
 LANGCHAIN_API_KEY = st.secrets.langsmith.api_key
 LANGCHAIN_PROJECT = st.secrets.langsmith.project
+CHAT_ENVIRONMENT = st.secrets.langsmith.chat_environment
