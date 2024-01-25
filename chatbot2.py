@@ -171,11 +171,6 @@ if __name__ == "__main__":
         for doc in docs:
             st.caption(doc.path.strip("documentos/").strip(".txt"))
 
-    if st.button("borrar cache"):
-        get_chain.clear()
-        get_llm.clear()
-        get_retriever.clear()
-
     # Inicializacion de variables de estado
     if "session_id" not in st.session_state:
         st.session_state.session_id = str(uuid.uuid4())
