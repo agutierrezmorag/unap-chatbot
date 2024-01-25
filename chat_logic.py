@@ -66,7 +66,7 @@ def get_chain():
     prompt = hub.pull("unap-chatbot/unap-chatbot-rag")
 
     rag_chain = (
-        RunnablePassthrough.assign(context=(lambda x: format_docs(x["context"])))
+        RunnablePassthrough.assign(context=(lambda x: x["context"]))
         | prompt
         | llm
         | StrOutputParser()
