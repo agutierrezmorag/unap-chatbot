@@ -42,12 +42,18 @@ def get_retriever():
         environment=config.PINECONE_ENV,
     )
     embeddings = OpenAIEmbeddings(openai_api_key=config.OPENAI_API_KEY)
-    vectorstore = Pinecone.from_existing_index(
-        index_name=config.PINECONE_INDEX_NAME, embedding=embeddings
-    )
-    retriever = vectorstore.as_retriever(
-        search_type="similarity", search_kwargs={"k": 5}
-    )
+    try:
+        vectorstore = Pinecone.from_existing_index(
+            index_name=config.PINECONE_INDEX_NAME, embedding=embeddings
+        )
+        retriever = vectorstore.as_retriever(
+            search_type="similarity", search_kwargs={"k": 5}
+        )
+    except Exception as e:
+        print(e)
+        st.error(
+            "Hubo un error al cargar el índice de documentos. Por favor, recarga la página y vuelve a intentarlo."
+        )
     return retriever
 
 
