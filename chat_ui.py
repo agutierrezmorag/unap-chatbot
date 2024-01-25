@@ -11,7 +11,7 @@ from streamlit_feedback import streamlit_feedback
 
 from chat_logic import get_chain, get_langsmith_client
 from documents_manager import get_repo_documents
-from utils import config
+from utils import config, set_envs
 
 
 def process_chain_stream(prompt, sources_placeholder, response_placeholder):
