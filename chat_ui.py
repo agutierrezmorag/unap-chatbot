@@ -55,7 +55,7 @@ def process_chain_stream(prompt, sources_placeholder, response_placeholder):
 
 if __name__ == "__main__":
     st.set_page_config(
-        page_title="Chatbot UNAP 📖",
+        page_title="Chatbot UNAP",
         page_icon="🤖",
         initial_sidebar_state="collapsed",
         menu_items={
