@@ -213,9 +213,10 @@ if __name__ == "__main__":
     for msg in st.session_state.msgs:
         st.chat_message(msg.type, avatar=avatars[msg.type]).write(msg.content)
 
+    # Interaccion con el chatbot
     user_question = st.chat_input(placeholder="Escribe tu pregunta...")
 
-    # Interaccion con el chatbot
+    # Logica de respuesta
     if ex_prompt:
         user_question = ex_prompt
     if user_question:
