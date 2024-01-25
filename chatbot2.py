@@ -103,11 +103,12 @@ def process_chain_stream(prompt, sources_placeholder, response_placeholder):
     chain = get_chain()
     full_response = ""
 
+    # Collect runs nos da el id del tracing en langsmith
     with collect_runs() as cb:
         for chunk in chain.stream(
             prompt,
             config={
-                "tags": ["Test Chat"],
+                "tags": [config.CHAT_ENVIRONMENT],
                 "metadata": {"user_session": st.session_state.session_id},
             },
         ):
@@ -128,6 +129,8 @@ def process_chain_stream(prompt, sources_placeholder, response_placeholder):
 
             sources_placeholder.update(label="Respuesta generada", state="complete")
         st.session_state.run_id = cb.traced_runs[0].id
+
+    # Guardar pregunta y respuesta en memoria
     st.session_state.memory.save_context(
         {"question": prompt}, {"answer": full_response}
     )
@@ -195,40 +198,63 @@ if __name__ == "__main__":
             return_messages=True,
         )
 
+    questions = [
+        "¿Cuales son las tareas del decano?",
+        "¿Que hago en caso de reprobar una asignatura?",
+        "Explica en que consiste el trabajo de titulo",
+        "¿Cuales son los requisitos para titularse?",
+    ]
+    qcol1, qcol2 = st.columns(2)
+    ex_prompt = ""
+    for question in questions[:2]:
+        with qcol1:
+            if st.button(question, use_container_width=True):
+                ex_prompt = question
+    for question in questions[2:]:
+        with qcol2:
+            if st.button(question, use_container_width=True):
+                ex_prompt = question
+
     # Historial de mensajes
     avatars = {"human": "🧑‍💻", "ai": logo_path}
     for msg in st.session_state.msgs:
         st.chat_message(msg.type, avatar=avatars[msg.type]).write(msg.content)
 
+    user_question = st.chat_input(placeholder="Escribe tu pregunta...")
+
     # Interaccion con el chatbot
-    if prompt := st.chat_input(placeholder="Ask me a question!"):
-        st.chat_message("user", avatar="🧑‍💻").write(prompt)
+    if ex_prompt:
+        user_question = ex_prompt
+    if user_question:
+        st.chat_message("user", avatar="🧑‍💻").write(user_question)
         with st.chat_message("assistant", avatar=logo_path):
             sources_placeholder = st.status("Consultando documentos")
             response_placeholder = st.empty()
             full_response = process_chain_stream(
-                prompt, sources_placeholder, response_placeholder
+                user_question, sources_placeholder, response_placeholder
             )
         response_placeholder.markdown(full_response)
 
     # Botones de feedback
     if len(st.session_state.msgs) > 0:
         feedback = streamlit_feedback(
-            feedback_type="thumbs",
+            feedback_type="faces",
             optional_text_label="Proporciona feedback adicional (opcional):",
             key=f"feedback_{st.session_state.run_id}",
         )
 
     # Registro de feedback
     if st.session_state.run_id:
-        score_mappings = {"thumbs": {"👍": 1, "👎": 0}}
-        scores = score_mappings["thumbs"]
+        score_mappings = {
+            "faces": {"😀": 1, "🙂": 0.75, "😐": 0.5, "🙁": 0.25, "😞": 0}
+        }
+        scores = score_mappings["faces"]
 
         if feedback:
             score = scores.get(feedback["score"])
 
             if score is not None:
-                feedback_type_str = f"thumbs {feedback['score']}"
+                feedback_type_str = f"faces {feedback['score']}"
 
                 feedback_record = client.create_feedback(
                     st.session_state.run_id,
@@ -241,4 +267,4 @@ if __name__ == "__main__":
                     "score": score,
                 }
             else:
-                st.warning("Invalid feedback score.")
+                st.warning("Puntuación no válida. No se registró el feedback.")
