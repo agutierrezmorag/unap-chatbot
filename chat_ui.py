@@ -15,6 +15,17 @@ from utils import config, set_envs
 
 
 def process_chain_stream(prompt, sources_placeholder, response_placeholder):
+    """
+    Process the chain stream and generate a response based on the given prompt.
+
+    Args:
+        prompt (str): The prompt for generating the response.
+        sources_placeholder (Placeholder): The placeholder for displaying the sources.
+        response_placeholder (Placeholder): The placeholder for displaying the response.
+
+    Returns:
+        str: The generated response.
+    """
     chain = get_chain()
     full_response = ""
 
@@ -64,6 +75,7 @@ if __name__ == "__main__":
     )
     show_pages_from_config()
 
+    # Eliminar el texto 'footnotes' generado por streamlit
     st.markdown(
         """
     <style>
@@ -74,6 +86,8 @@ if __name__ == "__main__":
     """,
         unsafe_allow_html=True,
     )
+
+    # Variables utiles a lo largo de la app
     set_llm_cache(InMemoryCache())
     logo_path = "logos/unap_negativo.png"
     client = get_langsmith_client()
@@ -106,6 +120,7 @@ if __name__ == "__main__":
             return_messages=True,
         )
 
+    # Preguntas predefinidas
     questions = [
         "¿Cuales son las tareas del decano?",
         "¿Que hago en caso de reprobar una asignatura?",
