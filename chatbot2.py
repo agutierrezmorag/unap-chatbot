@@ -18,7 +18,7 @@ from st_pages import show_pages_from_config
 from streamlit_feedback import streamlit_feedback
 
 from documents_manager import get_repo_documents
-from utils import config, set_envs
+from utils import config, set_envs  # noqa: F401
 
 
 def format_docs(docs):
