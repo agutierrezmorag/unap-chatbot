@@ -32,7 +32,9 @@ def process_chain_stream(prompt, sources_placeholder, response_placeholder):
     # Collect runs nos da el id del tracing en langsmith
     with collect_runs() as cb:
         try:
-            for chunk in chain.stream(
+            for chunk in chain.with_config(
+                configurable={"gpt_model": st.session_state.model_type}
+            ).stream(
                 prompt,
                 config={
                     "tags": [config.CHAT_ENVIRONMENT],
@@ -127,6 +129,12 @@ if __name__ == "__main__":
             chat_memory=StreamlitChatMessageHistory(key="msgs"),
             return_messages=True,
         )
+    if "model_type" not in st.session_state:
+        st.session_state.model_type = "gpt-3.5-turbo-1106"
+
+    st.session_state.model_type = st.selectbox(
+        "Tipo de modelo", ["gpt-3.5-turbo-1106", "gpt-4-turbo-preview"]
+    )
 
     # Preguntas predefinidas
     questions = [

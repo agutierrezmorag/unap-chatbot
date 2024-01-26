@@ -3,7 +3,11 @@ import streamlit as st
 from langchain import hub
 from langchain_community.vectorstores import Pinecone
 from langchain_core.output_parsers import StrOutputParser
-from langchain_core.runnables import RunnableParallel, RunnablePassthrough
+from langchain_core.runnables import (
+    ConfigurableField,
+    RunnableParallel,
+    RunnablePassthrough,
+)
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langsmith import Client
 
@@ -26,11 +30,17 @@ def get_langsmith_client():
 @st.cache_resource(show_spinner=False)
 def get_llm():
     llm = ChatOpenAI(
-        model="gpt-3.5-turbo-1106",
+        model_name="gpt-3.5-turbo-1106",
         openai_api_key=config.OPENAI_API_KEY,
         temperature=0.7,
         max_tokens=1000,
         streaming=True,
+    ).configurable_fields(
+        model_name=ConfigurableField(
+            id="gpt_model",
+            name="GPT Model",
+            description="The model to use for generating the response",
+        )
     )
     return llm
 
