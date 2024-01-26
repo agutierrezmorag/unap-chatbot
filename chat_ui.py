@@ -37,7 +37,7 @@ def process_chain_stream(prompt, sources_placeholder, response_placeholder):
             ).stream(
                 prompt,
                 config={
-                    "tags": [config.CHAT_ENVIRONMENT],
+                    "tags": [config.CHAT_ENVIRONMENT, st.session_state.model_type],
                     "metadata": {"user_session": st.session_state.session_id},
                 },
             ):
