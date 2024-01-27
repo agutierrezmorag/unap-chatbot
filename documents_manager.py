@@ -231,12 +231,13 @@ def main():
                 "password": passwords[index],
             }
 
+        st.warning("Solo personal autorizado puede acceder a esta seccion.", icon="⚠")
         Authenticator = stauth.Authenticate(
             credentials, cookie_name="Streamlit", key="abcdef", cookie_expiry_days=1
         )
 
         email, authentication_status, username = Authenticator.login(
-            ":white[Login]", "main"
+            ":white[Inicio de sesion]", "main"
         )
 
         # Para querer registrar una cuenta.
