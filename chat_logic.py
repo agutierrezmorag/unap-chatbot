@@ -1,3 +1,5 @@
+import os
+
 import pinecone
 import streamlit as st
 from langchain import hub
@@ -15,7 +17,10 @@ from utils import config
 
 
 def format_docs(docs):
-    return "\n\n".join(doc.page_content for doc in docs)
+    return "\n\n".join(
+        f"{os.path.splitext(doc.metadata['file_name'])[0]}: {doc.page_content}"
+        for doc in docs
+    )
 
 
 @st.cache_resource(show_spinner=False)
@@ -76,7 +81,7 @@ def get_chain():
     prompt = hub.pull("unap-chatbot/unap-chatbot-rag")
 
     rag_chain = (
-        RunnablePassthrough.assign(context=(lambda x: x["context"]))
+        RunnablePassthrough.assign(context=(lambda x: format_docs(x["context"])))
         | prompt
         | llm
         | StrOutputParser()
