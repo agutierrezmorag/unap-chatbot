@@ -1,3 +1,5 @@
+import os
+
 import streamlit as st
 
 # API keys
@@ -20,8 +22,9 @@ GITHUB_ACCESS_TOKEN = st.secrets.github.access_token
 FIRESTORE_TEXT_KEY = st.secrets.firestore.textkey
 
 # LangSmith data
-LANGCHAIN_TRACING_V2 = st.secrets.langsmith.tracing
-LANGCHAIN_ENDPOINT = st.secrets.langsmith.endpoint
-LANGCHAIN_API_KEY = st.secrets.langsmith.api_key
-LANGCHAIN_PROJECT = st.secrets.langsmith.project
 CHAT_ENVIRONMENT = st.secrets.langsmith.chat_environment
+
+os.environ["LANGCHAIN_TRACING_V2"] = st.secrets.langsmith.tracing
+os.environ["LANGCHAIN_ENDPOINT"] = st.secrets.langsmith.endpoint
+os.environ["LANGCHAIN_API_KEY"] = st.secrets.langsmith.api_key
+os.environ["LANGCHAIN_PROJECT"] = st.secrets.langsmith.project

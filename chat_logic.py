@@ -2,9 +2,7 @@ import os
 
 import pinecone
 import streamlit as st
-from langchain import hub
 from langchain_community.vectorstores import Pinecone
-from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables import (
