@@ -1,3 +1,4 @@
+import os
 import time
 
 import pinecone
@@ -26,6 +27,11 @@ from utils.firestore import add_to_db, get_chats_len, get_messages_len, update_f
 set_llm_cache(InMemoryCache())
 
 logo_path = "logos/unap_negativo.png"
+
+os.environ["LANGCHAIN_TRACING_V2"] = config.LANGCHAIN_TRACING_V2
+os.environ["LANGCHAIN_ENDPOINT"] = config.LANGCHAIN_ENDPOINT
+os.environ["LANGCHAIN_API_KEY"] = config.LANGCHAIN_API_KEY
+os.environ["LANGCHAIN_PROJECT"] = config.LANGCHAIN_PROJECT
 
 
 # Instanciar llm
@@ -77,24 +83,24 @@ def get_chain():
         ConversationalRetrievalChain: The conversational retrieval chain object.
     """
     template = """
-    Eres un modelo de IA que puede responder preguntas sobre documentos de la universidad Arturo Prat.
-    Busca en tu memoria para ver si ya has respondido esta pregunta antes. Si no, busca en tu base de datos de documentos.
-    Si la pregunta no es relevante para la universidad o los documentos, no respondas.
-    Se conversacional, y si no sabes la respuesta, di que no sabes.
+    Eres un asistente para tareas de respuesta a preguntas. 
+    Manten un tono conversacional, si el usuario te saluda, responde adecuadamente.
+    Si la pregunta no es relevante para los documentos, responde 'Solo puedo responder preguntas sobre documentos de la universidad Arturo Prat.'
     
+    Evita parrafos largos, responde mediante punteos y listas para facilitar la lectura.
     Siempre que respondas segun los documentos, cita el documento y el numero de articulo, donde corresponda.
     Genera tu respuesta en formato Markdown y utiliza footnotes para las referencias.
     
-    Este es un ejemplo de como deberia verse una respuesta:
+    Este es un ejemplo de como deberia verse una respuesta generada a partir de documentos:
     'El decano es el encargado de la administracion de la facultad. [^1]
     
     ### Referencias
     [^1]: Reglamento de la facultad de ingenieria, articulo 1.'
     
-    Escribe el nombre del documento con un formato adecuado cuando cites.
+    Escribe el nombre del documento con un formato adecuado cuando lo cites.
     Sigue estas instrucciones y genera una respuesta para la pregunta.
     
-    Documentos: {context}
+    Utiliza los siguientes fragmentos de contexto recuperado para responder a la pregunta: {context}
     Pregunta: {question}
     Respuesta:
     """
@@ -253,6 +259,8 @@ def main():
             chat_memory=st.session_state.msgs,
             return_messages=True,
         )
+
+    ic(st.session_state.memory.buffer)
 
     # Variables de sesion necesarias para firestore, ELIMINAR EN PRODUCCION
     if "chat_id" not in st.session_state:
