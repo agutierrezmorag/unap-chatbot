@@ -4,10 +4,12 @@ import pinecone
 import streamlit as st
 from langchain import hub
 from langchain_community.vectorstores import Pinecone
+from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables import (
     ConfigurableField,
-    RunnableParallel,
+    RunnableMap,
     RunnablePassthrough,
 )
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
@@ -78,7 +80,34 @@ def get_chain():
     retriever = get_retriever()
     llm = get_llm()
 
-    prompt = hub.pull("unap-chatbot/unap-chatbot-rag")
+    template = """
+Eres un asistente cuyo encargo es responder preguntas sobre documentos institucionales. Se amigable y mantén un tono conversacional, si el usuario te saluda, responde adecuadamente.
+Si la pregunta no es relevante para los documentos o el historial de conversación, responde 'Solo puedo responder preguntas sobre documentos de la universidad Arturo Prat.'
+Evita párrafos largos, utiliza punteo y listas para facilitar la lectura. Siempre que respondas según los documentos, cita el documento y el numero de articulo, donde corresponda.
+Genera tu respuesta en formato Markdown y utiliza footnotes para las referencias. Este es un ejemplo de como debería verse una respuesta generada a partir de documentos:
+-------------
+El decano es el encargado de la administración de la facultad. [^1]
+
+### Referencias
+[^1]: Reglamento de la facultad de ingeniería, articulo 1.
+-------------
+Escribe el nombre del documento con un formato adecuado cuando lo cites.
+Sigue estas instrucciones y genera una respuesta para la pregunta.
+Pregunta: {question}
+Utiliza los siguientes fragmentos de contexto recuperado para responder a la pregunta:
+-------------
+{context}
+-------------
+Respuesta:
+    """
+
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            ("system", template),
+            MessagesPlaceholder(variable_name="chat_history"),
+            ("human", "{question}"),
+        ]
+    )
 
     rag_chain = (
         RunnablePassthrough.assign(context=(lambda x: format_docs(x["context"])))
@@ -87,7 +116,7 @@ def get_chain():
         | StrOutputParser()
     )
 
-    rag_chain_with_source = RunnableParallel(
+    rag_chain_with_source = RunnableMap(
         {
             "context": retriever,
             "question": RunnablePassthrough(),
