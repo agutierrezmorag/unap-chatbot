@@ -2,6 +2,9 @@ import os
 
 import pinecone
 import streamlit as st
+from langchain.agents import AgentExecutor, create_openai_tools_agent
+from langchain.tools.retriever import create_retriever_tool
+from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_community.vectorstores import Pinecone
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
@@ -37,7 +40,7 @@ def get_llm():
     llm = ChatOpenAI(
         model_name="gpt-3.5-turbo-1106",
         openai_api_key=config.OPENAI_API_KEY,
-        temperature=0.7,
+        temperature=0,
         max_tokens=1000,
         streaming=True,
     ).configurable_fields(
@@ -79,26 +82,26 @@ def get_chain():
     llm = get_llm()
 
     template = """
-Eres un asistente cuyo encargo es responder preguntas sobre documentos institucionales. Se amigable y mantén un tono conversacional, si el usuario te saluda, responde adecuadamente.
-Si la pregunta no es relevante para los documentos o el historial de conversación, responde 'Solo puedo responder preguntas sobre documentos de la universidad Arturo Prat.'
-Evita párrafos largos, utiliza punteo y listas para facilitar la lectura. Siempre que respondas según los documentos, cita el documento y el numero de articulo, donde corresponda.
-Genera tu respuesta en formato Markdown y utiliza footnotes para las referencias. Este es un ejemplo de como debería verse una respuesta generada a partir de documentos:
+Eres un asistente cuyo encargo es responder preguntas sobre documentos institucionales. 
+Mantén un tono amigable y conversacional. Si el usuario te saluda, responde adecuadamente. 
+Si la pregunta no es relevante para los documentos o el historial de conversación, responde 'Solo puedo responder preguntas sobre documentos de la Universidad Arturo Prat.'
+Evita párrafos largos. Utiliza listas y puntos para facilitar la lectura. Cuando respondas según los documentos, cita el documento y el número de artículo, si corresponde.
+Genera tu respuesta en formato Markdown y utiliza notas al pie para las referencias. Aquí tienes un ejemplo de cómo debería verse una respuesta basada en documentos:
 -------------
 El decano es el encargado de la administración de la facultad. [^1]
 
 ### Referencias
 [^1]: Reglamento de la facultad de ingeniería, articulo 1.
 -------------
-Escribe el nombre del documento con un formato adecuado cuando lo cites.
+Escribe el nombre del documento con un formato adecuado cuando lo cites. 
 Sigue estas instrucciones y genera una respuesta para la pregunta.
 Pregunta: {question}
-Utiliza los siguientes fragmentos de contexto recuperado para responder a la pregunta:
+Utiliza los siguientes fragmentos de contexto recuperados para responder a la pregunta:
 -------------
 {context}
 -------------
 Respuesta:
-    """
-
+"""
     prompt = ChatPromptTemplate.from_messages(
         [
             ("system", template),
@@ -123,3 +126,67 @@ Respuesta:
     ).assign(answer=rag_chain)
 
     return rag_chain_with_source
+
+
+# Funciones de agente
+def get_agent():
+    retriever_tool = create_retriever_tool(
+        get_retriever(),
+        "search_unap_documents",
+        "Searches and returns excerpts from UNAP documents. Use it to find relevant documents to answer a question.",
+    )
+    search_tool = TavilySearchResults(
+        description="A search engine optimized for comprehensive, accurate, and trusted results. "
+        "Useful for when you need to answer questions about current events or if the data you need is not in the retrieved documents."
+        "Input should be a search query."
+    )
+    tools = [search_tool, retriever_tool]
+
+    template = """
+Eres un asistente que ayuda a estudiantes a responder dudas sobre la Universidad Arturo Prat y sus reglamentos institucionales. Tienes a tu disposición dos herramientas:
+
+1. Una para buscar documentos.
+2. Otra para buscar en internet.
+
+Sigue estos pasos:
+
+- Primero, utiliza la herramienta de búsqueda de documentos para encontrar documentos relevantes a la pregunta.
+- Si no puedes encontrar la respuesta en los documentos, utiliza la herramienta de búsqueda en internet.
+- Ignora los resultados de internet que no tengan relación con la Universidad Arturo Prat, o que no sean relevantes para la pregunta.
+- Solo responde preguntas que tengan relación con la universidad o el historial de conversación, ignorando las que no tengan relación.
+- Si luego de todos estos pasos aun no puedes responder la pregunta, responde indicando que no puedes responderla.
+
+Recuerda:
+
+- Siempre responde de forma formal, amigable y conversacional. Si el usuario te saluda, responde adecuadamente.
+- Cuando respondas según los documentos, cita el documento y el número de artículo. Si no sabes el número de artículo, puedes omitir la cita. NO cites solo con el nombre del documento.
+
+Genera tu respuesta en formato Markdown y utiliza notas al pie para las referencias.
+
+Pregunta: {question}
+Respuesta:
+"""
+
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            (
+                "system",
+                template,
+            ),
+            MessagesPlaceholder(variable_name="chat_history"),
+            ("user", "{question}"),
+            MessagesPlaceholder(variable_name="agent_scratchpad"),
+        ]
+    )
+    agent = create_openai_tools_agent(get_llm(), tools, prompt)
+
+    agent_executor = AgentExecutor(
+        agent=agent,
+        tools=tools,
+        verbose=True,
+        memory=st.session_state.memory,
+        max_iterations=3,
+        early_stopping_method="generate",
+    )
+
+    return agent_executor
