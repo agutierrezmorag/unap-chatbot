@@ -21,7 +21,7 @@ async def agent_answer(prompt, agent_thoughts_placeholder, response_placeholder)
     full_response = ""
     full_output = ""
 
-    # Collect runs nos da el id del tracing en langsmith
+    # Collect runs nos da el id del rastreo en langsmith
     with collect_runs() as cb:
         try:
             async for event in agent.astream_events(
@@ -35,7 +35,7 @@ async def agent_answer(prompt, agent_thoughts_placeholder, response_placeholder)
                 if kind == "on_chain_end":
                     if (
                         event["name"] == "Agent"
-                    ):  # Was assigned when creating the agent with `.with_config({"run_name": "Agent"})`
+                    ):  # Fue asignado al crear el agente con `.with_config({"run_name": "Agent"})`
                         agent_thoughts_placeholder.markdown("- ✅ Respuesta generada.")
                 if kind == "on_chat_model_stream":
                     content = event["data"]["chunk"].content
@@ -51,20 +51,20 @@ async def agent_answer(prompt, agent_thoughts_placeholder, response_placeholder)
                         )
                     else:
                         agent_thoughts_placeholder.markdown(
-                            f"- 🔍 Buscando {query} en internet..."
+                            f"- 🔍 Buscando {query} en Internet..."
                         )
                 elif kind == "on_tool_end":
                     event_name = event["name"]
                     output = event["data"].get("output")
                     if event_name == "search_unap_documents":
                         agent_thoughts_placeholder.markdown(
-                            "- 📝 Encontre textos relevantes"
+                            "- 📝 Encontré textos relevantes"
                         )
                         full_output += output
                         agent_thoughts_placeholder.code(full_output + "▌")
                     else:
                         agent_thoughts_placeholder.markdown(
-                            "- 📝 Encontre resultados relevantes"
+                            "- 📝 Encontré resultados relevantes"
                         )
                         full_output += output
                         agent_thoughts_placeholder.code(full_output + "▌")
