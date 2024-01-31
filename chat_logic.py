@@ -8,11 +8,7 @@ from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_community.vectorstores import Pinecone
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_core.runnables import (
-    ConfigurableField,
-    RunnableMap,
-    RunnablePassthrough,
-)
+from langchain_core.runnables import ConfigurableField, RunnableMap, RunnablePassthrough
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langsmith import Client
 
@@ -35,7 +31,8 @@ def get_langsmith_client():
     return client
 
 
-@st.cache_resource(show_spinner=False)
+# Para que funcione el agente, esta funcion no puede ser cacheada
+# @st.cache_resource(show_spinner=False)
 def get_llm():
     llm = ChatOpenAI(
         model_name="gpt-3.5-turbo-1106",
@@ -129,19 +126,8 @@ Respuesta:
 
 
 # Funciones de agente
+# Esta funcion no puede ser cacheada, para que funcione correctamente el agente
 def get_agent():
-    retriever_tool = create_retriever_tool(
-        get_retriever(),
-        "search_unap_documents",
-        "Searches and returns excerpts from UNAP documents. Use it to find relevant documents to answer a question.",
-    )
-    search_tool = TavilySearchResults(
-        description="A search engine optimized for comprehensive, accurate, and trusted results. "
-        "Useful for when you need to answer questions about current events or if the data you need is not in the retrieved documents."
-        "Input should be a search query."
-    )
-    tools = [search_tool, retriever_tool]
-
     template = """
 Eres un asistente que ayuda a estudiantes a responder dudas sobre la Universidad Arturo Prat y sus reglamentos institucionales. Tienes a tu disposición dos herramientas:
 
@@ -154,7 +140,7 @@ Sigue estos pasos:
 - Si no puedes encontrar la respuesta en los documentos, utiliza la herramienta de búsqueda en internet.
 - Ignora los resultados de internet que no tengan relación con la Universidad Arturo Prat, o que no sean relevantes para la pregunta.
 - Solo responde preguntas que tengan relación con la universidad o el historial de conversación, ignorando las que no tengan relación.
-- Si luego de todos estos pasos aun no puedes responder la pregunta, responde indicando que no puedes responderla.
+- Si luego de todos estos pasos aun no puedes responder la pregunta, responde indicando que no sabes la respuesta.
 
 Recuerda:
 
@@ -178,15 +164,28 @@ Respuesta:
             MessagesPlaceholder(variable_name="agent_scratchpad"),
         ]
     )
-    agent = create_openai_tools_agent(get_llm(), tools, prompt)
 
+    retriever_tool = create_retriever_tool(
+        get_retriever(),
+        "search_unap_documents",
+        "Searches and returns excerpts from UNAP documents. Use it to find relevant documents to answer a question.",
+    )
+
+    search_tool = TavilySearchResults(
+        description="A search engine optimized for comprehensive, accurate, and trusted results. "
+        "Useful for when you need to answer questions about current events or if the data you need is not in the retrieved documents."
+        "Input should be a search query."
+    )
+    tools = [search_tool, retriever_tool]
+
+    agent = create_openai_tools_agent(get_llm(), tools, prompt)
     agent_executor = AgentExecutor(
         agent=agent,
         tools=tools,
-        verbose=True,
         memory=st.session_state.memory,
         max_iterations=3,
         early_stopping_method="generate",
-    )
+        return_intermediate_steps=True,
+    ).with_config({"run_name": "Agent"})
 
     return agent_executor

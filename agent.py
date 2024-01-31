@@ -1,6 +1,8 @@
+import asyncio
 import uuid
 
 import streamlit as st
+from icecream import ic
 from langchain.cache import InMemoryCache
 from langchain.callbacks.manager import collect_runs
 from langchain.globals import set_llm_cache
@@ -14,19 +16,58 @@ from documents_manager import get_repo_documents
 from utils import config
 
 
-def agent_answer(prompt, response_placeholder):
+async def agent_answer(prompt, agent_thoughts_placeholder, response_placeholder):
     agent = get_agent()
+    full_response = ""
+    full_output = ""
 
     # Collect runs nos da el id del tracing en langsmith
     with collect_runs() as cb:
         try:
-            full_response = agent.invoke(
+            async for event in agent.astream_events(
                 {"question": user_question},
                 config={
                     "tags": [config.CHAT_ENVIRONMENT, st.session_state.model_type],
                     "metadata": {"user_session": st.session_state.session_id},
                 },
-            )
+            ):
+                kind = event["event"]
+                if kind == "on_chain_end":
+                    if (
+                        event["name"] == "Agent"
+                    ):  # Was assigned when creating the agent with `.with_config({"run_name": "Agent"})`
+                        agent_thoughts_placeholder.markdown("- ✅ Respuesta generada.")
+                if kind == "on_chat_model_stream":
+                    content = event["data"]["chunk"].content
+                    if content:
+                        full_response += content
+                        response_placeholder.markdown(full_response + "▌")
+                elif kind == "on_tool_start":
+                    event_name = event["name"]
+                    query = event["data"].get("input")["query"]
+                    if event_name == "search_unap_documents":
+                        agent_thoughts_placeholder.markdown(
+                            f"- 📚 Consultando {query} en los documentos..."
+                        )
+                    else:
+                        agent_thoughts_placeholder.markdown(
+                            f"- 🔍 Buscando {query} en internet..."
+                        )
+                elif kind == "on_tool_end":
+                    event_name = event["name"]
+                    output = event["data"].get("output")
+                    if event_name == "search_unap_documents":
+                        agent_thoughts_placeholder.markdown(
+                            "- 📝 Encontre textos relevantes"
+                        )
+                        full_output += output
+                        agent_thoughts_placeholder.code(full_output + "▌")
+                    else:
+                        agent_thoughts_placeholder.markdown(
+                            "- 📝 Encontre resultados relevantes"
+                        )
+                        full_output += output
+                        agent_thoughts_placeholder.code(full_output + "▌")
 
         except Exception as e:
             print(e)
@@ -36,7 +77,7 @@ def agent_answer(prompt, response_placeholder):
             return
         st.session_state.run_id = cb.traced_runs[0].id
 
-    return full_response["output"]
+    return full_response
 
 
 if __name__ == "__main__":
@@ -132,11 +173,17 @@ if __name__ == "__main__":
     # Logica de respuesta
     if ex_prompt:
         user_question = ex_prompt
+
     if user_question:
         st.chat_message("user", avatar="🧑‍💻").write(user_question)
         with st.chat_message("assistant", avatar=logo_path):
-            response_placeholder = st.container()
-            full_response = agent_answer(user_question, response_placeholder)
+            agent_thoughts_placeholder = st.expander("🤔 Cadena de pensamientos")
+            response_placeholder = st.empty()
+            full_response = asyncio.run(
+                agent_answer(
+                    user_question, agent_thoughts_placeholder, response_placeholder
+                )
+            )
         response_placeholder.markdown(full_response)
 
     # Botones de feedback
