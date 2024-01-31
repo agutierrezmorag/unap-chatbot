@@ -64,7 +64,7 @@ async def agent_answer(prompt, agent_thoughts_placeholder, response_placeholder)
                         agent_thoughts_placeholder.code(full_output + "▌")
                     else:
                         agent_thoughts_placeholder.markdown(
-                            "- 📝 Encontré resultados relevantes"
+                            "- 🕵 Encontré resultados relevantes"
                         )
                         full_output += output
                         agent_thoughts_placeholder.code(full_output + "▌")
