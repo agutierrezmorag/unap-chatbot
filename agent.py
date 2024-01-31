@@ -1,7 +1,6 @@
 import uuid
 
 import streamlit as st
-from icecream import ic
 from langchain.cache import InMemoryCache
 from langchain.callbacks.manager import collect_runs
 from langchain.globals import set_llm_cache
@@ -37,8 +36,7 @@ def agent_answer(prompt, response_placeholder):
             return
         st.session_state.run_id = cb.traced_runs[0].id
 
-    ic(full_response)
-    return full_response
+    return full_response["output"]
 
 
 if __name__ == "__main__":
