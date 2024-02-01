@@ -138,10 +138,10 @@ if __name__ == "__main__":
 
     # Preguntas predefinidas
     questions = [
-        "¿Cuales son las tareas del decano?",
-        "¿Que hago en caso de reprobar una asignatura?",
-        "Explica en que consiste el trabajo de titulo",
-        "¿A que tipo de examenes puedo optar?",
+        "¿Cuáles son las tareas del decano?",
+        "¿Qué hago en caso de reprobar una asignatura?",
+        "Explica en qué consiste el trabajo de título",
+        "¿A qué tipo de exámenes puedo optar?",
     ]
     qcol1, qcol2 = st.columns(2)
     ex_prompt = ""
