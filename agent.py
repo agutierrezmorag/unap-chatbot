@@ -146,10 +146,10 @@ if __name__ == "__main__":
 
     # Preguntas predefinidas
     questions = [
-        "¿Cuales son las tareas del decano?",
-        "¿Que hago en caso de reprobar una asignatura?",
-        "Explica en que consiste el trabajo de titulo",
-        "¿A que tipo de examenes puedo optar?",
+        "¿Cuáles son las tareas del decano?",
+        "¿Qué hago en caso de reprobar una asignatura?",
+        "Explica en qué consiste el trabajo de título",
+        "¿A qué tipo de exámenes puedo optar?",
     ]
     qcol1, qcol2 = st.columns(2)
     ex_prompt = ""
@@ -190,7 +190,7 @@ if __name__ == "__main__":
     if len(st.session_state.msgs.messages) > 0:
         feedback = streamlit_feedback(
             feedback_type="faces",
-            optional_text_label="Proporciona feedback adicional (opcional):",
+            optional_text_label="Proporciona retroalimentación adicional (opcional):",
             key=f"feedback_{st.session_state.run_id}",
         )
 
