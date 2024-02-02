@@ -22,7 +22,7 @@ deprecation==2.1.0
 distro==1.8.0
 dnspython==2.4.2
 docstring-inheritance==2.1.2
-duckduckgo_search==4.3.2
+duckduckgo_search==4.4
 executing==2.0.1
 extra-streamlit-components==0.1.60
 frozenlist==1.4.0
@@ -62,6 +62,7 @@ marshmallow==3.20.1
 mdurl==0.1.2
 multidict==6.0.4
 mypy-extensions==1.0.0
+nest-asyncio==1.6.0
 numpy==1.26.2
 oauthlib==3.2.2
 openai==1.9.0
