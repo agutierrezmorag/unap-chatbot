@@ -17,6 +17,16 @@ from utils.callbacks import CustomLLMThoughtLabeler
 
 
 def answer(question, agent_thoughts_placeholder):
+    """
+    Function to get the response from the agent for a given question.
+
+    Args:
+        question (str): The question asked by the user.
+        agent_thoughts_placeholder: Placeholder for agent's thoughts.
+
+    Returns:
+        dict: The response from the agent.
+    """
     agent = get_agent()
     with collect_runs() as cb:
         response = agent.invoke(
