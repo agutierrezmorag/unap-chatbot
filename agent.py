@@ -13,6 +13,7 @@ from streamlit_feedback import streamlit_feedback
 from chat_logic import get_agent, get_langsmith_client
 from documents_manager import get_repo_documents
 from utils import config
+from utils.callbacks import CustomLLMThoughtLabeler
 
 
 def answer(question, agent_thoughts_placeholder):
@@ -129,7 +130,9 @@ if __name__ == "__main__":
     if user_question:
         st.chat_message("user", avatar="🧑‍💻").write(user_question)
         with st.chat_message("assistant", avatar=logo_path):
-            agent_thoughts = StreamlitCallbackHandler(st.container())
+            agent_thoughts = StreamlitCallbackHandler(
+                st.container(), thought_labeler=CustomLLMThoughtLabeler()
+            )
             full_response = answer(user_question, agent_thoughts)
             st.markdown(full_response["output"])
 
