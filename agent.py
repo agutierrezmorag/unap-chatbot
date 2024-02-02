@@ -1,12 +1,11 @@
-import asyncio
 import uuid
 
 import streamlit as st
-from icecream import ic
 from langchain.cache import InMemoryCache
 from langchain.callbacks.manager import collect_runs
 from langchain.globals import set_llm_cache
 from langchain.memory import ConversationBufferWindowMemory
+from langchain_community.callbacks import StreamlitCallbackHandler
 from langchain_community.chat_message_histories import StreamlitChatMessageHistory
 from st_pages import show_pages_from_config
 from streamlit_feedback import streamlit_feedback
@@ -16,69 +15,21 @@ from documents_manager import get_repo_documents
 from utils import config
 
 
-async def agent_answer(prompt, agent_thoughts_placeholder, response_placeholder):
+def answer(question, agent_thoughts_placeholder):
     agent = get_agent()
-    full_response = ""
-    full_output = ""
-
-    # Collect runs nos da el id del rastreo en langsmith
     with collect_runs() as cb:
-        try:
-            async for event in agent.astream_events(
-                {"question": user_question},
-                config={
-                    "tags": [config.CHAT_ENVIRONMENT, st.session_state.model_type],
-                    "metadata": {"user_session": st.session_state.session_id},
-                },
-                version="v1",
-            ):
-                kind = event["event"]
-                if kind == "on_chain_end":
-                    if (
-                        event["name"] == "Agent"
-                    ):  # Fue asignado al crear el agente con `.with_config({"run_name": "Agent"})`
-                        agent_thoughts_placeholder.markdown("- ✅ Respuesta generada.")
-                if kind == "on_chat_model_stream":
-                    content = event["data"]["chunk"].content
-                    if content:
-                        full_response += content
-                        response_placeholder.markdown(full_response + "▌")
-                elif kind == "on_tool_start":
-                    event_name = event["name"]
-                    query = event["data"].get("input")["query"]
-                    if event_name == "search_unap_documents":
-                        agent_thoughts_placeholder.markdown(
-                            f"- 📚 Consultando {query} en los documentos..."
-                        )
-                    else:
-                        agent_thoughts_placeholder.markdown(
-                            f"- 🔍 Buscando {query} en Internet..."
-                        )
-                elif kind == "on_tool_end":
-                    event_name = event["name"]
-                    output = event["data"].get("output")
-                    if event_name == "search_unap_documents":
-                        agent_thoughts_placeholder.markdown(
-                            "- 📝 Encontré textos relevantes"
-                        )
-                        full_output += output
-                        agent_thoughts_placeholder.code(full_output + "▌")
-                    else:
-                        agent_thoughts_placeholder.markdown(
-                            "- 🕵 Encontré resultados relevantes"
-                        )
-                        full_output += output
-                        agent_thoughts_placeholder.code(full_output + "▌")
+        response = agent.invoke(
+            {"question": user_question},
+            config={
+                "tags": [config.CHAT_ENVIRONMENT, st.session_state.model_type],
+                "metadata": {"user_session": st.session_state.session_id},
+                "callbacks": [agent_thoughts_placeholder],
+            },
+        )
 
-        except Exception as e:
-            print(e)
-            st.error(
-                "Hubo un error al generar la respuesta. Por favor, recarga la página y vuelve a intentarlo."
-            )
-            return
         st.session_state.run_id = cb.traced_runs[0].id
 
-    return full_response
+    return response
 
 
 if __name__ == "__main__":
@@ -178,14 +129,9 @@ if __name__ == "__main__":
     if user_question:
         st.chat_message("user", avatar="🧑‍💻").write(user_question)
         with st.chat_message("assistant", avatar=logo_path):
-            agent_thoughts_placeholder = st.expander("🤔 Cadena de pensamientos")
-            response_placeholder = st.empty()
-            full_response = asyncio.run(
-                agent_answer(
-                    user_question, agent_thoughts_placeholder, response_placeholder
-                )
-            )
-        response_placeholder.markdown(full_response)
+            agent_thoughts = StreamlitCallbackHandler(st.container())
+            full_response = answer(user_question, agent_thoughts)
+            st.markdown(full_response["output"])
 
     # Botones de feedback
     if len(st.session_state.msgs.messages) > 0:
