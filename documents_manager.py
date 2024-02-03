@@ -369,169 +369,163 @@ def main():
         # if not authentication_status:
         # sign_up()
 
-        if username:
-            if username in usernames:
-                if authentication_status:
-                    # let User see app
-                    st.sidebar.subheader(f"Bienvenido {username}")
-                    Authenticator.logout("Cerrar Sesión", "sidebar")
+        if not username:
+            st.warning("Por favor, ingrese sus credenciales.")
+        elif username not in usernames:
+            st.warning("Usuario no existente.")
+        if not authentication_status:
+            st.error("Contraseña o Usuario incorrectos.")
+        else:
+            st.sidebar.subheader(f"Bienvenido {username}")
+            Authenticator.logout("Cerrar Sesión", "sidebar")
 
-                    if st.button("Escrapear wiki page"):
-                        scrape_wikipedia_page()
-                    st.title("⚙️ Gestión de documentos")
-                    with st.expander("ℹ️ Información"):
-                        st.markdown(
-                            """
-                            ## 📋 Instrucciones
-                            ### Cargar nuevos documentos
-                            - Se debe subir uno o mas archivos de texto (.txt).
-                            - Presionar el boton 'Subir archivos'.
-                            - Se dispone de un boton 'Limpiar' para limpiar la lista de archivos subidos.
+            if st.button("Escrapear wiki page"):
+                scrape_wikipedia_page()
+            st.title("⚙️ Gestión de documentos")
+            with st.expander("ℹ️ Información"):
+                st.markdown(
+                    """
+                    ## 📋 Instrucciones
+                    ### Cargar nuevos documentos
+                    - Se debe subir uno o mas archivos de texto (.txt).
+                    - Presionar el boton 'Subir archivos'.
+                    - Se dispone de un boton 'Limpiar' para limpiar la lista de archivos subidos.
 
-                            ### Eliminar documentos
-                            - Seleccionar el/los documentos a eliminar.
-                            - Presionar el boton 'Eliminar documentos seleccionados'.
-                            - Confirmar la eliminacion de los documentos.
-                            """
+                    ### Eliminar documentos
+                    - Seleccionar el/los documentos a eliminar.
+                    - Presionar el boton 'Eliminar documentos seleccionados'.
+                    - Confirmar la eliminacion de los documentos.
+                    """
+                )
+
+            show_pages_from_config()
+
+            st.markdown("## 📂 Documentos en el repositorio")
+
+            container_placeholder = st.empty()
+
+            repo_contents = get_repo_documents()
+
+            if repo_contents:
+                # Create a list to store the documents data
+                documents_data = []
+
+                for item in repo_contents:
+                    document_path = item.path.replace(
+                        config.REPO_DIRECTORY_PATH, ""
+                    ).lstrip("/")
+                    document_name, _ = os.path.splitext(document_path)
+
+                    # Append a dictionary with the document data to the list
+                    documents_data.append(
+                        {
+                            "Document Name": document_name,
+                            "File Path": item.path,
+                            "Selected": False,
+                        }
+                    )
+
+                # Create a DataFrame from the documents data
+                documents_df = pd.DataFrame(documents_data)
+
+                # Create a dictionary to store the checkbox states
+                checkbox_states = {}
+
+                # Display the DataFrame with checkboxes
+                with st.container(border=True):
+                    for i in range(len(documents_df)):
+                        checkbox_states[i] = st.checkbox(
+                            documents_df.loc[i, "Document Name"], key=i
                         )
 
-                    show_pages_from_config()
+                # Create placeholders for the buttons
+                confirm_dialog = st.empty()
+                action_button = st.empty()
+                cancel_button = st.empty()
 
-                    st.markdown("## 📂 Documentos en el repositorio")
-
-                    container_placeholder = st.empty()
-
-                    repo_contents = get_repo_documents()
-
-                    if repo_contents:
-                        # Create a list to store the documents data
-                        documents_data = []
-
-                        for item in repo_contents:
-                            document_path = item.path.replace(
-                                config.REPO_DIRECTORY_PATH, ""
-                            ).lstrip("/")
-                            document_name, _ = os.path.splitext(document_path)
-
-                            # Append a dictionary with the document data to the list
-                            documents_data.append(
-                                {
-                                    "Document Name": document_name,
-                                    "File Path": item.path,
-                                    "Selected": False,
-                                }
-                            )
-
-                        # Create a DataFrame from the documents data
-                        documents_df = pd.DataFrame(documents_data)
-
-                        # Create a dictionary to store the checkbox states
-                        checkbox_states = {}
-
-                        # Display the DataFrame with checkboxes
-                        with st.container(border=True):
-                            for i in range(len(documents_df)):
-                                checkbox_states[i] = st.checkbox(
-                                    documents_df.loc[i, "Document Name"], key=i
-                                )
-
-                        # Create placeholders for the buttons
-                        confirm_dialog = st.empty()
-                        action_button = st.empty()
-                        cancel_button = st.empty()
-
-                        # Display the appropriate action button
-                        if st.session_state.get("delete_selected"):
-                            confirm_dialog.markdown(
-                                ":red[¿Estás seguro de que deseas eliminar los documentos seleccionados?]",
-                            )
-                            if action_button.button("Confirmar"):
-                                for i, selected in checkbox_states.items():
-                                    if selected:
-                                        document_to_delete = documents_df.loc[
-                                            i, "File Path"
-                                        ]
-                                        if delete_doc(document_to_delete):
-                                            st.success(
-                                                f"Documento '{documents_df.loc[i, 'Document Name']}' eliminado exitosamente."
-                                            )
-                                        else:
-                                            st.error(
-                                                f"Hubo un error al intentar eliminar '{documents_df.loc[i, 'Document Name']}'."
-                                            )
-                                st.session_state.delete_selected = False
-                                time.sleep(2)
-                                st.rerun()
-                            elif cancel_button.button("Cancelar"):
-                                st.session_state.delete_selected = False
-                                st.rerun()
-                        else:
-                            action_button = st.button(
-                                "Eliminar documentos seleccionados",
-                                disabled=not any(checkbox_states.values()),
-                            )
-                            if action_button:
-                                st.session_state.delete_selected = True
-                                st.rerun()
-                    else:
-                        st.info("ℹ️ No hay documentos en el repositorio.")
-
-                    uploaded_files = st.file_uploader(
-                        "Sube un nuevo documento",
-                        type="txt",
-                        accept_multiple_files=True,
-                        help="Selecciona uno o más archivos de texto. Solo se permiten archivos .txt.",
-                        key=st.session_state.upload_key,
+                # Display the appropriate action button
+                if st.session_state.get("delete_selected"):
+                    confirm_dialog.markdown(
+                        ":red[¿Estás seguro de que deseas eliminar los documentos seleccionados?]",
                     )
-
-                    if uploaded_files:
-                        if st.button("Subir archivos"):
-                            if uploaded_files:
-                                add_files_to_repo(uploaded_files, container_placeholder)
-                                st.session_state.upload_key = str(uuid.uuid4())
-                                st.rerun()
-
-                        if st.button("Limpiar"):
-                            st.session_state.upload_key = str(uuid.uuid4())
-                            st.rerun()
-
-                    st.divider()
-
-                    st.markdown("## 💾 Registrar cambios")
-
-                    st.markdown(
-                        "Cuando se presione el botón `Registrar cambios`, los documentos que se hayan subido se procesan y \
-                        se integran en la base de conocimientos de la IA. A partir de ese momento, la IA podrá responder \
-                        preguntas basándose en la información contenida en estos documentos."
-                    )
-
-                    st.warning(
-                        "**Importante**: La IA solo sera consciente de que ha habido modificaciones en los documentos una vez se registren los cambios.",
-                        icon="📢",
-                    )
-
-                    st.info(
-                        "El proceso de registro de cambios puede tardar varios minutos. No refresque la página mientras se esté realizando el registro.",
-                        icon="💡",
-                    )
-
-                    if st.columns(3)[1].button("Registrar cambios"):
-                        texts = load_and_split_docs()
-                        if do_embedding(texts):
-                            st.success(
-                                "✅ Documentos registrados exitosamente. Ahora es posible realizar consultas sobre los nuevos documentos."
-                            )
-                            time.sleep(5)
-                            st.rerun()
-                        else:
-                            st.error("❌ Hubo un error al registrar los documentos.")
-
-                elif not authentication_status:
-                    st.error("Contraseña o Usuario incorrectos.")
+                    if action_button.button("Confirmar"):
+                        for i, selected in checkbox_states.items():
+                            if selected:
+                                document_to_delete = documents_df.loc[i, "File Path"]
+                                if delete_doc(document_to_delete):
+                                    st.success(
+                                        f"Documento '{documents_df.loc[i, 'Document Name']}' eliminado exitosamente."
+                                    )
+                                else:
+                                    st.error(
+                                        f"Hubo un error al intentar eliminar '{documents_df.loc[i, 'Document Name']}'."
+                                    )
+                        st.session_state.delete_selected = False
+                        time.sleep(2)
+                        st.rerun()
+                    elif cancel_button.button("Cancelar"):
+                        st.session_state.delete_selected = False
+                        st.rerun()
                 else:
-                    st.warning("Por favor, ingrese sus credenciales.")
+                    action_button = st.button(
+                        "Eliminar documentos seleccionados",
+                        disabled=not any(checkbox_states.values()),
+                    )
+                    if action_button:
+                        st.session_state.delete_selected = True
+                        st.rerun()
             else:
-                st.warning("Usuario no existente.")
+                st.info("ℹ️ No hay documentos en el repositorio.")
+
+            uploaded_files = st.file_uploader(
+                "Sube un nuevo documento",
+                type="txt",
+                accept_multiple_files=True,
+                help="Selecciona uno o más archivos de texto. Solo se permiten archivos .txt.",
+                key=st.session_state.upload_key,
+            )
+
+            if uploaded_files:
+                if st.button("Subir archivos"):
+                    if uploaded_files:
+                        add_files_to_repo(uploaded_files, container_placeholder)
+                        st.session_state.upload_key = str(uuid.uuid4())
+                        st.rerun()
+
+                if st.button("Limpiar"):
+                    st.session_state.upload_key = str(uuid.uuid4())
+                    st.rerun()
+
+            st.divider()
+
+            st.markdown("## 💾 Registrar cambios")
+
+            st.markdown(
+                "Cuando se presione el botón `Registrar cambios`, los documentos que se hayan subido se procesan y \
+                se integran en la base de conocimientos de la IA. A partir de ese momento, la IA podrá responder \
+                preguntas basándose en la información contenida en estos documentos."
+            )
+
+            st.warning(
+                "**Importante**: La IA solo sera consciente de que ha habido modificaciones en los documentos una vez se registren los cambios.",
+                icon="📢",
+            )
+
+            st.info(
+                "El proceso de registro de cambios puede tardar varios minutos. No refresque la página mientras se esté realizando el registro.",
+                icon="💡",
+            )
+
+            if st.columns(3)[1].button("Registrar cambios"):
+                texts = load_and_split_docs()
+                if do_embedding(texts):
+                    st.success(
+                        "✅ Documentos registrados exitosamente. Ahora es posible realizar consultas sobre los nuevos documentos."
+                    )
+                    time.sleep(5)
+                    st.rerun()
+                else:
+                    st.error("❌ Hubo un error al registrar los documentos.")
 
     except Exception as e:
         print(e)
