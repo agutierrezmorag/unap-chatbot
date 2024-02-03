@@ -5,7 +5,7 @@ import streamlit as st
 from langchain.agents import AgentExecutor, create_openai_tools_agent
 from langchain.tools.retriever import create_retriever_tool
 from langchain_community.tools.tavily_search import TavilySearchResults
-from langchain_community.vectorstores import Pinecone
+from langchain_community.vectorstores import Pinecone as pcvs
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables import ConfigurableField, RunnableMap, RunnablePassthrough
@@ -52,13 +52,12 @@ def get_llm():
 
 @st.cache_resource(show_spinner=False)
 def get_retriever():
-    pinecone.init(
-        api_key=config.PINECONE_API_KEY,
-        environment=config.PINECONE_ENV,
+    pc = pinecone.Pinecone(
+        api_key=config.PINECONE_API_KEY, environment=config.PINECONE_ENV
     )
     embeddings = OpenAIEmbeddings(openai_api_key=config.OPENAI_API_KEY)
     try:
-        vectorstore = Pinecone.from_existing_index(
+        vectorstore = pcvs.from_existing_index(
             index_name=config.PINECONE_INDEX_NAME, embedding=embeddings
         )
         retriever = vectorstore.as_retriever(
@@ -176,7 +175,7 @@ Respuesta:
         "Useful for when you need to answer questions about current events or if the data you need is not in the retrieved documents."
         "Input should be a search query."
     )
-    tools = [search_tool, retriever_tool]
+    tools = [retriever_tool]
 
     agent = create_openai_tools_agent(get_llm(), tools, prompt)
     agent_executor = AgentExecutor(
@@ -184,6 +183,7 @@ Respuesta:
         tools=tools,
         memory=st.session_state.memory,
         max_iterations=3,
+        max_execution_time=90.0,
         early_stopping_method="generate",
         return_intermediate_steps=True,
     ).with_config({"run_name": "Agent"})
