@@ -1,3 +1,4 @@
+import logging
 import os
 import time
 import uuid
@@ -19,6 +20,7 @@ from register import fetch_users
 from utils import config
 
 logo_path = "logos/unap_negativo.png"
+logging.basicConfig(level=logging.INFO)
 
 
 @st.cache_resource
@@ -32,6 +34,9 @@ def get_repo(show_loader=False):
     auth = Auth.Token(config.GITHUB_ACCESS_TOKEN)
     g = Github(auth=auth)
     repo = g.get_repo(config.REPO_OWNER + "/" + config.REPO_NAME)
+
+    logging.info(f"Retrieved repository {config.REPO_OWNER}/{config.REPO_NAME}")
+
     return repo
 
 
@@ -45,12 +50,16 @@ def get_repo_documents():
     Returns:
         A list of documents from the repository.
     """
+    # Configure the logging system
+    logging.basicConfig(level=logging.INFO)
+
     try:
         repo = get_repo()
         docs = repo.get_contents(config.REPO_DIRECTORY_PATH, ref=config.REPO_BRANCH)
+        logging.info(f"Retrieved {len(docs)} documents from the repository")
         return docs
     except GithubException as e:
-        print(f"Error: {e}")
+        logging.error(f"Error retrieving documents from the repository: {e}")
         return []
 
 
@@ -76,9 +85,10 @@ def delete_doc(file_path, commit_message="Delete file via Streamlit"):
             branch=config.REPO_BRANCH,
         )
         get_repo_documents.clear()
+        logging.info(f"Documento '{doc.name}' eliminado exitosamente.")
         return "commit" in resp
     except GithubException as e:
-        print(f"Error: {e}")
+        logging.error(f"Error al eliminar el documento '{file_path}': {e}")
         return False
 
 
@@ -102,6 +112,7 @@ def add_files_to_repo(file_list, container):
             container.warning(
                 f"Documento '{uploaded_file.name}' ya existe. Omitiendo...", icon="⚠️"
             )
+            logging.warning(f"Documento '{uploaded_file.name}' ya existe. Omitiendo...")
             time.sleep(2)
             continue
         except GithubException as e:
@@ -109,6 +120,9 @@ def add_files_to_repo(file_list, container):
                 container.error(
                     f"Error al obtener el documento '{uploaded_file.name}': {e}",
                     icon="❌",
+                )
+                logging.error(
+                    f"Error al obtener el documento '{uploaded_file.name}': {e}"
                 )
                 continue
 
@@ -123,10 +137,12 @@ def add_files_to_repo(file_list, container):
             container.success(
                 f"Documento '{uploaded_file.name}' añadido exitosamente.", icon="✅"
             )
+            logging.info(f"Documento '{uploaded_file.name}' añadido exitosamente.")
             time.sleep(2)
             get_repo_documents.clear()
         except GithubException as e:
             container.error(f"Error al añadir el documento '{uploaded_file.name}': {e}")
+            logging.error(f"Error al añadir el documento '{uploaded_file.name}': {e}")
 
 
 # Carga y split de textos
@@ -137,7 +153,6 @@ def load_and_split_docs():
     Returns:
         texts (list): A list of split text documents.
     """
-
     loader = GitLoader(
         clone_url=config.REPO_URL,
         repo_path="./documentos",
@@ -145,12 +160,14 @@ def load_and_split_docs():
         file_filter=lambda x: x.endswith(".txt"),
     )
     docs = loader.load()
+    logging.info(f"Loaded {len(docs)} documents from {config.REPO_URL}")
 
     # Split de textos
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=2048, chunk_overlap=128, length_function=len
     )
     texts = text_splitter.split_documents(docs)
+    logging.info(f"Split documents into {len(texts)} chunks")
 
     return texts
 
@@ -210,17 +227,18 @@ def scrape_wikipedia_page(url="https://es.wikipedia.org/wiki/Universidad_Arturo_
             embedding=embeddings,
             namespace="Wikipedia",
         )
-        print("Created namespace Wikipedia")
+        logging.info("Created namespace Wikipedia")
 
         # Añadir documentos
         vectorstore.add_documents(documents=splits)
-        print("Added documents to namespace Wikipedia")
-        return splits
+        logging.info("Added documents to namespace Wikipedia")
+
+        st.success("Documentos añadidos exitosamente.")
     except Exception as e:
-        print(
+        logging.error(
             f"Hubo un error al intentar añadir los documentos de Wikipedia al vector store: {e}"
         )
-        return False
+        st.error("Hubo un error al intentar añadir los documentos de Wikipedia.")
 
 
 def clean_up_document(document):
@@ -233,17 +251,26 @@ def clean_up_document(document):
     Returns:
         Document: The cleaned up document object.
     """
-    soup = BeautifulSoup(document.page_content, "html.parser")
-    cleaned_text = (
-        soup.get_text().replace("\n", " ").replace("\xa0", " ").replace("\u200b", " ")
-    )
+    logging.info("Cleaning up document: %s", document.title)
 
-    document.page_content = cleaned_text
+    try:
+        soup = BeautifulSoup(document.page_content, "html.parser")
+        cleaned_text = (
+            soup.get_text()
+            .replace("\n", " ")
+            .replace("\xa0", " ")
+            .replace("\u200b", " ")
+        )
+
+        document.page_content = cleaned_text
+        logging.info("Successfully cleaned up document: %s", document.title)
+
+    except Exception as e:
+        logging.error("Failed to clean up document: %s, error: %s", document.title, e)
 
     return document
 
 
-# Crear vectorstore
 def do_embedding(text_chunks):
     """
     Embeds the given text chunks using OpenAIEmbeddings and stores them in a Pinecone index.
@@ -259,24 +286,25 @@ def do_embedding(text_chunks):
         api_key=config.PINECONE_API_KEY, environment=config.PINECONE_ENV
     )
 
-    # Revisar si el index ya existe
     if config.PINECONE_INDEX_NAME in pc.list_indexes().names():
-        # Borrarlo en caso de que exista
         pc.delete_index(config.PINECONE_INDEX_NAME)
+        logging.info(f"Deleted index {config.PINECONE_INDEX_NAME}")
 
-    # Crear un nuevo index
     pc.create_index(
         name=config.PINECONE_INDEX_NAME,
         metric="cosine",
         dimension=1536,
         spec=pinecone.PodSpec(environment=config.PINECONE_ENV),
     )
+    logging.info(f"Created index {config.PINECONE_INDEX_NAME}")
 
     vectorstore = pcvs.from_documents(
         index_name=config.PINECONE_INDEX_NAME,
         embedding=embeddings,
         documents=text_chunks,
     )
+    logging.info(f"Added documents to index {config.PINECONE_INDEX_NAME}")
+
     return vectorstore
 
 
@@ -349,8 +377,7 @@ def main():
                     Authenticator.logout("Cerrar Sesión", "sidebar")
 
                     if st.button("Escrapear wiki page"):
-                        content = scrape_wikipedia_page()
-                        st.write(content)
+                        scrape_wikipedia_page()
                     st.title("⚙️ Gestión de documentos")
                     with st.expander("ℹ️ Información"):
                         st.markdown(
