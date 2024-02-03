@@ -8,7 +8,6 @@ import streamlit as st
 import streamlit_authenticator as stauth
 from bs4 import BeautifulSoup
 from github import Auth, Github, GithubException
-from icecream import ic
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import AsyncHtmlLoader, GitLoader
 from langchain_community.document_transformers import BeautifulSoupTransformer
@@ -197,16 +196,25 @@ def scrape_wikipedia_page(url="https://es.wikipedia.org/wiki/Universidad_Arturo_
                 spec=pinecone.PodSpec(environment=config.PINECONE_ENV),
             )
 
+        # Para evitar documentos duplicados, se elimina el namespace si es que existe
+        try:
+            index = pc.Index(config.PINECONE_INDEX_NAME)
+            index.delete(delete_all=True, namespace="Wikipedia")
+            print("Deleted namespace Wikipedia")
+        except pinecone.exceptions.IndexNotFoundError:
+            pass
+
         # Recuperar index
         vectorstore = pcvs.from_existing_index(
             index_name=config.PINECONE_INDEX_NAME,
             embedding=embeddings,
             namespace="Wikipedia",
         )
+        print("Created namespace Wikipedia")
 
         # Añadir documentos
         vectorstore.add_documents(documents=splits)
-
+        print("Added documents to namespace Wikipedia")
         return splits
     except Exception as e:
         print(
