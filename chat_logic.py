@@ -51,14 +51,18 @@ def get_llm():
 
 
 @st.cache_resource(show_spinner=False)
-def get_retriever():
+def get_retriever(namespace="Default"):
     pc = pinecone.Pinecone(
-        api_key=config.PINECONE_API_KEY, environment=config.PINECONE_ENV
+        api_key=config.PINECONE_API_KEY,
+        environment=config.PINECONE_ENV,
+        namespace=namespace,
     )
     embeddings = OpenAIEmbeddings(openai_api_key=config.OPENAI_API_KEY)
     try:
         vectorstore = pcvs.from_existing_index(
-            index_name=config.PINECONE_INDEX_NAME, embedding=embeddings
+            index_name=config.PINECONE_INDEX_NAME,
+            embedding=embeddings,
+            namespace=namespace,
         )
         retriever = vectorstore.as_retriever(
             search_type="similarity", search_kwargs={"k": 5}
@@ -130,14 +134,13 @@ def get_agent():
     template = """
 Eres un asistente que ayuda a estudiantes a responder dudas sobre la Universidad Arturo Prat y sus reglamentos institucionales. Tienes a tu disposición dos herramientas:
 
-1. Una para buscar documentos.
-2. Otra para buscar en internet.
+1. Una para buscar documentos de reglamentos.
+2. Otra para buscar en Wikipedia.
 
 Sigue estos pasos:
 
 - Primero, utiliza la herramienta de búsqueda de documentos para encontrar documentos relevantes a la pregunta.
-- Si no puedes encontrar la respuesta en los documentos, utiliza la herramienta de búsqueda en internet.
-- Ignora los resultados de internet que no tengan relación con la Universidad Arturo Prat, o que no sean relevantes para la pregunta.
+- Si no puedes encontrar la respuesta en los documentos, utiliza la herramienta de búsqueda en Wikipedia.
 - Solo responde preguntas que tengan relación con la universidad o el historial de conversación, ignorando las que no tengan relación.
 - Si luego de todos estos pasos aun no puedes responder la pregunta, responde indicando que no sabes la respuesta.
 
@@ -164,10 +167,15 @@ Respuesta:
         ]
     )
 
-    retriever_tool = create_retriever_tool(
+    doc_retriever_tool = create_retriever_tool(
         get_retriever(),
         "search_unap_documents",
         "Searches and returns excerpts from UNAP documents. Use it to find relevant documents to answer a question.",
+    )
+    wikipedia_retriever_tool = create_retriever_tool(
+        get_retriever(namespace="Wikipedia"),
+        "search_wikipedia",
+        "Searches and returns excerpts from UNAP's Wikipedia page. Use it to find relevant information about UNAP that is not available in the documents.",
     )
 
     search_tool = TavilySearchResults(
@@ -175,7 +183,7 @@ Respuesta:
         "Useful for when you need to answer questions about current events or if the data you need is not in the retrieved documents."
         "Input should be a search query."
     )
-    tools = [retriever_tool]
+    tools = [doc_retriever_tool, wikipedia_retriever_tool]
 
     agent = create_openai_tools_agent(get_llm(), tools, prompt)
     agent_executor = AgentExecutor(

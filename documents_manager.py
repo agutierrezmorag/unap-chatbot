@@ -8,6 +8,7 @@ import streamlit as st
 import streamlit_authenticator as stauth
 from bs4 import BeautifulSoup
 from github import Auth, Github, GithubException
+from icecream import ic
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import AsyncHtmlLoader, GitLoader
 from langchain_community.document_transformers import BeautifulSoupTransformer
@@ -75,6 +76,7 @@ def delete_doc(file_path, commit_message="Delete file via Streamlit"):
             sha=doc.sha,
             branch=config.REPO_BRANCH,
         )
+        get_repo_documents.clear()
         return "commit" in resp
     except GithubException as e:
         print(f"Error: {e}")
@@ -123,6 +125,7 @@ def add_files_to_repo(file_list, container):
                 f"Documento '{uploaded_file.name}' añadido exitosamente.", icon="✅"
             )
             time.sleep(2)
+            get_repo_documents.clear()
         except GithubException as e:
             container.error(f"Error al añadir el documento '{uploaded_file.name}': {e}")
 
@@ -198,12 +201,13 @@ def scrape_wikipedia_page(url="https://es.wikipedia.org/wiki/Universidad_Arturo_
         vectorstore = pcvs.from_existing_index(
             index_name=config.PINECONE_INDEX_NAME,
             embedding=embeddings,
+            namespace="Wikipedia",
         )
 
         # Añadir documentos
         vectorstore.add_documents(documents=splits)
 
-        return True
+        return splits
     except Exception as e:
         print(
             f"Hubo un error al intentar añadir los documentos de Wikipedia al vector store: {e}"
