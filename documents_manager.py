@@ -6,11 +6,13 @@ import pandas as pd
 import pinecone
 import streamlit as st
 import streamlit_authenticator as stauth
+from bs4 import BeautifulSoup
 from github import Auth, Github, GithubException
-from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.document_loaders import GitLoader
-from langchain_community.vectorstores import Pinecone
+from langchain_community.document_loaders import AsyncHtmlLoader, GitLoader
+from langchain_community.document_transformers import BeautifulSoupTransformer
+from langchain_community.vectorstores import Pinecone as pcvs
+from langchain_openai import OpenAIEmbeddings
 from st_pages import show_pages_from_config
 
 from register import fetch_users
@@ -151,6 +153,84 @@ def load_and_split_docs():
     return texts
 
 
+def scrape_wikipedia_page(url="https://es.wikipedia.org/wiki/Universidad_Arturo_Prat"):
+    """
+    Scrapes a Wikipedia page, transforms the documents, cleans them, splits them, and adds them to a vector store.
+
+    Args:
+        url (str): The URL of the Wikipedia page to scrape. Defaults to the Universidad Arturo Prat page in Spanish.
+
+    Returns:
+        bool: True if the documents were successfully added to the vector store, False otherwise.
+    """
+    # Scrapping de la pagina de wikipedia
+    loader = AsyncHtmlLoader(url)
+    docs = loader.load()
+
+    # Transformacion de los documentos
+    bs4_transformer = BeautifulSoupTransformer()
+    transformed_docs = bs4_transformer.transform_documents(docs)
+
+    # Limpieza de los documentos
+    cleaned_docs = [clean_up_document(doc) for doc in transformed_docs]
+
+    # Split de los documentos
+    splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
+        chunk_size=1000, chunk_overlap=200
+    )
+    splits = splitter.split_documents(cleaned_docs)
+
+    try:
+        embeddings = OpenAIEmbeddings(openai_api_key=config.OPENAI_API_KEY)
+        pc = pinecone.Pinecone(
+            api_key=config.PINECONE_API_KEY, environment=config.PINECONE_ENV
+        )
+
+        if config.PINECONE_INDEX_NAME not in pc.list_indexes().names():
+            pc.create_index(
+                name=config.PINECONE_INDEX_NAME,
+                metric="cosine",
+                dimension=1536,
+                spec=pinecone.PodSpec(environment=config.PINECONE_ENV),
+            )
+
+        # Recuperar index
+        vectorstore = pcvs.from_existing_index(
+            index_name=config.PINECONE_INDEX_NAME,
+            embedding=embeddings,
+        )
+
+        # Añadir documentos
+        vectorstore.add_documents(documents=splits)
+
+        return True
+    except Exception as e:
+        print(
+            f"Hubo un error al intentar añadir los documentos de Wikipedia al vector store: {e}"
+        )
+        return False
+
+
+def clean_up_document(document):
+    """
+    Cleans up the page content of a document by removing HTML tags and special characters.
+
+    Args:
+        document (Document): The document object to be cleaned up.
+
+    Returns:
+        Document: The cleaned up document object.
+    """
+    soup = BeautifulSoup(document.page_content, "html.parser")
+    cleaned_text = (
+        soup.get_text().replace("\n", " ").replace("\xa0", " ").replace("\u200b", " ")
+    )
+
+    document.page_content = cleaned_text
+
+    return document
+
+
 # Crear vectorstore
 def do_embedding(text_chunks):
     """
@@ -163,22 +243,27 @@ def do_embedding(text_chunks):
         vectorstore (Pinecone.VectorStore): The embedded text chunks stored in a Pinecone VectorStore.
     """
     embeddings = OpenAIEmbeddings(openai_api_key=config.OPENAI_API_KEY)
-    pinecone.init(
-        api_key=config.PINECONE_API_KEY,
-        environment=config.PINECONE_ENV,
+    pc = pinecone.Pinecone(
+        api_key=config.PINECONE_API_KEY, environment=config.PINECONE_ENV
     )
 
     # Revisar si el index ya existe
-    if config.PINECONE_INDEX_NAME in pinecone.list_indexes():
+    if config.PINECONE_INDEX_NAME in pc.list_indexes().names():
         # Borrarlo en caso de que exista
-        pinecone.delete_index(config.PINECONE_INDEX_NAME)
+        pc.delete_index(config.PINECONE_INDEX_NAME)
 
     # Crear un nuevo index
-    pinecone.create_index(
-        name=config.PINECONE_INDEX_NAME, metric="cosine", dimension=1536
+    pc.create_index(
+        name=config.PINECONE_INDEX_NAME,
+        metric="cosine",
+        dimension=1536,
+        spec=pinecone.PodSpec(environment=config.PINECONE_ENV),
     )
-    vectorstore = Pinecone.from_documents(
-        text_chunks, embeddings, index_name=config.PINECONE_INDEX_NAME
+
+    vectorstore = pcvs.from_documents(
+        index_name=config.PINECONE_INDEX_NAME,
+        embedding=embeddings,
+        documents=text_chunks,
     )
     return vectorstore
 
@@ -251,6 +336,9 @@ def main():
                     st.sidebar.subheader(f"Bienvenido {username}")
                     Authenticator.logout("Cerrar Sesión", "sidebar")
 
+                    if st.button("Escrapear wiki page"):
+                        content = scrape_wikipedia_page()
+                        st.write(content)
                     st.title("⚙️ Gestión de documentos")
                     with st.expander("ℹ️ Información"):
                         st.markdown(
