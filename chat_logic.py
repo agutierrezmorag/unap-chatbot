@@ -51,7 +51,7 @@ def get_llm():
 
 @st.cache_resource(show_spinner=False)
 def get_retriever(namespace="Reglamentos"):
-    pc = pinecone.Pinecone(
+    pc = pinecone.Pinecone(  # noqa: F841
         api_key=config.PINECONE_API_KEY,
         environment=config.PINECONE_ENV,
     )
