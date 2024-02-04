@@ -9,6 +9,7 @@ import streamlit as st
 import streamlit_authenticator as stauth
 from bs4 import BeautifulSoup
 from github import Auth, Github, GithubException
+from icecream import ic
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import AsyncHtmlLoader, GitLoader
 from langchain_community.document_transformers import BeautifulSoupTransformer
@@ -253,7 +254,7 @@ def clean_up_document(document):
     Returns:
         Document: El objeto de documento limpiado.
     """
-    logging.info("Limpiando el documento: %s", document.title)
+    logging.info("Limpiando el documento: %s", document.metadata["title"])
 
     try:
         soup = BeautifulSoup(document.page_content, "html.parser")
@@ -265,10 +266,14 @@ def clean_up_document(document):
         )
 
         document.page_content = cleaned_text
-        logging.info("Documento limpiado con éxito: %s", document.title)
+        logging.info("Documento limpiado con éxito: %s", document.metadata["title"])
 
     except Exception as e:
-        logging.error("Error al limpiar el documento: %s, error: %s", document.title, e)
+        logging.error(
+            "Error al limpiar el documento: %s, error: %s",
+            document.metadata["title"],
+            e,
+        )
 
     return document
 
@@ -315,6 +320,8 @@ def main():
     st.set_page_config(
         page_title="Documentos",
         page_icon="📖",
+        layout="wide",
+        initial_sidebar_state="collapsed",
     )
 
     st.markdown(
