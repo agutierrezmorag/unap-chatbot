@@ -148,7 +148,7 @@ if __name__ == "__main__":
         st.chat_message("user", avatar="🧑‍💻").write(user_question)
         with st.chat_message("assistant", avatar=logo_path):
             agent_thoughts = StreamlitCallbackHandler(
-                st.empty(),
+                st.container(),
                 thought_labeler=CustomLLMThoughtLabeler(),
             )
             full_response = answer(user_question, agent_thoughts)
