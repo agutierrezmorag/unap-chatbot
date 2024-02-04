@@ -304,6 +304,7 @@ def do_embedding(text_chunks):
         index_name=config.PINECONE_INDEX_NAME,
         embedding=embeddings,
         documents=text_chunks,
+        namespace="Reglamentos",
     )
     logging.info(f"Documentos añadidos al índice {config.PINECONE_INDEX_NAME}")
 
@@ -373,10 +374,13 @@ def main():
 
         if not username:
             st.warning("Por favor, ingrese sus credenciales.")
+            st.stop()
         elif username not in usernames:
             st.warning("Usuario no existente.")
+            st.stop()
         if not authentication_status:
-            st.error("Contraseña o Usuario incorrectos.")
+            st.error("Contraseña o usuario incorrectos.")
+            st.stop()
         else:
             st.sidebar.subheader(f"Bienvenido {username}")
             Authenticator.logout("Cerrar Sesión", "sidebar")
