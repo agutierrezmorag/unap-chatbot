@@ -26,16 +26,16 @@ logging.basicConfig(level=logging.INFO)
 @st.cache_resource
 def get_repo(show_loader=False):
     """
-    Retrieves the GitHub repository object based on the provided access token, repository owner, and repository name.
+    Recupera el objeto del repositorio de GitHub basado en el token de acceso proporcionado, el propietario del repositorio y el nombre del repositorio.
 
     Returns:
-        repo (github.Repository.Repository): The GitHub repository object.
+        repo (github.Repository.Repository): El objeto del repositorio de GitHub.
     """
     auth = Auth.Token(config.GITHUB_ACCESS_TOKEN)
     g = Github(auth=auth)
     repo = g.get_repo(config.REPO_OWNER + "/" + config.REPO_NAME)
 
-    logging.info(f"Retrieved repository {config.REPO_OWNER}/{config.REPO_NAME}")
+    logging.info(f"Repositorio recuperado {config.REPO_OWNER}/{config.REPO_NAME}")
 
     return repo
 
@@ -45,39 +45,39 @@ def get_repo(show_loader=False):
 )
 def get_repo_documents():
     """
-    Retrieves the documents from the repository.
+    Recupera los documentos del repositorio.
 
     Returns:
-        A list of documents from the repository.
+        Una lista de documentos del repositorio.
     """
-    # Configure the logging system
+    # Configurar el sistema de logging
     logging.basicConfig(level=logging.INFO)
 
     try:
         repo = get_repo()
         docs = repo.get_contents(config.REPO_DIRECTORY_PATH, ref=config.REPO_BRANCH)
-        logging.info(f"Retrieved {len(docs)} documents from the repository")
+        logging.info(f"Recuperados {len(docs)} documentos del repositorio")
         return docs
     except GithubException as e:
-        logging.error(f"Error retrieving documents from the repository: {e}")
+        logging.error(f"Error al recuperar documentos del repositorio: {e}")
         return []
 
 
-def delete_doc(file_path, commit_message="Delete file via Streamlit"):
+def delete_doc(file_path, commit_message="Eliminar archivo a través de Streamlit"):
     """
-    Deletes a file from the repository.
+    Elimina un archivo del repositorio.
 
     Args:
-        file_path (str): The path of the file to be deleted.
-        commit_message (str, optional): The commit message for the deletion. Defaults to "Delete file via Streamlit".
+        file_path (str): La ruta del archivo a eliminar.
+        commit_message (str, optional): El mensaje de commit para la eliminación. Por defecto es "Eliminar archivo a través de Streamlit".
 
     Returns:
-        bool: True if the file was successfully deleted, False otherwise.
+        bool: Verdadero si el archivo se eliminó con éxito, Falso en caso contrario.
     """
     repo = get_repo()
     try:
         doc = repo.get_contents(file_path, ref=config.REPO_BRANCH)
-        message = f"Eliminado el documento '{doc.name}'."
+        message = f"Documento '{doc.name}' eliminado."
         resp = repo.delete_file(
             path=doc.path,
             message=message,
@@ -94,11 +94,11 @@ def delete_doc(file_path, commit_message="Delete file via Streamlit"):
 
 def add_files_to_repo(file_list, container):
     """
-    Adds files to a repository.
+    Añade archivos a un repositorio.
 
     Args:
-        file_list (list): A list of files to be added.
-        commit_message (str, optional): The commit message for the file addition. Defaults to "Add file via Streamlit".
+        file_list (list): Una lista de archivos a añadir.
+        container (streamlit.delta_generator.DeltaGenerator): Un contenedor de Streamlit para mostrar mensajes.
     """
     repo = get_repo()
 
@@ -110,9 +110,11 @@ def add_files_to_repo(file_list, container):
         try:
             existing_file = repo.get_contents(file_path, ref=config.REPO_BRANCH)
             container.warning(
-                f"Documento '{uploaded_file.name}' ya existe. Omitiendo...", icon="⚠️"
+                f"El documento '{uploaded_file.name}' ya existe. Omitiendo...", icon="⚠️"
             )
-            logging.warning(f"Documento '{uploaded_file.name}' ya existe. Omitiendo...")
+            logging.warning(
+                f"El documento '{uploaded_file.name}' ya existe. Omitiendo..."
+            )
             time.sleep(2)
             continue
         except GithubException as e:
@@ -127,7 +129,7 @@ def add_files_to_repo(file_list, container):
                 continue
 
         try:
-            message = f"Añadido el documento '{uploaded_file.name}'."
+            message = f"Documento '{uploaded_file.name}' añadido."
             repo.create_file(
                 path=file_path,
                 message=message,
@@ -148,10 +150,10 @@ def add_files_to_repo(file_list, container):
 # Carga y split de textos
 def load_and_split_docs():
     """
-    Load and split the documents from the 'documentos' directory.
+    Carga y divide los documentos del directorio 'documentos'.
 
     Returns:
-        texts (list): A list of split text documents.
+        texts (list): Una lista de documentos de texto divididos.
     """
     loader = GitLoader(
         clone_url=config.REPO_URL,
@@ -160,27 +162,27 @@ def load_and_split_docs():
         file_filter=lambda x: x.endswith(".txt"),
     )
     docs = loader.load()
-    logging.info(f"Loaded {len(docs)} documents from {config.REPO_URL}")
+    logging.info(f"Cargados {len(docs)} documentos desde {config.REPO_URL}")
 
-    # Split de textos
+    # División de textos
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=2048, chunk_overlap=128, length_function=len
     )
     texts = text_splitter.split_documents(docs)
-    logging.info(f"Split documents into {len(texts)} chunks")
+    logging.info(f"Documentos divididos en {len(texts)} fragmentos")
 
     return texts
 
 
 def scrape_wikipedia_page(url="https://es.wikipedia.org/wiki/Universidad_Arturo_Prat"):
     """
-    Scrapes a Wikipedia page, transforms the documents, cleans them, splits them, and adds them to a vector store.
+    Realiza el scraping de una página de Wikipedia, transforma los documentos, los limpia, los divide y los añade a un vector store.
 
     Args:
-        url (str): The URL of the Wikipedia page to scrape. Defaults to the Universidad Arturo Prat page in Spanish.
+        url (str): La URL de la página de Wikipedia a hacer scraping. Por defecto es la página de la Universidad Arturo Prat en español.
 
     Returns:
-        bool: True if the documents were successfully added to the vector store, False otherwise.
+        bool: Verdadero si los documentos se añadieron con éxito al vector store, Falso en caso contrario.
     """
     # Scrapping de la pagina de wikipedia
     loader = AsyncHtmlLoader(url)
@@ -217,7 +219,7 @@ def scrape_wikipedia_page(url="https://es.wikipedia.org/wiki/Universidad_Arturo_
         try:
             index = pc.Index(config.PINECONE_INDEX_NAME)
             index.delete(delete_all=True, namespace="Wikipedia")
-            print("Deleted namespace Wikipedia")
+            print("Namespace 'Wikipedia' eliminado")
         except pinecone.exceptions.IndexNotFoundError:
             pass
 
@@ -227,11 +229,11 @@ def scrape_wikipedia_page(url="https://es.wikipedia.org/wiki/Universidad_Arturo_
             embedding=embeddings,
             namespace="Wikipedia",
         )
-        logging.info("Created namespace Wikipedia")
+        logging.info("Namespace 'Wikipedia' creado")
 
         # Añadir documentos
         vectorstore.add_documents(documents=splits)
-        logging.info("Added documents to namespace Wikipedia")
+        logging.info("Documentos añadidos al namespace 'Wikipedia'")
 
         st.success("Documentos añadidos exitosamente.")
     except Exception as e:
@@ -243,15 +245,15 @@ def scrape_wikipedia_page(url="https://es.wikipedia.org/wiki/Universidad_Arturo_
 
 def clean_up_document(document):
     """
-    Cleans up the page content of a document by removing HTML tags and special characters.
+    Limpia el contenido de la página de un documento eliminando las etiquetas HTML y los caracteres especiales.
 
     Args:
-        document (Document): The document object to be cleaned up.
+        document (Document): El objeto de documento a limpiar.
 
     Returns:
-        Document: The cleaned up document object.
+        Document: El objeto de documento limpiado.
     """
-    logging.info("Cleaning up document: %s", document.title)
+    logging.info("Limpiando el documento: %s", document.title)
 
     try:
         soup = BeautifulSoup(document.page_content, "html.parser")
@@ -263,23 +265,23 @@ def clean_up_document(document):
         )
 
         document.page_content = cleaned_text
-        logging.info("Successfully cleaned up document: %s", document.title)
+        logging.info("Documento limpiado con éxito: %s", document.title)
 
     except Exception as e:
-        logging.error("Failed to clean up document: %s, error: %s", document.title, e)
+        logging.error("Error al limpiar el documento: %s, error: %s", document.title, e)
 
     return document
 
 
 def do_embedding(text_chunks):
     """
-    Embeds the given text chunks using OpenAIEmbeddings and stores them in a Pinecone index.
+    Incrusta los fragmentos de texto dados usando OpenAIEmbeddings y los almacena en un índice Pinecone.
 
     Args:
-        text_chunks (list): List of text chunks to be embedded.
+        text_chunks (list): Lista de fragmentos de texto para incrustar.
 
     Returns:
-        vectorstore (Pinecone.VectorStore): The embedded text chunks stored in a Pinecone VectorStore.
+        vectorstore (Pinecone.VectorStore): Los fragmentos de texto incrustados almacenados en un VectorStore de Pinecone.
     """
     embeddings = OpenAIEmbeddings(openai_api_key=config.OPENAI_API_KEY)
     pc = pinecone.Pinecone(
@@ -288,7 +290,7 @@ def do_embedding(text_chunks):
 
     if config.PINECONE_INDEX_NAME in pc.list_indexes().names():
         pc.delete_index(config.PINECONE_INDEX_NAME)
-        logging.info(f"Deleted index {config.PINECONE_INDEX_NAME}")
+        logging.info(f"Índice eliminado {config.PINECONE_INDEX_NAME}")
 
     pc.create_index(
         name=config.PINECONE_INDEX_NAME,
@@ -296,14 +298,14 @@ def do_embedding(text_chunks):
         dimension=1536,
         spec=pinecone.PodSpec(environment=config.PINECONE_ENV),
     )
-    logging.info(f"Created index {config.PINECONE_INDEX_NAME}")
+    logging.info(f"Índice creado {config.PINECONE_INDEX_NAME}")
 
     vectorstore = pcvs.from_documents(
         index_name=config.PINECONE_INDEX_NAME,
         embedding=embeddings,
         documents=text_chunks,
     )
-    logging.info(f"Added documents to index {config.PINECONE_INDEX_NAME}")
+    logging.info(f"Documentos añadidos al índice {config.PINECONE_INDEX_NAME}")
 
     return vectorstore
 
