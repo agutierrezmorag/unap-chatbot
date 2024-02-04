@@ -1,4 +1,3 @@
-import logging
 import os
 import time
 import uuid
@@ -9,19 +8,18 @@ import streamlit as st
 import streamlit_authenticator as stauth
 from bs4 import BeautifulSoup
 from github import Auth, Github, GithubException
-from icecream import ic
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import AsyncHtmlLoader, GitLoader
 from langchain_community.document_transformers import BeautifulSoupTransformer
 from langchain_community.vectorstores import Pinecone as pcvs
 from langchain_openai import OpenAIEmbeddings
 from st_pages import show_pages_from_config
+from termcolor import cprint
 
 from register import fetch_users
 from utils import config
 
 logo_path = "logos/unap_negativo.png"
-logging.basicConfig(level=logging.INFO)
 
 
 @st.cache_resource
@@ -36,7 +34,7 @@ def get_repo(show_loader=False):
     g = Github(auth=auth)
     repo = g.get_repo(config.REPO_OWNER + "/" + config.REPO_NAME)
 
-    logging.info(f"Repositorio recuperado {config.REPO_OWNER}/{config.REPO_NAME}")
+    cprint(f"Repositorio recuperado {config.REPO_OWNER}/{config.REPO_NAME}", "green")
 
     return repo
 
@@ -51,16 +49,14 @@ def get_repo_documents():
     Returns:
         Una lista de documentos del repositorio.
     """
-    # Configurar el sistema de logging
-    logging.basicConfig(level=logging.INFO)
 
     try:
         repo = get_repo()
         docs = repo.get_contents(config.REPO_DIRECTORY_PATH, ref=config.REPO_BRANCH)
-        logging.info(f"Recuperados {len(docs)} documentos del repositorio")
+        cprint(f"Recuperados {len(docs)} documentos del repositorio", "green")
         return docs
     except GithubException as e:
-        logging.error(f"Error al recuperar documentos del repositorio: {e}")
+        cprint(f"Error al recuperar documentos del repositorio: {e}", "red")
         return []
 
 
@@ -86,10 +82,10 @@ def delete_doc(file_path, commit_message="Eliminar archivo a través de Streamli
             branch=config.REPO_BRANCH,
         )
         get_repo_documents.clear()
-        logging.info(f"Documento '{doc.name}' eliminado exitosamente.")
+        cprint(f"Documento '{doc.name}' eliminado exitosamente.", "green")
         return "commit" in resp
     except GithubException as e:
-        logging.error(f"Error al eliminar el documento '{file_path}': {e}")
+        cprint(f"Error al eliminar el documento '{file_path}': {e}", "red")
         return False
 
 
@@ -109,12 +105,12 @@ def add_files_to_repo(file_list, container):
         file_path = f"{config.REPO_DIRECTORY_PATH}/{uploaded_file.name}"
 
         try:
-            existing_file = repo.get_contents(file_path, ref=config.REPO_BRANCH)
+            existing_file = repo.get_contents(file_path, ref=config.REPO_BRANCH)  # noqa: F841
             container.warning(
                 f"El documento '{uploaded_file.name}' ya existe. Omitiendo...", icon="⚠️"
             )
-            logging.warning(
-                f"El documento '{uploaded_file.name}' ya existe. Omitiendo..."
+            cprint(
+                f"El documento '{uploaded_file.name}' ya existe. Omitiendo...", "yellow"
             )
             time.sleep(2)
             continue
@@ -124,8 +120,9 @@ def add_files_to_repo(file_list, container):
                     f"Error al obtener el documento '{uploaded_file.name}': {e}",
                     icon="❌",
                 )
-                logging.error(
-                    f"Error al obtener el documento '{uploaded_file.name}': {e}"
+                cprint(
+                    f"Error al obtener el documento '{uploaded_file.name}': {e}",
+                    "red",
                 )
                 continue
 
@@ -140,12 +137,12 @@ def add_files_to_repo(file_list, container):
             container.success(
                 f"Documento '{uploaded_file.name}' añadido exitosamente.", icon="✅"
             )
-            logging.info(f"Documento '{uploaded_file.name}' añadido exitosamente.")
+            cprint(f"Documento '{uploaded_file.name}' añadido exitosamente.", "green")
             time.sleep(2)
             get_repo_documents.clear()
         except GithubException as e:
             container.error(f"Error al añadir el documento '{uploaded_file.name}': {e}")
-            logging.error(f"Error al añadir el documento '{uploaded_file.name}': {e}")
+            cprint(f"Error al añadir el documento '{uploaded_file.name}': {e}", "red")
 
 
 # Carga y split de textos
@@ -163,14 +160,14 @@ def load_and_split_docs():
         file_filter=lambda x: x.endswith(".txt"),
     )
     docs = loader.load()
-    logging.info(f"Cargados {len(docs)} documentos desde {config.REPO_URL}")
+    cprint(f"Cargados {len(docs)} documentos desde {config.REPO_URL}", "yellow")
 
     # División de textos
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=2048, chunk_overlap=128, length_function=len
     )
     texts = text_splitter.split_documents(docs)
-    logging.info(f"Documentos divididos en {len(texts)} fragmentos")
+    cprint(f"Documentos divididos en {len(texts)} fragmentos", "green")
 
     return texts
 
@@ -220,7 +217,7 @@ def scrape_wikipedia_page(url="https://es.wikipedia.org/wiki/Universidad_Arturo_
         try:
             index = pc.Index(config.PINECONE_INDEX_NAME)
             index.delete(delete_all=True, namespace="Wikipedia")
-            print("Namespace 'Wikipedia' eliminado")
+            cprint("Namespace 'Wikipedia' eliminado", "yellow")
         except pinecone.exceptions.IndexNotFoundError:
             pass
 
@@ -230,18 +227,21 @@ def scrape_wikipedia_page(url="https://es.wikipedia.org/wiki/Universidad_Arturo_
             embedding=embeddings,
             namespace="Wikipedia",
         )
-        logging.info("Namespace 'Wikipedia' creado")
+        cprint("Namespace 'Wikipedia' creado", "yellow")
 
         # Añadir documentos
         vectorstore.add_documents(documents=splits)
-        logging.info("Documentos añadidos al namespace 'Wikipedia'")
+        cprint("Documentos añadidos al namespace 'Wikipedia'", "green")
 
-        st.success("Documentos añadidos exitosamente.")
+        st.success("Documentos añadidos exitosamente.", icon="✅")
     except Exception as e:
-        logging.error(
-            f"Hubo un error al intentar añadir los documentos de Wikipedia al vector store: {e}"
+        cprint(
+            f"Hubo un error al intentar añadir los documentos de Wikipedia al vector store: {e}",
+            "red",
         )
-        st.error("Hubo un error al intentar añadir los documentos de Wikipedia.")
+        st.error(
+            "Hubo un error al intentar añadir los documentos de Wikipedia.", icon="❌"
+        )
 
 
 def clean_up_document(document):
@@ -254,7 +254,7 @@ def clean_up_document(document):
     Returns:
         Document: El objeto de documento limpiado.
     """
-    logging.info("Limpiando el documento: %s", document.metadata["title"])
+    cprint("Limpiando el documento: %s", document.metadata["title"], "yellow")
 
     try:
         soup = BeautifulSoup(document.page_content, "html.parser")
@@ -266,13 +266,12 @@ def clean_up_document(document):
         )
 
         document.page_content = cleaned_text
-        logging.info("Documento limpiado con éxito: %s", document.metadata["title"])
+        cprint("Documento limpiado con éxito: %s", document.metadata["title"], "green")
 
     except Exception as e:
-        logging.error(
-            "Error al limpiar el documento: %s, error: %s",
-            document.metadata["title"],
-            e,
+        cprint(
+            f"Error al limpiar el documento: {document.metadata['title']}, error: {e}",
+            "red",
         )
 
     return document
@@ -295,7 +294,7 @@ def do_embedding(text_chunks):
 
     if config.PINECONE_INDEX_NAME in pc.list_indexes().names():
         pc.delete_index(config.PINECONE_INDEX_NAME)
-        logging.info(f"Índice eliminado {config.PINECONE_INDEX_NAME}")
+        cprint(f"Índice eliminado {config.PINECONE_INDEX_NAME}", "yellow")
 
     pc.create_index(
         name=config.PINECONE_INDEX_NAME,
@@ -303,7 +302,7 @@ def do_embedding(text_chunks):
         dimension=1536,
         spec=pinecone.PodSpec(environment=config.PINECONE_ENV),
     )
-    logging.info(f"Índice creado {config.PINECONE_INDEX_NAME}")
+    cprint(f"Índice creado {config.PINECONE_INDEX_NAME}", "yellow")
 
     vectorstore = pcvs.from_documents(
         index_name=config.PINECONE_INDEX_NAME,
@@ -311,7 +310,7 @@ def do_embedding(text_chunks):
         documents=text_chunks,
         namespace="Reglamentos",
     )
-    logging.info(f"Documentos añadidos al índice {config.PINECONE_INDEX_NAME}")
+    cprint(f"Documentos añadidos al índice {config.PINECONE_INDEX_NAME}", "green")
 
     return vectorstore
 
