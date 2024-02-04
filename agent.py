@@ -9,6 +9,7 @@ from langchain_community.callbacks import StreamlitCallbackHandler
 from langchain_community.chat_message_histories import StreamlitChatMessageHistory
 from st_pages import show_pages_from_config
 from streamlit_feedback import streamlit_feedback
+from termcolor import cprint
 
 from chat_logic import get_agent, get_langsmith_client
 from documents_manager import get_repo_documents
@@ -18,29 +19,35 @@ from utils.callbacks import CustomLLMThoughtLabeler
 
 def answer(question, agent_thoughts_placeholder):
     """
-    Function to get the response from the agent for a given question.
+    Función para obtener la respuesta del agente para una pregunta dada.
 
     Args:
-        question (str): The question asked by the user.
-        agent_thoughts_placeholder: Placeholder for agent's thoughts.
+        question (str): La pregunta hecha por el usuario.
+        agent_thoughts_placeholder: Espacio reservado para los pensamientos del agente.
 
     Returns:
-        dict: The response from the agent.
+        dict: La respuesta del agente.
     """
-    agent = get_agent()
-    with collect_runs() as cb:
-        response = agent.invoke(
-            {"question": user_question},
-            config={
-                "tags": [config.CHAT_ENVIRONMENT, st.session_state.model_type],
-                "metadata": {"user_session": st.session_state.session_id},
-                "callbacks": [agent_thoughts_placeholder],
-            },
+    try:
+        agent = get_agent()
+        with collect_runs() as cb:
+            response = agent.invoke(
+                {"question": user_question},
+                config={
+                    "tags": [config.CHAT_ENVIRONMENT, st.session_state.model_type],
+                    "metadata": {"user_session": st.session_state.session_id},
+                    "callbacks": [agent_thoughts_placeholder],
+                },
+            )
+
+            st.session_state.run_id = cb.traced_runs[0].id
+        return response
+    except Exception as e:
+        cprint(f"Ocurrió un error en la función answer: {e}", "red")
+        st.error(
+            "Ocurrió un error al intentar obtener la respuesta. Inténtalo de nuevo."
         )
-
-        st.session_state.run_id = cb.traced_runs[0].id
-
-    return response
+        return None
 
 
 if __name__ == "__main__":
@@ -141,10 +148,11 @@ if __name__ == "__main__":
         st.chat_message("user", avatar="🧑‍💻").write(user_question)
         with st.chat_message("assistant", avatar=logo_path):
             agent_thoughts = StreamlitCallbackHandler(
-                st.container(), thought_labeler=CustomLLMThoughtLabeler()
+                st.empty(),
+                thought_labeler=CustomLLMThoughtLabeler(),
             )
             full_response = answer(user_question, agent_thoughts)
-            st.markdown(full_response["output"])
+            st.write(full_response["output"])
 
     # Botones de feedback
     if len(st.session_state.msgs.messages) > 0:
