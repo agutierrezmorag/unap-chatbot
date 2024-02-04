@@ -3,6 +3,7 @@ import os
 import pinecone
 import streamlit as st
 from langchain.agents import AgentExecutor, create_openai_tools_agent
+from langchain.retrievers import EnsembleRetriever
 from langchain.tools.retriever import create_retriever_tool
 from langchain_community.vectorstores import Pinecone as pcvs
 from langchain_core.output_parsers import StrOutputParser
@@ -16,7 +17,7 @@ from utils import config
 
 def format_docs(docs):
     return "\n\n".join(
-        f"{os.path.splitext(doc.metadata['file_name'])[0]}: {doc.page_content}"
+        f"{os.path.splitext(doc.metadata.get('file_name', doc.metadata.get('title')))[0]}: {doc.page_content}"
         for doc in docs
     )
 
@@ -62,7 +63,48 @@ def get_retriever(namespace="Reglamentos"):
             embedding=embeddings,
             namespace=namespace,
         )
-        retriever = vectorstore.as_retriever(search_type="mmr", search_kwargs={"k": 5})
+        retriever = vectorstore.as_retriever(
+            search_type="similarity", search_kwargs={"k": 2}
+        )
+
+        wiki_vectorstore = pcvs.from_existing_index(
+            index_name=config.PINECONE_INDEX_NAME,
+            embedding=embeddings,
+            namespace="Wikipedia",
+        )
+        wiki_retriever = wiki_vectorstore.as_retriever(
+            search_type="similarity", search_kwargs={"k": 2}
+        )
+
+        ensembled_retrievers = EnsembleRetriever(
+            retrievers=[retriever, wiki_retriever], weights=[0.2, 0.8]
+        )
+
+        return ensembled_retrievers
+    except Exception as e:
+        print(e)
+        st.error(
+            "Hubo un error al cargar el índice de documentos. Por favor, recarga la página y vuelve a intentarlo."
+        )
+        return None
+
+
+@st.cache_resource(show_spinner=False)
+def get_agent_retriever(namespace="Reglamentos"):
+    pc = pinecone.Pinecone(  # noqa: F841
+        api_key=config.PINECONE_API_KEY,
+        environment=config.PINECONE_ENV,
+    )
+    embeddings = OpenAIEmbeddings(openai_api_key=config.OPENAI_API_KEY)
+    try:
+        vectorstore = pcvs.from_existing_index(
+            index_name=config.PINECONE_INDEX_NAME,
+            embedding=embeddings,
+            namespace=namespace,
+        )
+        retriever = vectorstore.as_retriever(
+            search_type="similarity", search_kwargs={"k": 3}
+        )
 
         return retriever
     except Exception as e:
@@ -166,12 +208,12 @@ Respuesta:
     )
 
     doc_retriever_tool = create_retriever_tool(
-        get_retriever(),
+        get_agent_retriever(),
         "search_unap_documents",
         "Searches and returns excerpts from UNAP documents. Use it to find relevant documents to answer a question.",
     )
     wikipedia_retriever_tool = create_retriever_tool(
-        get_retriever(namespace="Wikipedia"),
+        get_agent_retriever(namespace="Wikipedia"),
         "search_wikipedia",
         "Searches and returns excerpts from UNAP's Wikipedia page. Use it to find relevant information about UNAP that is not available in the documents.",
     )
