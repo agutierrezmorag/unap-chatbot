@@ -9,8 +9,10 @@ import streamlit_authenticator as stauth
 from bs4 import BeautifulSoup
 from github import Auth, Github, GithubException
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.document_loaders import AsyncHtmlLoader, GitLoader
-from langchain_community.document_transformers import BeautifulSoupTransformer
+from langchain_community.document_loaders import (
+    GitLoader,
+    WikipediaLoader,
+)
 from langchain_community.vectorstores import Pinecone as pcvs
 from langchain_openai import OpenAIEmbeddings
 from st_pages import show_pages_from_config
@@ -183,21 +185,16 @@ def scrape_wikipedia_page(url="https://es.wikipedia.org/wiki/Universidad_Arturo_
         bool: Verdadero si los documentos se añadieron con éxito al vector store, Falso en caso contrario.
     """
     # Scrapping de la pagina de wikipedia
-    loader = AsyncHtmlLoader(url)
-    docs = loader.load()
-
-    # Transformacion de los documentos
-    bs4_transformer = BeautifulSoupTransformer()
-    transformed_docs = bs4_transformer.transform_documents(docs)
-
-    # Limpieza de los documentos
-    cleaned_docs = [clean_up_document(doc) for doc in transformed_docs]
+    docs = WikipediaLoader(
+        query="Universidad Arturo Prat",
+        lang="es",
+        load_max_docs=1,
+        doc_content_chars_max=20000,
+    ).load()
 
     # Split de los documentos
-    splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
-        chunk_size=1000, chunk_overlap=200
-    )
-    splits = splitter.split_documents(cleaned_docs)
+    splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+    splits = splitter.split_documents(docs)
 
     try:
         embeddings = OpenAIEmbeddings(openai_api_key=config.OPENAI_API_KEY)
