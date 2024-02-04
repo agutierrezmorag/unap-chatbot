@@ -4,7 +4,6 @@ import pinecone
 import streamlit as st
 from langchain.agents import AgentExecutor, create_openai_tools_agent
 from langchain.tools.retriever import create_retriever_tool
-from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_community.vectorstores import Pinecone as pcvs
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
@@ -51,11 +50,10 @@ def get_llm():
 
 
 @st.cache_resource(show_spinner=False)
-def get_retriever(namespace="Default"):
+def get_retriever(namespace="Reglamentos"):
     pc = pinecone.Pinecone(
         api_key=config.PINECONE_API_KEY,
         environment=config.PINECONE_ENV,
-        namespace=namespace,
     )
     embeddings = OpenAIEmbeddings(openai_api_key=config.OPENAI_API_KEY)
     try:
@@ -64,15 +62,15 @@ def get_retriever(namespace="Default"):
             embedding=embeddings,
             namespace=namespace,
         )
-        retriever = vectorstore.as_retriever(
-            search_type="similarity", search_kwargs={"k": 5}
-        )
+        retriever = vectorstore.as_retriever(search_type="mmr", search_kwargs={"k": 5})
+
+        return retriever
     except Exception as e:
         print(e)
         st.error(
             "Hubo un error al cargar el índice de documentos. Por favor, recarga la página y vuelve a intentarlo."
         )
-    return retriever
+        return None
 
 
 @st.cache_resource(show_spinner=False)
@@ -178,11 +176,6 @@ Respuesta:
         "Searches and returns excerpts from UNAP's Wikipedia page. Use it to find relevant information about UNAP that is not available in the documents.",
     )
 
-    search_tool = TavilySearchResults(
-        description="A search engine optimized for comprehensive, accurate, and trusted results. "
-        "Useful for when you need to answer questions about current events or if the data you need is not in the retrieved documents."
-        "Input should be a search query."
-    )
     tools = [doc_retriever_tool, wikipedia_retriever_tool]
 
     agent = create_openai_tools_agent(get_llm(), tools, prompt)
