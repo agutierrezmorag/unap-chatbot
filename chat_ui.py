@@ -8,6 +8,7 @@ from langchain.memory import ConversationBufferWindowMemory
 from langchain_community.chat_message_histories import StreamlitChatMessageHistory
 from st_pages import show_pages_from_config
 from streamlit_feedback import streamlit_feedback
+from termcolor import cprint
 
 from chat_logic import get_chain, get_langsmith_client
 from documents_manager import get_repo_documents
@@ -51,10 +52,14 @@ def process_chain_stream(prompt, sources_placeholder, response_placeholder):
                         "La respuesta fue generada a partir de los siguientes textos:"
                     )
                     for doc in chunk["context"]:
-                        file_name = doc.metadata["file_name"]
-                        page_content = doc.page_content
-                        sources_placeholder.caption(f"Extracto de **{file_name}**:")
-                        sources_placeholder.code(page_content)
+                        try:
+                            file_name = doc.metadata["file_name"]
+                            page_content = doc.page_content
+                            sources_placeholder.caption(f"Extracto de **{file_name}**:")
+                            sources_placeholder.code(page_content)
+                        except Exception as e:
+                            cprint(e, "red")
+                            pass
 
                 sources_placeholder.update(label="Respuesta generada", state="complete")
 
@@ -173,7 +178,6 @@ if __name__ == "__main__":
             full_response = process_chain_stream(
                 user_question, sources_placeholder, response_placeholder
             )
-        response_placeholder.markdown(full_response)
 
     # Botones de feedback
     if len(st.session_state.msgs) > 0:
