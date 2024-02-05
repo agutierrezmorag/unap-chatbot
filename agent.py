@@ -147,12 +147,13 @@ if __name__ == "__main__":
     if user_question:
         st.chat_message("user", avatar="🧑‍💻").write(user_question)
         with st.chat_message("assistant", avatar=logo_path):
+            response_placeholder = st.empty()
             agent_thoughts = StreamlitCallbackHandler(
                 st.container(),
                 thought_labeler=CustomLLMThoughtLabeler(),
             )
             full_response = answer(user_question, agent_thoughts)
-            st.write(full_response["output"])
+            response_placeholder.write(full_response["output"])
 
     # Botones de feedback
     if len(st.session_state.msgs.messages) > 0:
