@@ -17,7 +17,7 @@ from utils import config
 
 def format_docs(docs):
     return "\n\n".join(
-        f"{os.path.splitext(doc.metadata.get('file_name', doc.metadata.get('title')))[0]}: {doc.page_content}"
+        f"<TITLE> {os.path.splitext(doc.metadata.get('file_name', doc.metadata.get('title')))[0]}\n<CONTENT> {doc.page_content}"
         for doc in docs
     )
 
