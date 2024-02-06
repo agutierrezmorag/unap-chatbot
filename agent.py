@@ -43,13 +43,14 @@ async def agent_answer(prompt, agent_thoughts_placeholder, response_placeholder)
                 elif kind == "on_tool_start":
                     event_name = event["name"]
                     query = event["data"].get("input")["query"]
+                    agent_thoughts_placeholder.markdown("- 🧐 Pensando que hacer...")
                     if event_name == "search_unap_documents":
                         agent_thoughts_placeholder.markdown(
-                            f"- 📚 Consultando {query} en los documentos..."
+                            f"- 📚 Consultando {query} en los reglamentos..."
                         )
                     else:
                         agent_thoughts_placeholder.markdown(
-                            f"- 🔍 Buscando {query} en internet..."
+                            f"- 🔍 Consultando {query} en los documentos..."
                         )
                 elif kind == "on_tool_end":
                     event_name = event["name"]
@@ -58,14 +59,19 @@ async def agent_answer(prompt, agent_thoughts_placeholder, response_placeholder)
                         agent_thoughts_placeholder.markdown(
                             "- 📝 Encontré textos relevantes."
                         )
-                        full_output += output
-                        agent_thoughts_placeholder.code(full_output + "▌")
+
                     else:
                         agent_thoughts_placeholder.markdown(
-                            "- 📝 Encontré resultados relevantes."
+                            "- 🖥️ Encontré información relevante."
                         )
-                        full_output += output
-                        agent_thoughts_placeholder.code(full_output + "▌")
+                    full_output += output
+                    agent_thoughts_placeholder.text_area(
+                        "Contexto",
+                        help="La IA utiliza este contexto para generar la respuesta. Este texto proviene de los reglamentos y la información general de la universidad. \
+                            Si es necesario, puedes reformular tu pregunta para obtener una mejor respuesta",
+                        value=full_output + "▌",
+                        disabled=True,
+                    )
 
         except Exception as e:
             cprint(e, "red")
@@ -175,14 +181,13 @@ if __name__ == "__main__":
     if user_question:
         st.chat_message("user", avatar="🧑‍💻").write(user_question)
         with st.chat_message("assistant", avatar=logo_path):
-            agent_thoughts_placeholder = st.expander("🤔 Cadena de pensamientos")
             response_placeholder = st.empty()
+            agent_thoughts_placeholder = st.expander("🤔 Cadena de pensamientos")
             full_response = asyncio.run(
                 agent_answer(
                     user_question, agent_thoughts_placeholder, response_placeholder
                 )
             )
-            st.empty()
 
     # Botones de feedback
     if len(st.session_state.msgs.messages) > 0:
