@@ -64,7 +64,7 @@ def get_retriever(namespace="Reglamentos"):
             namespace=namespace,
         )
         retriever = vectorstore.as_retriever(
-            search_type="similarity", search_kwargs={"k": 2}
+            search_type="similarity", search_kwargs={"k": 3}
         )
 
         wiki_vectorstore = pcvs.from_existing_index(
