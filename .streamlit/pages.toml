@@ -1,7 +1,7 @@
 [[pages]]
-path = "chat_ui.py"
+path = "agent.py"
 name = "Chatbot"
-icon = "🕵"
+icon = "🤖"
 
 [[pages]]
 path = "documents_manager.py"
