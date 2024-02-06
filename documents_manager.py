@@ -368,7 +368,13 @@ def main():
         )
 
         email, authentication_status, username = Authenticator.login(
-            ":white[Inicio de sesion]", "main"
+            "main",
+            fields={
+                "Form name": "Inicio de sesión",
+                "Username": "Usuario",
+                "Password": "Contraseña",
+                "Login": "Iniciar Sesión",
+            },
         )
 
         # Para querer registrar una cuenta.
