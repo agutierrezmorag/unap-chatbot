@@ -100,7 +100,7 @@ if __name__ == "__main__":
         st.session_state.msgs = StreamlitChatMessageHistory(key="msgs")
     if "memory" not in st.session_state:
         st.session_state.memory = ConversationBufferWindowMemory(
-            k=3,
+            k=5,
             memory_key="chat_history",
             input_key="question",
             output_key="output",
