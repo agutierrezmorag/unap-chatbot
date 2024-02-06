@@ -90,7 +90,7 @@ def get_retriever(namespace="Reglamentos"):
 
 
 @st.cache_resource(show_spinner=False)
-def get_agent_retriever(namespace="Reglamentos"):
+def get_agent_retriever(namespace):
     pc = pinecone.Pinecone(  # noqa: F841
         api_key=config.PINECONE_API_KEY,
         environment=config.PINECONE_ENV,
@@ -211,7 +211,7 @@ Respuesta:
     )
 
     doc_retriever_tool = create_retriever_tool(
-        get_agent_retriever(),
+        get_agent_retriever(namespace="Reglamentos"),
         "search_unap_documents",
         "Busca y devuelve información sobre los reglamentos de la Universidad Arturo Prat. Utilízalo para encontrar información relevante para dar respuesta a la pregunta.",
     )
