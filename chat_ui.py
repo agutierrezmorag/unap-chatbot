@@ -57,6 +57,8 @@ def process_chain_stream(prompt, sources_placeholder, response_placeholder):
                             page_content = doc.page_content
                             sources_placeholder.caption(f"Extracto de **{file_name}**:")
                             sources_placeholder.code(page_content)
+                        except AttributeError:
+                            pass
                         except Exception as e:
                             cprint(e, "red")
                             pass
@@ -69,6 +71,7 @@ def process_chain_stream(prompt, sources_placeholder, response_placeholder):
                 "Hubo un error al generar la respuesta. Por favor, recarga la página y vuelve a intentarlo."
             )
             return
+
         st.session_state.run_id = cb.traced_runs[0].id
 
     # Guardar pregunta y respuesta en memoria
