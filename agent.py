@@ -1,3 +1,4 @@
+import asyncio
 import uuid
 
 import streamlit as st
@@ -5,7 +6,6 @@ from langchain.cache import InMemoryCache
 from langchain.callbacks.manager import collect_runs
 from langchain.globals import set_llm_cache
 from langchain.memory import ConversationBufferWindowMemory
-from langchain_community.callbacks import StreamlitCallbackHandler
 from langchain_community.chat_message_histories import StreamlitChatMessageHistory
 from st_pages import show_pages_from_config
 from streamlit_feedback import streamlit_feedback
@@ -14,40 +14,68 @@ from termcolor import cprint
 from chat_logic import get_agent, get_langsmith_client
 from documents_manager import get_repo_documents
 from utils import config
-from utils.callbacks import CustomLLMThoughtLabeler
 
 
-def answer(question, agent_thoughts_placeholder):
-    """
-    Función para obtener la respuesta del agente para una pregunta dada.
+async def agent_answer(prompt, agent_thoughts_placeholder, response_placeholder):
+    agent = get_agent()
+    full_response = ""
+    full_output = ""
 
-    Args:
-        question (str): La pregunta hecha por el usuario.
-        agent_thoughts_placeholder: Espacio reservado para los pensamientos del agente.
-
-    Returns:
-        dict: La respuesta del agente.
-    """
-    try:
-        agent = get_agent()
-        with collect_runs() as cb:
-            response = agent.invoke(
+    with collect_runs() as cb:
+        try:
+            async for event in agent.astream_events(
                 {"question": user_question},
                 config={
                     "tags": [config.CHAT_ENVIRONMENT, st.session_state.model_type],
                     "metadata": {"user_session": st.session_state.session_id},
-                    "callbacks": [agent_thoughts_placeholder],
                 },
-            )
+                version="v1",
+            ):
+                kind = event["event"]
+                if kind == "on_chain_end":
+                    if event["name"] == "Agent":
+                        agent_thoughts_placeholder.markdown("- 🤗 Respuesta generada.")
+                if kind == "on_chat_model_stream":
+                    content = event["data"]["chunk"].content
+                    if content:
+                        full_response += content
+                        response_placeholder.markdown(full_response + "▌")
+                elif kind == "on_tool_start":
+                    event_name = event["name"]
+                    query = event["data"].get("input")["query"]
+                    if event_name == "search_unap_documents":
+                        agent_thoughts_placeholder.markdown(
+                            f"- 📚 Consultando {query} en los documentos..."
+                        )
+                    else:
+                        agent_thoughts_placeholder.markdown(
+                            f"- 🔍 Buscando {query} en internet..."
+                        )
+                elif kind == "on_tool_end":
+                    event_name = event["name"]
+                    output = event["data"].get("output")
+                    if event_name == "search_unap_documents":
+                        agent_thoughts_placeholder.markdown(
+                            "- 📝 Encontré textos relevantes."
+                        )
+                        full_output += output
+                        agent_thoughts_placeholder.code(full_output + "▌")
+                    else:
+                        agent_thoughts_placeholder.markdown(
+                            "- 📝 Encontré resultados relevantes."
+                        )
+                        full_output += output
+                        agent_thoughts_placeholder.code(full_output + "▌")
 
-            st.session_state.run_id = cb.traced_runs[0].id
-        return response
-    except Exception as e:
-        cprint(f"Ocurrió un error en la función answer: {e}", "red")
-        st.error(
-            "Ocurrió un error al intentar obtener la respuesta. Inténtalo de nuevo."
-        )
-        return None
+        except Exception as e:
+            cprint(e, "red")
+            st.error(
+                "Hubo un error al generar la respuesta. Por favor, recarga la página y vuelve a intentarlo."
+            )
+            return
+        st.session_state.run_id = cb.traced_runs[0].id
+
+    return full_response
 
 
 if __name__ == "__main__":
@@ -147,13 +175,14 @@ if __name__ == "__main__":
     if user_question:
         st.chat_message("user", avatar="🧑‍💻").write(user_question)
         with st.chat_message("assistant", avatar=logo_path):
+            agent_thoughts_placeholder = st.expander("🤔 Cadena de pensamientos")
             response_placeholder = st.empty()
-            agent_thoughts = StreamlitCallbackHandler(
-                st.container(),
-                thought_labeler=CustomLLMThoughtLabeler(),
+            full_response = asyncio.run(
+                agent_answer(
+                    user_question, agent_thoughts_placeholder, response_placeholder
+                )
             )
-            full_response = answer(user_question, agent_thoughts)
-            response_placeholder.write(full_response["output"])
+            st.empty()
 
     # Botones de feedback
     if len(st.session_state.msgs.messages) > 0:
