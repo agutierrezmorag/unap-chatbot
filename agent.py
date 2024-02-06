@@ -59,19 +59,26 @@ async def agent_answer(prompt, agent_thoughts_placeholder, response_placeholder)
                         agent_thoughts_placeholder.markdown(
                             "- 📝 Encontré textos relevantes."
                         )
-
+                        full_output += output
+                        agent_thoughts_placeholder.text_area(
+                            "Contexto",
+                            help="La IA utiliza este contexto para generar la respuesta. Este texto proviene de los reglamentos y la información general de la universidad. \
+                            Si es necesario, puedes reformular tu pregunta para obtener una mejor respuesta",
+                            value=full_output + "▌",
+                            disabled=True,
+                        )
                     else:
                         agent_thoughts_placeholder.markdown(
                             "- 🖥️ Encontré información relevante."
                         )
-                    full_output += output
-                    agent_thoughts_placeholder.text_area(
-                        "Contexto",
-                        help="La IA utiliza este contexto para generar la respuesta. Este texto proviene de los reglamentos y la información general de la universidad. \
-                            Si es necesario, puedes reformular tu pregunta para obtener una mejor respuesta",
-                        value=full_output + "▌",
-                        disabled=True,
-                    )
+                        full_output += output
+                        agent_thoughts_placeholder.text_area(
+                            "Contexto",
+                            help="La IA utiliza este contexto para generar la respuesta. Este texto proviene de los reglamentos y la información general de la universidad. \
+                                Si es necesario, puedes reformular tu pregunta para obtener una mejor respuesta",
+                            value=full_output + "▌",
+                            disabled=True,
+                        )
 
         except Exception as e:
             cprint(e, "red")
