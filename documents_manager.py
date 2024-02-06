@@ -83,7 +83,6 @@ def delete_doc(file_path, commit_message="Eliminar archivo a través de Streamli
             sha=doc.sha,
             branch=config.REPO_BRANCH,
         )
-        get_repo_documents.clear()
         cprint(f"Documento '{doc.name}' eliminado exitosamente.", "green")
         return "commit" in resp
     except GithubException as e:
@@ -141,7 +140,6 @@ def add_files_to_repo(file_list, container):
             )
             cprint(f"Documento '{uploaded_file.name}' añadido exitosamente.", "green")
             time.sleep(2)
-            get_repo_documents.clear()
         except GithubException as e:
             container.error(f"Error al añadir el documento '{uploaded_file.name}': {e}")
             cprint(f"Error al añadir el documento '{uploaded_file.name}': {e}", "red")
@@ -316,7 +314,6 @@ def main():
     st.set_page_config(
         page_title="Documentos",
         page_icon="📖",
-        layout="wide",
         initial_sidebar_state="collapsed",
     )
 
@@ -362,7 +359,6 @@ def main():
                 "password": passwords[index],
             }
 
-        st.warning("Solo personal autorizado puede acceder a esta seccion.", icon="⚠")
         Authenticator = stauth.Authenticate(
             credentials, cookie_name="Streamlit", key="abcdef", cookie_expiry_days=1
         )
@@ -394,28 +390,24 @@ def main():
             st.sidebar.subheader(f"Bienvenido {username}")
             Authenticator.logout("Cerrar Sesión", "sidebar")
 
-            if st.button("Escrapear wiki page"):
-                scrape_wikipedia_page()
-            st.title("⚙️ Gestión de documentos")
-            with st.expander("ℹ️ Información"):
-                st.markdown(
-                    """
-                    ## 📋 Instrucciones
-                    ### Cargar nuevos documentos
-                    - Se debe subir uno o mas archivos de texto (.txt).
-                    - Presionar el boton 'Subir archivos'.
-                    - Se dispone de un boton 'Limpiar' para limpiar la lista de archivos subidos.
-
-                    ### Eliminar documentos
-                    - Seleccionar el/los documentos a eliminar.
-                    - Presionar el boton 'Eliminar documentos seleccionados'.
-                    - Confirmar la eliminacion de los documentos.
-                    """
-                )
+            st.header("📚 Gestión de documentos", divider=True)
+            st.markdown(
+                "En esta sección se pueden gestionar los documentos del repositorio. "
+                "Es posible ver los documentos presentes en el repositorio, "
+                "subir nuevos documentos o eliminar documentos ya existentes."
+            )
+            st.info(
+                "**Importante**: La IA solo sera consciente de que ha habido modificaciones "
+                "en los documentos una vez se [registren los cambios](#Registro).",
+                icon="📢",
+            )
 
             show_pages_from_config()
 
-            st.markdown("## 📂 Documentos en el repositorio")
+            st.header("🗃️ Documentos en el repositorio", divider=True)
+            st.markdown(
+                "Listado de documentos presentes en el repositorio. Es posible seleccionar uno o más documentos para eliminarlos."
+            )
 
             container_placeholder = st.empty()
 
@@ -461,7 +453,7 @@ def main():
                 # Display the appropriate action button
                 if st.session_state.get("delete_selected"):
                     confirm_dialog.markdown(
-                        ":red[¿Estás seguro de que deseas eliminar los documentos seleccionados?]",
+                        ":red[¿Seguro que desea eliminar los documentos seleccionados?]",
                     )
                     if action_button.button("Confirmar"):
                         for i, selected in checkbox_states.items():
@@ -471,6 +463,7 @@ def main():
                                     st.success(
                                         f"Documento '{documents_df.loc[i, 'Document Name']}' eliminado exitosamente."
                                     )
+                                    get_repo_documents.clear()
                                 else:
                                     st.error(
                                         f"Hubo un error al intentar eliminar '{documents_df.loc[i, 'Document Name']}'."
@@ -505,33 +498,40 @@ def main():
                     if uploaded_files:
                         add_files_to_repo(uploaded_files, container_placeholder)
                         st.session_state.upload_key = str(uuid.uuid4())
+                        get_repo_documents.clear()
                         st.rerun()
 
                 if st.button("Limpiar"):
                     st.session_state.upload_key = str(uuid.uuid4())
                     st.rerun()
 
-            st.divider()
+            st.header("🌐 Wikipedia", divider=True)
+            st.markdown(
+                "El contenido de la página de Wikipedia de la [Universidad Arturo Prat](https://es.wikipedia.org/wiki/Universidad_Arturo_Prat) "
+                "está disponible para añadirse a la base de conocimientos de la IA. "
+                "Este contenido puede ser útil para responder preguntas generales sobre la universidad o sobre datos que no estén en los reglamentos. "
+                "Si se añade, la IA podrá responder preguntas basándose en esta información."
+            )
+            st.markdown(
+                "Cada vez que se realice esta operación, el contenido anterior de la página de Wikipedia se eliminará y se reemplazará automáticamente "
+                "por el contenido actual. Se recomienda hacerlo solo si se está seguro de que el contenido es relevante y actualizado."
+            )
+            if st.button("Wikipedia"):
+                scrape_wikipedia_page()
+                time.sleep(2)
+                st.rerun()
 
-            st.markdown("## 💾 Registrar cambios")
-
+            st.header("💾 Registrar cambios", anchor="Registro", divider="red")
             st.markdown(
                 "Cuando se presione el botón `Registrar cambios`, los documentos que se hayan subido se procesan y \
-                se integran en la base de conocimientos de la IA. A partir de ese momento, la IA podrá responder \
+                se integran en la base de conocimientos de la IA. Solo a partir de ese momento, la IA podrá responder \
                 preguntas basándose en la información contenida en estos documentos."
             )
-
-            st.warning(
-                "**Importante**: La IA solo sera consciente de que ha habido modificaciones en los documentos una vez se registren los cambios.",
-                icon="📢",
-            )
-
             st.info(
-                "El proceso de registro de cambios puede tardar varios minutos. No refresque la página mientras se esté realizando el registro.",
+                "Este proceso puede tardar varios minutos. No refresque la página mientras se esté realizando el registro.",
                 icon="💡",
             )
-
-            if st.columns(3)[1].button("Registrar cambios"):
+            if st.button("Registrar cambios", type="primary", use_container_width=True):
                 texts = load_and_split_docs()
                 if do_embedding(texts):
                     st.success(
