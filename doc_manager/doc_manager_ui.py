@@ -13,7 +13,11 @@ from doc_manager.github_management import (
     get_repo_documents,
     load_repo_docs_to_vectorstore,
 )
-from doc_manager.pinecone_management import delete_namespace, get_index_stats
+from doc_manager.pinecone_management import (
+    delete_all_namespaces,
+    delete_namespace,
+    get_index_stats,
+)
 from doc_manager.register import fetch_users
 from doc_manager.wikipedia_management import load_wikipedia_page_to_vectorstore
 from utils import config
@@ -205,6 +209,22 @@ def save_changes_section():
     )
     if st.button("Registrar cambios", type="primary", use_container_width=True):
         load_repo_docs_to_vectorstore()
+    if st.button(
+        "Eliminar memoria de la IA", type="secondary", use_container_width=True
+    ):
+        st.error(
+            "Esta acción eliminará **TODA** la memoria de la IA. ¿Está seguro de continuar?",
+            icon="⚠️",
+        )
+        confirm_col1, confirm_col2 = st.columns(2)
+        with confirm_col1:
+            if st.button("Confirmar", type="primary", use_container_width=True):
+                delete_all_namespaces()
+                time.sleep(4)
+                st.rerun()
+        with confirm_col2:
+            if st.button("Cancelar", type="secondary", use_container_width=True):
+                st.rerun()
 
 
 def main():
