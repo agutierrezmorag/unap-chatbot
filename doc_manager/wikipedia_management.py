@@ -10,9 +10,7 @@ from doc_manager.pinecone_management import (
 )
 
 
-def load_wikipedia_page_to_vectorstore(
-    url="https://es.wikipedia.org/wiki/Universidad_Arturo_Prat",
-):
+def load_wikipedia_page_to_vectorstore():
     """
     Realiza el scraping de una página de Wikipedia, transforma los documentos, los limpia, los divide y los añade a un vector store.
 
