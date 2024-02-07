@@ -179,14 +179,14 @@ def load_wikipedia_page(url="https://es.wikipedia.org/wiki/Universidad_Arturo_Pr
         vectorstore.add_documents(documents=splits)
         cprint("Documentos añadidos al namespace 'Wikipedia'", "green")
 
-        st.success("Documentos añadidos exitosamente.", icon="✅")
+        st.success("Contenido añadido exitosamente.", icon="✅")
     except Exception as e:
         cprint(
-            f"Hubo un error al intentar añadir los documentos de Wikipedia al vector store: {e}",
+            f"Hubo un error al intentar añadir el contenido de Wikipedia al vector store: {e}",
             "red",
         )
         st.error(
-            "Hubo un error al intentar añadir los documentos de Wikipedia.", icon="❌"
+            "Hubo un error al intentar añadir el contenido de Wikipedia.", icon="❌"
         )
 
 
