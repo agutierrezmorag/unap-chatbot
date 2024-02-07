@@ -1,4 +1,5 @@
 import asyncio
+import time
 import uuid
 
 import streamlit as st
@@ -34,7 +35,12 @@ async def agent_answer(prompt, agent_thoughts_placeholder, response_placeholder)
                 kind = event["event"]
                 if kind == "on_chain_end":
                     if event["name"] == "Agent":
-                        agent_thoughts_placeholder.markdown("- 🤗 Respuesta generada.")
+                        time.sleep(0.5)
+                        agent_thoughts_placeholder.update(
+                            label="🤗 Respuesta generada.",
+                            expanded=False,
+                            state="complete",
+                        )
                 if kind == "on_chat_model_stream":
                     content = event["data"]["chunk"].content
                     if content:
@@ -43,14 +49,13 @@ async def agent_answer(prompt, agent_thoughts_placeholder, response_placeholder)
                 elif kind == "on_tool_start":
                     event_name = event["name"]
                     query = event["data"].get("input")["query"]
-                    agent_thoughts_placeholder.markdown("- 🧐 Pensando que hacer...")
                     if event_name == "search_unap_documents":
                         agent_thoughts_placeholder.markdown(
-                            f"- 📚 Consultando **{query}** en los reglamentos..."
+                            f"- 📚 Consultando **{query.encode('utf-8').decode('unicode_escape')}** en los reglamentos..."
                         )
                     else:
                         agent_thoughts_placeholder.markdown(
-                            f"- 🔍 Consultando **{query}** en los documentos..."
+                            f"- 🔍 Consultando **{query.encode('utf-8').decode('unicode_escape')}** en los documentos..."
                         )
                 elif kind == "on_tool_end":
                     event_name = event["name"]
@@ -176,7 +181,7 @@ if __name__ == "__main__":
         st.chat_message("user", avatar="🧑‍💻").write(user_question)
         with st.chat_message("assistant", avatar=logo_path):
             response_placeholder = st.empty()
-            agent_thoughts_placeholder = st.expander("🤔 Cadena de pensamientos")
+            agent_thoughts_placeholder = st.status("🤔 Pensando...", expanded=True)
             full_response = asyncio.run(
                 agent_answer(
                     user_question, agent_thoughts_placeholder, response_placeholder
