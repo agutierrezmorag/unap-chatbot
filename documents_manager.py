@@ -537,18 +537,17 @@ def main():
                 "Cada vez que se realice esta operación, el contenido anterior de la página de Wikipedia se eliminará y se reemplazará automáticamente "
                 "por el contenido actual. Se recomienda hacerlo solo si se está seguro de que el contenido es relevante y actualizado."
             )
-            knows_wikipedia = False
-            if "Wikipedia" in index_stats.namespaces:
-                knows_wikipedia = True
+
+            knows_wikipedia = "Wikipedia" in index_stats.namespaces
 
             if knows_wikipedia:
                 st.success(
-                    "Actualmente, la IA conoce el contenido de la página de Wikipedia.",
+                    "Actualmente, la IA SI conoce el contenido de la página de Wikipedia.",
                     icon="✅",
                 )
             else:
                 st.warning(
-                    "Actualmente, la IA no conoce el contenido de la página de Wikipedia.",
+                    "Actualmente, la IA NO conoce el contenido de la página de Wikipedia.",
                     icon="⚠️",
                 )
 
@@ -560,7 +559,7 @@ def main():
                     type="primary",
                 ):
                     load_wikipedia_page()
-                    time.sleep(2)
+                    time.sleep(10)
                     st.rerun()
             with col2:
                 if st.button(
@@ -569,7 +568,7 @@ def main():
                     type="secondary",
                 ):
                     delete_namespace("Wikipedia")
-                    time.sleep(2)
+                    time.sleep(4)
                     st.rerun()
 
             st.header("💾 Registrar cambios", anchor="Registro", divider="red")
