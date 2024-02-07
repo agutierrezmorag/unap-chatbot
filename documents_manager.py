@@ -83,7 +83,7 @@ def delete_doc(file_path, commit_message="Eliminar archivo a través de Streamli
             sha=doc.sha,
             branch=config.REPO_BRANCH,
         )
-        cprint(f"Documento '{doc.name}' eliminado exitosamente.", "green")
+        cprint(f"Documento '{doc.name}' eliminado exitosamente.", "yellow")
         return "commit" in resp
     except GithubException as e:
         cprint(f"Error al eliminar el documento '{file_path}': {e}", "red")
@@ -145,34 +145,7 @@ def add_files_to_repo(file_list, container):
             cprint(f"Error al añadir el documento '{uploaded_file.name}': {e}", "red")
 
 
-# Carga y split de textos
-def load_and_split_docs():
-    """
-    Carga y divide los documentos del directorio 'documentos'.
-
-    Returns:
-        texts (list): Una lista de documentos de texto divididos.
-    """
-    loader = GitLoader(
-        clone_url=config.REPO_URL,
-        repo_path="./documentos",
-        branch=config.REPO_BRANCH,
-        file_filter=lambda x: x.endswith(".txt"),
-    )
-    docs = loader.load()
-    cprint(f"Cargados {len(docs)} documentos desde {config.REPO_URL}", "yellow")
-
-    # División de textos
-    text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=2048, chunk_overlap=128, length_function=len
-    )
-    texts = text_splitter.split_documents(docs)
-    cprint(f"Documentos divididos en {len(texts)} fragmentos", "green")
-
-    return texts
-
-
-def scrape_wikipedia_page(url="https://es.wikipedia.org/wiki/Universidad_Arturo_Prat"):
+def load_wikipedia_page(url="https://es.wikipedia.org/wiki/Universidad_Arturo_Prat"):
     """
     Realiza el scraping de una página de Wikipedia, transforma los documentos, los limpia, los divide y los añade a un vector store.
 
@@ -195,35 +168,13 @@ def scrape_wikipedia_page(url="https://es.wikipedia.org/wiki/Universidad_Arturo_
     splits = splitter.split_documents(docs)
 
     try:
-        embeddings = OpenAIEmbeddings(openai_api_key=config.OPENAI_API_KEY)
-        pc = pinecone.Pinecone(
-            api_key=config.PINECONE_API_KEY, environment=config.PINECONE_ENV
-        )
-
-        if config.PINECONE_INDEX_NAME not in pc.list_indexes().names():
-            pc.create_index(
-                name=config.PINECONE_INDEX_NAME,
-                metric="cosine",
-                dimension=1536,
-                spec=pinecone.PodSpec(environment=config.PINECONE_ENV),
-            )
+        check_if_index_exists()
 
         # Para evitar documentos duplicados, se elimina el namespace si es que existe
-        try:
-            index = pc.Index(config.PINECONE_INDEX_NAME)
-            index.delete(delete_all=True, namespace="Wikipedia")
-            cprint("Namespace 'Wikipedia' eliminado", "yellow")
-        except pinecone.exceptions.IndexNotFoundError:
-            pass
+        delete_namespace("Wikipedia")
 
         # Recuperar index
-        vectorstore = pcvs.from_existing_index(
-            index_name=config.PINECONE_INDEX_NAME,
-            embedding=embeddings,
-            namespace="Wikipedia",
-        )
-        cprint("Namespace 'Wikipedia' creado", "yellow")
-
+        vectorstore = get_vectorstore("Wikipedia")
         # Añadir documentos
         vectorstore.add_documents(documents=splits)
         cprint("Documentos añadidos al namespace 'Wikipedia'", "green")
@@ -259,10 +210,8 @@ def clean_up_document(document):
             .replace("\xa0", " ")
             .replace("\u200b", " ")
         )
-
         document.page_content = cleaned_text
         cprint("Documento limpiado con éxito: %s", document.metadata["title"], "green")
-
     except Exception as e:
         cprint(
             f"Error al limpiar el documento: {document.metadata['title']}, error: {e}",
@@ -272,57 +221,138 @@ def clean_up_document(document):
     return document
 
 
-def do_embedding(text_chunks):
+def get_pinecone():
     """
-    Incrusta los fragmentos de texto dados usando OpenAIEmbeddings y los almacena en un índice Pinecone.
-
-    Args:
-        text_chunks (list): Lista de fragmentos de texto para incrustar.
+    Obtiene una instancia del objeto Pinecone.
 
     Returns:
-        vectorstore (Pinecone.VectorStore): Los fragmentos de texto incrustados almacenados en un VectorStore de Pinecone.
+        Pinecone: Una instancia del objeto Pinecone.
     """
-    embeddings = OpenAIEmbeddings(openai_api_key=config.OPENAI_API_KEY)
-    pc = pinecone.Pinecone(
+    return pinecone.Pinecone(
         api_key=config.PINECONE_API_KEY, environment=config.PINECONE_ENV
     )
 
-    if config.PINECONE_INDEX_NAME in pc.list_indexes().names():
-        pc.delete_index(config.PINECONE_INDEX_NAME)
-        cprint(f"Índice eliminado {config.PINECONE_INDEX_NAME}", "yellow")
 
-    pc.create_index(
-        name=config.PINECONE_INDEX_NAME,
-        metric="cosine",
-        dimension=1536,
-        spec=pinecone.PodSpec(environment=config.PINECONE_ENV),
-    )
-    cprint(f"Índice creado {config.PINECONE_INDEX_NAME}", "yellow")
+def load_repo_docs(namespace="Reglamentos"):
+    """
+    Carga documentos de un repositorio Git, los divide en fragmentos y los añade a un almacenamiento de vectores.
 
-    vectorstore = pcvs.from_documents(
+    Args:
+        namespace (str, opcional): El espacio de nombres en el almacenamiento de vectores para añadir los documentos. Por defecto es "Reglamentos".
+
+    Throws:
+        Exception: Si hay un error al cargar los documentos en el almacenamiento de vectores.
+    """
+    index_stats = get_index_stats()
+
+    try:
+        # Carga de textos
+        loader = GitLoader(
+            clone_url=config.REPO_URL,
+            repo_path=config.REPO_DIRECTORY_PATH,
+            branch=config.REPO_BRANCH,
+            file_filter=lambda x: x.endswith(".txt"),
+        )
+        docs = loader.load()
+        cprint(f"Cargados {len(docs)} documentos desde {config.REPO_URL}", "yellow")
+
+        # División de textos
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=2048, chunk_overlap=128, length_function=len
+        )
+        texts_chunks = text_splitter.split_documents(docs)
+        cprint(f"Documentos divididos en {len(texts_chunks)} vectores", "yellow")
+
+        check_if_index_exists()
+
+        # Se elimina el namespace para evitar duplicados
+        if namespace in index_stats.namespaces:
+            delete_namespace(namespace)
+
+        vectorstore = get_vectorstore(namespace)
+        vectorstore.add_documents(documents=texts_chunks)
+        cprint(
+            f"{len(texts_chunks)} vectores añadidos al namespace {namespace}", "green"
+        )
+        st.success("Documentos añadidos exitosamente.", icon="✅")
+    except Exception as e:
+        cprint(f"Error al cargar los documentos al vector store: {e}", "red")
+        st.error("Hubo un error al cargar los documentos.", icon="❌")
+
+
+def get_vectorstore(namespace="Reglamentos"):
+    """
+    Recupera el almacenamiento de vectores para un espacio de nombres dado.
+
+    Args:
+        namespace (str): El espacio de nombres del almacenamiento de vectores. Por defecto es "Reglamentos".
+
+    Returns:
+        vectorstore (pcvs.VectorStore): El objeto de almacenamiento de vectores.
+    """
+    embeddings = OpenAIEmbeddings(openai_api_key=config.OPENAI_API_KEY)
+    vectorstore = pcvs.from_existing_index(
         index_name=config.PINECONE_INDEX_NAME,
         embedding=embeddings,
-        documents=text_chunks,
-        namespace="Reglamentos",
+        namespace=namespace,
     )
-    cprint(f"Documentos añadidos al índice {config.PINECONE_INDEX_NAME}", "green")
-
     return vectorstore
 
 
-def calc_space():
+def get_index_stats():
     """
-    Calculates the current space occupied by vectors in the Pinecone index.
+    Recupera las estadísticas del índice Pinecone.
 
     Returns:
-        int: The number of vectors currently stored in the index.
+        dict: Un diccionario que contiene las estadísticas del índice.
     """
-    pc = pinecone.Pinecone(api_key=config.PINECONE_API_KEY)
+    pc = get_pinecone()
     host = pc.describe_index(config.PINECONE_INDEX_NAME).host
     index = pc.Index(host=host)
-    current_vectors = index.describe_index_stats().index_fullness
+    index_stats = index.describe_index_stats()
 
-    return current_vectors
+    return index_stats
+
+
+def check_if_index_exists():
+    pc = get_pinecone()
+    if config.PINECONE_INDEX_NAME not in pc.list_indexes().names():
+        try:
+            pc.create_index(
+                name=config.PINECONE_INDEX_NAME,
+                metric="cosine",
+                dimension=1536,
+                spec=pinecone.PodSpec(environment=config.PINECONE_ENV),
+            )
+            cprint(f"Índice creado {config.PINECONE_INDEX_NAME}", "yellow")
+        except Exception as e:
+            cprint(f"Error al crear el índice {config.PINECONE_INDEX_NAME}: {e}", "red")
+
+
+def delete_namespace(namespace):
+    """
+    Elimina un espacio de nombres del índice Pinecone.
+
+    Args:
+        namespace (str): El nombre del espacio de nombres a eliminar.
+
+    Throws:
+        Exception: Si hay un error al eliminar el espacio de nombres.
+
+    Returns:
+        None
+    """
+    try:
+        pc = get_pinecone()
+        index = pc.Index(config.PINECONE_INDEX_NAME)
+        index.delete(delete_all=True, namespace=namespace)
+        cprint(f"Namespace {namespace} eliminado exitosamente.", "yellow")
+    except Exception as e:
+        cprint(
+            f"Hubo un error al eliminar el namespace {namespace}: {e}",
+            "red",
+        )
+        st.error(f"Hubo un error al eliminar el namespace {namespace}: {e}")
 
 
 def main():
@@ -412,7 +442,9 @@ def main():
                 "subir nuevos documentos o eliminar documentos ya existentes."
             )
 
-            space_used = calc_space()
+            index_stats = get_index_stats()
+
+            space_used = index_stats.index_fullness
             st.progress(
                 1 - space_used,
                 f"{100-space_used:.3f}% espacio disponible en memoria de la IA",
@@ -431,7 +463,6 @@ def main():
             )
 
             container_placeholder = st.empty()
-
             repo_contents = get_repo_documents()
 
             if repo_contents:
@@ -481,8 +512,9 @@ def main():
                             if selected:
                                 document_to_delete = documents_df.loc[i, "File Path"]
                                 if delete_doc(document_to_delete):
-                                    st.success(
-                                        f"Documento '{documents_df.loc[i, 'Document Name']}' eliminado exitosamente."
+                                    st.warning(
+                                        f"Documento '{documents_df.loc[i, 'Document Name']}' eliminado.",
+                                        icon="⚠️",
                                     )
                                     get_repo_documents.clear()
                                 else:
@@ -537,10 +569,40 @@ def main():
                 "Cada vez que se realice esta operación, el contenido anterior de la página de Wikipedia se eliminará y se reemplazará automáticamente "
                 "por el contenido actual. Se recomienda hacerlo solo si se está seguro de que el contenido es relevante y actualizado."
             )
+            knows_wikipedia = False
+            if "Wikipedia" in index_stats.namespaces:
+                knows_wikipedia = True
+
+            if knows_wikipedia:
+                st.success(
+                    "Actualmente, la IA conoce el contenido de la página de Wikipedia.",
+                    icon="✅",
+                )
+            else:
+                st.warning(
+                    "Actualmente, la IA no conoce el contenido de la página de Wikipedia.",
+                    icon="⚠️",
+                )
 
             col1, col2 = st.columns(2)
-            if st.button("Wikipedia"):
-                scrape_wikipedia_page()
+            with col1:
+                if st.button(
+                    "Añadir contenido de Wikipedia",
+                    use_container_width=True,
+                    type="primary",
+                ):
+                    load_wikipedia_page()
+                    time.sleep(2)
+                    st.rerun()
+            with col2:
+                if st.button(
+                    "Eliminar contenido de Wikipedia",
+                    use_container_width=True,
+                    type="secondary",
+                ):
+                    delete_namespace("Wikipedia")
+                    time.sleep(2)
+                    st.rerun()
 
             st.header("💾 Registrar cambios", anchor="Registro", divider="red")
             st.markdown(
@@ -553,15 +615,7 @@ def main():
                 icon="💡",
             )
             if st.button("Registrar cambios", type="primary", use_container_width=True):
-                texts = load_and_split_docs()
-                if do_embedding(texts):
-                    st.success(
-                        "✅ Documentos registrados exitosamente. Ahora es posible realizar consultas sobre los nuevos documentos."
-                    )
-                    time.sleep(5)
-                    st.rerun()
-                else:
-                    st.error("❌ Hubo un error al registrar los documentos.")
+                load_repo_docs()
 
     except Exception as e:
         print(e)
