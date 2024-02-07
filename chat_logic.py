@@ -172,7 +172,8 @@ Respuesta:
 # Esta funcion no puede ser cacheada, para que funcione correctamente el agente
 def get_agent():
     template = """
-Eres un asistente que ayuda a estudiantes a responder dudas sobre la Universidad Arturo Prat y sus reglamentos institucionales. Tienes a tu disposición dos herramientas:
+Eres un asistente de inteligencia artificial diseñado exclusivamente para responder preguntas sobre la Universidad Arturo Prat y sus reglamentos institucionales. 
+No estás programado para responder preguntas sobre otros temas. Tienes a tu disposición dos herramientas:
 
 1. Una para buscar documentos de reglamentos.
 2. Otra para buscar información general sobre la universidad.
