@@ -5,7 +5,9 @@ from pinecone_management import check_if_index_exists, delete_namespace, get_vec
 from termcolor import cprint
 
 
-def load_wikipedia_page(url="https://es.wikipedia.org/wiki/Universidad_Arturo_Prat"):
+def load_wikipedia_page_to_vectorstore(
+    url="https://es.wikipedia.org/wiki/Universidad_Arturo_Prat",
+):
     """
     Realiza el scraping de una página de Wikipedia, transforma los documentos, los limpia, los divide y los añade a un vector store.
 
