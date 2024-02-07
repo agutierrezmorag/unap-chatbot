@@ -6,7 +6,6 @@ import pandas as pd
 import pinecone
 import streamlit as st
 import streamlit_authenticator as stauth
-from bs4 import BeautifulSoup
 from github import Auth, Github, GithubException
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import (
@@ -179,46 +178,15 @@ def load_wikipedia_page(url="https://es.wikipedia.org/wiki/Universidad_Arturo_Pr
         vectorstore.add_documents(documents=splits)
         cprint("Documentos añadidos al namespace 'Wikipedia'", "green")
 
-        st.success("Contenido añadido exitosamente.", icon="✅")
+        st.toast("Contenido añadido exitosamente.", icon="✅")
     except Exception as e:
         cprint(
             f"Hubo un error al intentar añadir el contenido de Wikipedia al vector store: {e}",
             "red",
         )
-        st.error(
+        st.toast(
             "Hubo un error al intentar añadir el contenido de Wikipedia.", icon="❌"
         )
-
-
-def clean_up_document(document):
-    """
-    Limpia el contenido de la página de un documento eliminando las etiquetas HTML y los caracteres especiales.
-
-    Args:
-        document (Document): El objeto de documento a limpiar.
-
-    Returns:
-        Document: El objeto de documento limpiado.
-    """
-    cprint("Limpiando el documento: %s", document.metadata["title"], "yellow")
-
-    try:
-        soup = BeautifulSoup(document.page_content, "html.parser")
-        cleaned_text = (
-            soup.get_text()
-            .replace("\n", " ")
-            .replace("\xa0", " ")
-            .replace("\u200b", " ")
-        )
-        document.page_content = cleaned_text
-        cprint("Documento limpiado con éxito: %s", document.metadata["title"], "green")
-    except Exception as e:
-        cprint(
-            f"Error al limpiar el documento: {document.metadata['title']}, error: {e}",
-            "red",
-        )
-
-    return document
 
 
 def get_pinecone():
