@@ -11,7 +11,7 @@ from streamlit_feedback import streamlit_feedback
 from termcolor import cprint
 
 from chat_logic import get_chain, get_langsmith_client
-from documents_manager import get_repo_documents
+from doc_manager.github_management import get_repo_documents
 from utils import config
 
 
@@ -36,7 +36,7 @@ def process_chain_stream(prompt, sources_placeholder, response_placeholder):
             for chunk in chain.with_config(
                 configurable={"gpt_model": st.session_state.model_type}
             ).stream(
-                prompt,
+                {"input": prompt, "chat_history": st.session_state.msgs},
                 config={
                     "tags": [config.CHAT_ENVIRONMENT, st.session_state.model_type],
                     "metadata": {"user_session": st.session_state.session_id},
@@ -57,13 +57,14 @@ def process_chain_stream(prompt, sources_placeholder, response_placeholder):
                             page_content = doc.page_content
                             sources_placeholder.caption(f"Extracto de **{file_name}**:")
                             sources_placeholder.code(page_content)
-                        except AttributeError:
+                        except KeyError:
                             pass
                         except Exception as e:
-                            cprint(e, "red")
+                            cprint(
+                                f"Error al intentar procesar las fuentes de la respuesta: {e}",
+                                "red",
+                            )
                             pass
-
-                sources_placeholder.update(label="Respuesta generada", state="complete")
 
         except Exception as e:
             print(e)
@@ -74,10 +75,10 @@ def process_chain_stream(prompt, sources_placeholder, response_placeholder):
 
         st.session_state.run_id = cb.traced_runs[0].id
 
+    sources_placeholder.update(label="🤗 Respuesta generada", state="complete")
+
     # Guardar pregunta y respuesta en memoria
-    st.session_state.memory.save_context(
-        {"question": prompt}, {"answer": full_response}
-    )
+    st.session_state.memory.save_context({"input": prompt}, {"answer": full_response})
 
     return full_response
 
@@ -132,10 +133,9 @@ if __name__ == "__main__":
         st.session_state.memory = ConversationBufferWindowMemory(
             k=5,
             memory_key="chat_history",
-            input_key="question",
+            input_key="input",
             output_key="answer",
             chat_memory=StreamlitChatMessageHistory(key="msgs"),
-            return_messages=True,
         )
     if "model_type" not in st.session_state:
         st.session_state.model_type = "gpt-3.5-turbo-1106"
@@ -176,9 +176,9 @@ if __name__ == "__main__":
     if user_question:
         st.chat_message("user", avatar="🧑‍💻").write(user_question)
         with st.chat_message("assistant", avatar=logo_path):
-            sources_placeholder = st.status("Consultando documentos")
             response_placeholder = st.empty()
-            full_response = process_chain_stream(
+            sources_placeholder = st.status("🤔 Generando respuesta...")
+            answer = process_chain_stream(
                 user_question, sources_placeholder, response_placeholder
             )
 
