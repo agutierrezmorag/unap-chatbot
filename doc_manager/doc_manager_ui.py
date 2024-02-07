@@ -155,8 +155,8 @@ def wikipedia_section():
         "Cada vez que se realice esta operación, el contenido anterior de la página de Wikipedia se eliminará y se reemplazará automáticamente "
         "por el contenido actual. Se recomienda hacerlo solo si se está seguro de que el contenido es relevante y actualizado."
     )
-    st.markdown(
-        ":gray[No es necesario realizar el proceso de registro de cambios para que la IA conozca el contenido de Wikipedia, esto se hace automáticamente.]"
+    st.caption(
+        "No es necesario realizar el proceso de registro de cambios para que la IA conozca el contenido de Wikipedia, esto se hace automáticamente."
     )
     index_stats = get_index_stats()
     knows_wikipedia = "Wikipedia" in index_stats.namespaces
