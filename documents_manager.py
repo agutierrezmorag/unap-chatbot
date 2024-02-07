@@ -310,6 +310,21 @@ def do_embedding(text_chunks):
     return vectorstore
 
 
+def calc_space():
+    """
+    Calculates the current space occupied by vectors in the Pinecone index.
+
+    Returns:
+        int: The number of vectors currently stored in the index.
+    """
+    pc = pinecone.Pinecone(api_key=config.PINECONE_API_KEY)
+    host = pc.describe_index(config.PINECONE_INDEX_NAME).host
+    index = pc.Index(host=host)
+    current_vectors = index.describe_index_stats().index_fullness
+
+    return current_vectors
+
+
 def main():
     st.set_page_config(
         page_title="Documentos",
@@ -395,6 +410,12 @@ def main():
                 "En esta sección se pueden gestionar los documentos del repositorio. "
                 "Es posible ver los documentos presentes en el repositorio, "
                 "subir nuevos documentos o eliminar documentos ya existentes."
+            )
+
+            space_used = calc_space()
+            st.progress(
+                1 - space_used,
+                f"{100-space_used:.3f}% espacio disponible en memoria de la IA",
             )
             st.info(
                 "**Importante**: La IA solo sera consciente de que ha habido modificaciones "
@@ -516,10 +537,10 @@ def main():
                 "Cada vez que se realice esta operación, el contenido anterior de la página de Wikipedia se eliminará y se reemplazará automáticamente "
                 "por el contenido actual. Se recomienda hacerlo solo si se está seguro de que el contenido es relevante y actualizado."
             )
+
+            col1, col2 = st.columns(2)
             if st.button("Wikipedia"):
                 scrape_wikipedia_page()
-                time.sleep(2)
-                st.rerun()
 
             st.header("💾 Registrar cambios", anchor="Registro", divider="red")
             st.markdown(
