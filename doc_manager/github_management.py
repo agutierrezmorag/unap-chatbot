@@ -4,14 +4,14 @@ import streamlit as st
 from github import Auth, Github, GithubException
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import GitLoader
-from pinecone_management import (
+from termcolor import cprint
+
+from doc_manager.pinecone_management import (
     check_if_index_exists,
     delete_namespace,
     get_index_stats,
     get_vectorstore,
 )
-from termcolor import cprint
-
 from utils import config
 
 

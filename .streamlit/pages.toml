@@ -4,7 +4,7 @@ name = "Chatbot"
 icon = "🤖"
 
 [[pages]]
-path = "documents_manager.py"
+path = "doc_manager/doc_manager_ui.py"
 name = "Administracion"
 icon = "👷‍♂️"
 

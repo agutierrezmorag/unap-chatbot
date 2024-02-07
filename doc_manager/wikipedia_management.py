@@ -1,8 +1,13 @@
 import streamlit as st
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import WikipediaLoader
-from pinecone_management import check_if_index_exists, delete_namespace, get_vectorstore
 from termcolor import cprint
+
+from doc_manager.pinecone_management import (
+    check_if_index_exists,
+    delete_namespace,
+    get_vectorstore,
+)
 
 
 def load_wikipedia_page_to_vectorstore(

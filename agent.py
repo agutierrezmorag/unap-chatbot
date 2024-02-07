@@ -13,7 +13,7 @@ from streamlit_feedback import streamlit_feedback
 from termcolor import cprint
 
 from chat_logic import get_agent, get_langsmith_client
-from documents_manager import get_repo_documents
+from doc_manager.github_management import get_repo_documents
 from utils import config
 
 

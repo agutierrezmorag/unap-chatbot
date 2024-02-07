@@ -5,17 +5,17 @@ import uuid
 import pandas as pd
 import streamlit as st
 import streamlit_authenticator as stauth
-from github_management import (
+from register import fetch_users
+from st_pages import show_pages_from_config
+
+from doc_manager.github_management import (
     add_files_to_repo,
     delete_repo_doc,
     get_repo_documents,
     load_repo_docs_to_vectorstore,
 )
-from pinecone_management import delete_namespace, get_index_stats
-from register import fetch_users
-from st_pages import show_pages_from_config
-from wikipedia_management import load_wikipedia_page_to_vectorstore
-
+from doc_manager.pinecone_management import delete_namespace, get_index_stats
+from doc_manager.wikipedia_management import load_wikipedia_page_to_vectorstore
 from utils import config
 
 logo_path = "logos/unap_negativo.png"
