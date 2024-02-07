@@ -27,6 +27,7 @@ def load_wikipedia_page_to_vectorstore(
         query="Universidad Arturo Prat",
         lang="es",
         load_max_docs=1,
+        load_all_available_meta=True,
         doc_content_chars_max=20000,
     ).load()
 
