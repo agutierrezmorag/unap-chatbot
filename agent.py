@@ -121,7 +121,6 @@ if __name__ == "__main__":
     with st.sidebar:
         st.image(logo_path)
 
-    st.title("🤖 Chatbot UNAP")
     st.caption(
         "Este chatbot puede cometer errores. Si encuentras inexactitudes, reformula tu pregunta o consulta los documentos oficiales."
     )
