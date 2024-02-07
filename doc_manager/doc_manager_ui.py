@@ -5,7 +5,6 @@ import uuid
 import pandas as pd
 import streamlit as st
 import streamlit_authenticator as stauth
-from register import fetch_users
 from st_pages import show_pages_from_config
 
 from doc_manager.github_management import (
@@ -15,6 +14,7 @@ from doc_manager.github_management import (
     load_repo_docs_to_vectorstore,
 )
 from doc_manager.pinecone_management import delete_namespace, get_index_stats
+from doc_manager.register import fetch_users
 from doc_manager.wikipedia_management import load_wikipedia_page_to_vectorstore
 from utils import config
 
