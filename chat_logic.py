@@ -2,13 +2,15 @@ import os
 
 import pinecone
 import streamlit as st
+from langchain import hub
 from langchain.agents import AgentExecutor, create_openai_tools_agent
+from langchain.chains import create_history_aware_retriever, create_retrieval_chain
+from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain.retrievers import EnsembleRetriever
 from langchain.tools.retriever import create_retriever_tool
 from langchain_community.vectorstores import Pinecone as pcvs
-from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_core.runnables import ConfigurableField, RunnableMap, RunnablePassthrough
+from langchain_core.runnables import ConfigurableField
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langsmith import Client
 
@@ -117,7 +119,6 @@ def get_agent_retriever(namespace):
 
 @st.cache_resource(show_spinner=False)
 def get_chain():
-    memory = st.session_state.memory
     retriever = get_retriever()
     llm = get_llm()
 
@@ -135,7 +136,7 @@ El decano es el encargado de la administración de la facultad. [^1]
 -------------
 Escribe el nombre del documento con un formato adecuado cuando lo cites. 
 Sigue estas instrucciones y genera una respuesta para la pregunta.
-Pregunta: {question}
+Pregunta: {input}
 Utiliza los siguientes fragmentos de contexto recuperados para responder a la pregunta:
 -------------
 {context}
@@ -146,26 +147,20 @@ Respuesta:
         [
             ("system", template),
             MessagesPlaceholder(variable_name="chat_history"),
-            ("human", "{question}"),
+            ("human", "{input}"),
         ]
     )
 
-    rag_chain = (
-        RunnablePassthrough.assign(context=(lambda x: format_docs(x["context"])))
-        | prompt
-        | llm
-        | StrOutputParser()
-    )
+    rephrase_prompt = hub.pull("langchain-ai/chat-langchain-rephrase")
 
-    rag_chain_with_source = RunnableMap(
-        {
-            "context": retriever,
-            "question": RunnablePassthrough(),
-            "chat_history": lambda x: memory.load_memory_variables(x)["chat_history"],
-        }
-    ).assign(answer=rag_chain)
+    # Esta cadena de ejecución se encarga de combinar los documentos recuperados
+    combine_docs_chain = create_stuff_documents_chain(llm, prompt)
+    # Esta cadena de ejecución se encarga de reformular la pregunta acorde al historial de conversación
+    retriever_chain = create_history_aware_retriever(llm, retriever, rephrase_prompt)
+    # Esta cadena de ejecución se encarga de dar respuesta a la pregunta, considerando las cadenas de ejecución anteriores
+    retrieval_chain = create_retrieval_chain(retriever_chain, combine_docs_chain)
 
-    return rag_chain_with_source
+    return retrieval_chain
 
 
 # Funciones de agente
