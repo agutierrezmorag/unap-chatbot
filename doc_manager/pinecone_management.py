@@ -92,3 +92,17 @@ def get_index_stats():
     index_stats = index.describe_index_stats()
 
     return index_stats
+
+
+def delete_all_namespaces():
+    """
+    Elimina todos los espacios de nombres del índice Pinecone.
+
+    Returns:
+        None
+    """
+    index_stats = get_index_stats()
+    for namespace in index_stats.namespaces:
+        delete_namespace(namespace)
+    cprint("Todos los namespaces eliminados.", "yellow")
+    st.success("Todos los namespaces eliminados.", icon="✅")
