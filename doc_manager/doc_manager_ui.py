@@ -51,20 +51,18 @@ def _doc_list_section():
         "Listado de documentos presentes en el repositorio. Es posible seleccionar uno o más documentos para eliminarlos."
     )
 
+    progress_bar_placeholder = st.empty()
     container_placeholder = st.empty()
     repo_contents = get_repo_documents()
 
     if repo_contents:
-        # Create a list to store the documents data
         documents_data = []
-
         for item in repo_contents:
             document_path = item.path.replace(config.REPO_DIRECTORY_PATH, "").lstrip(
                 "/"
             )
             document_name, _ = os.path.splitext(document_path)
 
-            # Append a dictionary with the document data to the list
             documents_data.append(
                 {
                     "Document Name": document_name,
@@ -101,7 +99,7 @@ def _doc_list_section():
                     if selected:
                         document_to_delete = documents_df.loc[i, "File Path"]
                         if delete_repo_doc(document_to_delete):
-                            st.warning(
+                            st.toast(
                                 f"Documento '{documents_df.loc[i, 'Document Name']}' eliminado.",
                                 icon="⚠️",
                             )
@@ -138,7 +136,9 @@ def _doc_list_section():
     if uploaded_files:
         if st.button("Subir archivos"):
             if uploaded_files:
-                add_files_to_repo(uploaded_files, container_placeholder)
+                add_files_to_repo(
+                    uploaded_files, container_placeholder, progress_bar_placeholder
+                )
                 st.session_state.upload_key = str(uuid.uuid4())
                 get_repo_documents.clear()
                 st.rerun()
