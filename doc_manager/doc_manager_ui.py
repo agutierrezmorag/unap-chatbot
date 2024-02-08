@@ -7,8 +7,8 @@ from st_pages import show_pages_from_config
 
 from doc_manager.github_management import (
     add_files_to_repo,
-    content_files_to_df,
     delete_repo_doc,
+    get_repo_docs_as_pd,
     get_repo_documents,
     upload_repo_docs,
 )
@@ -51,7 +51,7 @@ def _doc_list_section():
 
     progress_bar_placeholder = st.empty()
     container_placeholder = st.empty()
-    df = content_files_to_df()
+    df = get_repo_docs_as_pd()
     df["size"] = df["size"] / 1024
 
     form = st.form(key="document_list_form", border=False)

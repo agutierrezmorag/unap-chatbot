@@ -13,7 +13,7 @@ from streamlit_feedback import streamlit_feedback
 from termcolor import cprint
 
 from chat_logic import get_agent, get_langsmith_client
-from doc_manager.github_management import content_files_to_df
+from doc_manager.github_management import get_repo_docs_as_pd
 from utils import config
 
 
@@ -119,7 +119,7 @@ if __name__ == "__main__":
     )
 
     # Lista de documentos disponibles para consultar
-    docs = content_files_to_df()
+    docs = get_repo_docs_as_pd()
     with st.expander("Puedes realizar consultas sobre los siguientes documentos:"):
         st.dataframe(
             docs,

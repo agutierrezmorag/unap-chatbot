@@ -50,7 +50,7 @@ def _get_repo_documents() -> List[ContentFile]:
 @st.cache_resource(
     ttl=60 * 60 * 24, show_spinner="Recuperando listado de documentos..."
 )
-def content_files_to_df() -> pd.DataFrame:
+def get_repo_docs_as_pd() -> pd.DataFrame:
     """
     Converts a list of ContentFile objects into a pandas DataFrame.
 
