@@ -9,7 +9,6 @@ from doc_manager.github_management import (
     add_files_to_repo,
     delete_repo_doc,
     get_repo_docs_as_pd,
-    get_repo_documents,
     upload_repo_docs,
 )
 from doc_manager.pinecone_management import (
@@ -120,7 +119,7 @@ def _doc_list_section():
                         f"Documento '{doc_name}' eliminado.",
                         icon="⚠️",
                     )
-            get_repo_documents.clear()
+            get_repo_docs_as_pd.clear()
             st.session_state.delete_selected_docs = False
             time.sleep(1)
             st.rerun()
@@ -152,7 +151,7 @@ def _doc_list_section():
                     uploaded_files, container_placeholder, progress_bar_placeholder
                 )
                 st.session_state.upload_key = str(uuid.uuid4())
-                get_repo_documents.clear()
+                get_repo_docs_as_pd.clear()
                 st.rerun()
 
         if st.button("Limpiar"):
