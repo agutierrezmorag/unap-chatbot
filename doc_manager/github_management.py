@@ -2,16 +2,10 @@ import time
 
 import streamlit as st
 from github import Auth, Github, GithubException
-from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import GitLoader
 from termcolor import cprint
 
-from doc_manager.pinecone_management import (
-    check_if_index_exists,
-    delete_namespace,
-    get_index_stats,
-    get_vectorstore,
-)
+from doc_manager.pinecone_management import split_and_load_documents_to_vectorstore
 from utils import config
 
 
@@ -136,7 +130,7 @@ def add_files_to_repo(file_list, container):
             cprint(f"Error al añadir el documento '{uploaded_file.name}': {e}", "red")
 
 
-def load_repo_docs_to_vectorstore(namespace="Reglamentos"):
+def upload_repo_docs(namespace: str = "Reglamentos"):
     """
     Carga documentos de un repositorio Git, los divide en fragmentos y los añade a un almacenamiento de vectores.
 
@@ -146,38 +140,13 @@ def load_repo_docs_to_vectorstore(namespace="Reglamentos"):
     Throws:
         Exception: Si hay un error al cargar los documentos en el almacenamiento de vectores.
     """
-    index_stats = get_index_stats()
+    loader = GitLoader(
+        clone_url=config.REPO_URL,
+        repo_path=config.REPO_DIRECTORY_PATH,
+        branch=config.REPO_BRANCH,
+        file_filter=lambda x: x.endswith(".txt"),
+    )
+    docs = loader.load()
+    cprint(f"Cargados {len(docs)} documentos desde {config.REPO_URL}", "yellow")
 
-    try:
-        # Carga de textos
-        loader = GitLoader(
-            clone_url=config.REPO_URL,
-            repo_path=config.REPO_DIRECTORY_PATH,
-            branch=config.REPO_BRANCH,
-            file_filter=lambda x: x.endswith(".txt"),
-        )
-        docs = loader.load()
-        cprint(f"Cargados {len(docs)} documentos desde {config.REPO_URL}", "yellow")
-
-        # División de textos
-        text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=2048, chunk_overlap=128, length_function=len
-        )
-        texts_chunks = text_splitter.split_documents(docs)
-        cprint(f"Documentos divididos en {len(texts_chunks)} vectores", "yellow")
-
-        check_if_index_exists()
-
-        # Se elimina el namespace para evitar duplicados
-        if namespace in index_stats.namespaces:
-            delete_namespace(namespace)
-
-        vectorstore = get_vectorstore(namespace)
-        vectorstore.add_documents(documents=texts_chunks)
-        cprint(
-            f"{len(texts_chunks)} vectores añadidos al namespace {namespace}", "green"
-        )
-        st.success("Documentos añadidos exitosamente.", icon="✅")
-    except Exception as e:
-        cprint(f"Error al cargar los documentos al vector store: {e}", "red")
-        st.error("Hubo un error al cargar los documentos.", icon="❌")
+    split_and_load_documents_to_vectorstore(docs=docs, namespace=namespace)
