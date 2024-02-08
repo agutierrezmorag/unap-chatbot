@@ -25,7 +25,7 @@ from utils import config
 logo_path = "logos/unap_negativo.png"
 
 
-def general_info_section():
+def _general_info_section():
     st.markdown(
         "En esta sección se pueden gestionar los documentos del repositorio. "
         "Es posible ver los documentos presentes en el repositorio, "
@@ -46,7 +46,7 @@ def general_info_section():
     )
 
 
-def doc_list_section():
+def _doc_list_section():
     st.markdown(
         "Listado de documentos presentes en el repositorio. Es posible seleccionar uno o más documentos para eliminarlos."
     )
@@ -148,7 +148,7 @@ def doc_list_section():
             st.rerun()
 
 
-def wikipedia_section():
+def _wikipedia_section():
     st.markdown(
         "El contenido de la página de Wikipedia de la [Universidad Arturo Prat](https://es.wikipedia.org/wiki/Universidad_Arturo_Prat) "
         "está disponible para añadirse a la base de conocimientos de la IA. "
@@ -324,13 +324,13 @@ def main():
             Authenticator.logout("Cerrar Sesión", "sidebar")
 
             st.header("📚 Gestión de documentos", divider=True)
-            general_info_section()
+            _general_info_section()
 
             st.header("🗃️ Documentos en el repositorio", divider=True)
-            doc_list_section()
+            _doc_list_section()
 
             st.header("🌐 Wikipedia", divider=True)
-            wikipedia_section()
+            _wikipedia_section()
 
             st.header("💾 Registrar cambios", anchor="Registro", divider="red")
             save_changes_section()
