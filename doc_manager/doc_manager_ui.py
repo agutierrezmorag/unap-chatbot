@@ -11,15 +11,15 @@ from doc_manager.github_management import (
     add_files_to_repo,
     delete_repo_doc,
     get_repo_documents,
-    load_repo_docs_to_vectorstore,
+    upload_repo_docs,
 )
 from doc_manager.pinecone_management import (
     delete_all_namespaces,
     delete_namespace,
-    get_index_stats,
+    get_index_data,
 )
 from doc_manager.register import fetch_users
-from doc_manager.wikipedia_management import load_wikipedia_page_to_vectorstore
+from doc_manager.wikipedia_management import upload_wikipedia_page
 from utils import config
 
 logo_path = "logos/unap_negativo.png"
@@ -32,9 +32,9 @@ def _general_info_section():
         "subir nuevos documentos o eliminar documentos ya existentes."
     )
 
-    index_stats = get_index_stats()
+    index_data = get_index_data()
 
-    space_used = index_stats.index_fullness
+    space_used = index_data.index_fullness
     st.progress(
         1 - space_used,
         f"{100-space_used:.3f}% espacio disponible en memoria de la IA",
@@ -162,8 +162,8 @@ def _wikipedia_section():
     st.caption(
         "No es necesario realizar el proceso de registro de cambios para que la IA conozca el contenido de Wikipedia, esto se hace automáticamente."
     )
-    index_stats = get_index_stats()
-    knows_wikipedia = "Wikipedia" in index_stats.namespaces
+    index_data = get_index_data()
+    knows_wikipedia = "Wikipedia" in index_data.namespaces
 
     if knows_wikipedia:
         st.success(
@@ -183,7 +183,7 @@ def _wikipedia_section():
             use_container_width=True,
             type="primary",
         ):
-            load_wikipedia_page_to_vectorstore()
+            upload_wikipedia_page()
             time.sleep(10)
             st.rerun()
     with col2:
@@ -230,7 +230,7 @@ def save_changes_section():
         if save_changes_button.button(
             "Registrar cambios", use_container_width=True, type="primary"
         ):
-            load_repo_docs_to_vectorstore()
+            upload_repo_docs()
             st.success("Cambios registrados exitosamente.", icon="✅")
             time.sleep(10)
             st.rerun()
