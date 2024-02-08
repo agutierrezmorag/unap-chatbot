@@ -21,7 +21,7 @@ class SingletonPinecone:
         return SingletonPinecone._instance
 
 
-def get_pinecone():
+def _get_pinecone() -> pinecone.Pinecone:
     """
     Obtiene una instancia del objeto Pinecone.
 
@@ -31,7 +31,7 @@ def get_pinecone():
     return SingletonPinecone.get_instance()
 
 
-def get_or_create_vectorstore(namespace: str) -> pcvs:
+def _get_or_create_vectorstore(namespace: str) -> pcvs:
     """
     Recupera el almacenamiento de vectores para un espacio de nombres dado. Creando un nuevo espacio de nombres si no existe.
 
@@ -64,7 +64,7 @@ def delete_namespace(namespace: str) -> None:
         None
     """
     try:
-        pc = get_pinecone()
+        pc = _get_pinecone()
         index = pc.Index(config.PINECONE_INDEX_NAME)
         index.delete(delete_all=True, namespace=namespace)
         cprint(f"Namespace {namespace} eliminado exitosamente.", "yellow")
@@ -75,8 +75,8 @@ def delete_namespace(namespace: str) -> None:
         )
 
 
-def ensure_index_exists() -> None:
-    pc = get_pinecone()
+def _ensure_index_exists() -> None:
+    pc = _get_pinecone()
     if config.PINECONE_INDEX_NAME not in pc.list_indexes().names():
         try:
             pc.create_index(
@@ -97,7 +97,7 @@ def get_index_data() -> Dict:
     Returns:
         dict: Un diccionario que contiene las estadísticas del índice.
     """
-    pc = get_pinecone()
+    pc = _get_pinecone()
     host = pc.describe_index(config.PINECONE_INDEX_NAME).host
     index = pc.Index(host=host)
     index_data = index.describe_index_stats()
@@ -135,14 +135,14 @@ def split_and_load_documents_to_vectorstore(docs: List[str], namespace: str) -> 
     splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
     split_docs = splitter.split_documents(docs)
 
-    ensure_index_exists()
+    _ensure_index_exists()
 
     index_data = get_index_data()
     if namespace in index_data.namespaces:
         delete_namespace(namespace)
 
     try:
-        vectorstore = get_or_create_vectorstore(namespace)
+        vectorstore = _get_or_create_vectorstore(namespace)
         vectorstore.add_documents(documents=split_docs)
 
         cprint(
