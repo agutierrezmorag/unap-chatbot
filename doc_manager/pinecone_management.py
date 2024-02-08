@@ -1,10 +1,24 @@
+from typing import Dict, List
+
 import pinecone
-import streamlit as st
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import Pinecone as pcvs
 from langchain_openai import OpenAIEmbeddings
 from termcolor import cprint
 
 from utils import config
+
+
+class SingletonPinecone:
+    _instance = None
+
+    @staticmethod
+    def get_instance():
+        if SingletonPinecone._instance is None:
+            SingletonPinecone._instance = pinecone.Pinecone(
+                api_key=config.PINECONE_API_KEY, environment=config.PINECONE_ENV
+            )
+        return SingletonPinecone._instance
 
 
 def get_pinecone():
@@ -14,17 +28,15 @@ def get_pinecone():
     Returns:
         Pinecone: Una instancia del objeto Pinecone.
     """
-    return pinecone.Pinecone(
-        api_key=config.PINECONE_API_KEY, environment=config.PINECONE_ENV
-    )
+    return SingletonPinecone.get_instance()
 
 
-def get_vectorstore(namespace="Reglamentos"):
+def get_vectorstore(namespace: str) -> pcvs.VectorStore:
     """
-    Recupera el almacenamiento de vectores para un espacio de nombres dado.
+    Recupera el almacenamiento de vectores para un espacio de nombres dado. Creando un nuevo espacio de nombres si no existe.
 
     Args:
-        namespace (str): El espacio de nombres del almacenamiento de vectores. Por defecto es "Reglamentos".
+        namespace (str): El espacio de nombres del almacenamiento de vectores.
 
     Returns:
         vectorstore (pcvs.VectorStore): El objeto de almacenamiento de vectores.
@@ -38,7 +50,7 @@ def get_vectorstore(namespace="Reglamentos"):
     return vectorstore
 
 
-def delete_namespace(namespace):
+def delete_namespace(namespace: str) -> None:
     """
     Elimina un espacio de nombres del índice Pinecone.
 
@@ -61,10 +73,9 @@ def delete_namespace(namespace):
             f"Hubo un error al eliminar el namespace {namespace}: {e}",
             "red",
         )
-        st.error(f"Hubo un error al eliminar el namespace {namespace}: {e}")
 
 
-def check_if_index_exists():
+def ensure_index_exists() -> None:
     pc = get_pinecone()
     if config.PINECONE_INDEX_NAME not in pc.list_indexes().names():
         try:
@@ -79,7 +90,7 @@ def check_if_index_exists():
             cprint(f"Error al crear el índice {config.PINECONE_INDEX_NAME}: {e}", "red")
 
 
-def get_index_stats():
+def get_index_stats() -> Dict:
     """
     Recupera las estadísticas del índice Pinecone.
 
@@ -94,7 +105,7 @@ def get_index_stats():
     return index_stats
 
 
-def delete_all_namespaces():
+def delete_all_namespaces() -> None:
     """
     Elimina todos los espacios de nombres del índice Pinecone.
 
@@ -105,4 +116,34 @@ def delete_all_namespaces():
     for namespace in index_stats.namespaces:
         delete_namespace(namespace)
     cprint("Todos los namespaces eliminados.", "yellow")
-    st.success("La memoria de la IA ha sido limpiada.", icon="✅")
+
+
+def split_and_load_documents_to_vectorstore(docs: List[str], namespace: str) -> None:
+    """
+    Divide documentos y los añade a un almacenamiento de vectores.
+
+    Args:
+        docs (list): Una lista de documentos a añadir al almacenamiento de vectores.
+        namespace (str): El espacio de nombres en el almacenamiento de vectores para añadir los documentos.
+
+    Throws:
+        Exception: Si hay un error al cargar los documentos en el almacenamiento de vectores.
+
+    Returns:
+        None
+    """
+    splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+    splits = splitter.split_documents(docs)
+    try:
+        ensure_index_exists()
+        delete_namespace(namespace)
+
+        vectorstore = get_vectorstore(namespace)
+        vectorstore.add_documents(documents=splits)
+
+        cprint(f"Documentos añadidos al namespace '{namespace}'", "green")
+    except Exception as e:
+        cprint(
+            f"Hubo un error al intentar añadir el contenido al vector store: {e}",
+            "red",
+        )
