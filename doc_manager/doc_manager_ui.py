@@ -51,8 +51,7 @@ def _doc_list_section():
 
     progress_bar_placeholder = st.empty()
     container_placeholder = st.empty()
-    repo_contents = get_repo_documents()
-    df = content_files_to_df(repo_contents)
+    df = content_files_to_df()
     df["size"] = df["size"] / 1024
 
     form = st.form(key="document_list_form", border=False)
