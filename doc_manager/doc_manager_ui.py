@@ -1,14 +1,13 @@
-import os
 import time
 import uuid
 
-import pandas as pd
 import streamlit as st
 import streamlit_authenticator as stauth
 from st_pages import show_pages_from_config
 
 from doc_manager.github_management import (
     add_files_to_repo,
+    content_files_to_df,
     delete_repo_doc,
     get_repo_documents,
     upload_repo_docs,
@@ -20,7 +19,6 @@ from doc_manager.pinecone_management import (
 )
 from doc_manager.register import fetch_users
 from doc_manager.wikipedia_management import upload_wikipedia_page
-from utils import config
 
 logo_path = "logos/unap_negativo.png"
 
@@ -54,76 +52,91 @@ def _doc_list_section():
     progress_bar_placeholder = st.empty()
     container_placeholder = st.empty()
     repo_contents = get_repo_documents()
+    df = content_files_to_df(repo_contents)
+    df["size"] = df["size"] / 1024
 
-    if repo_contents:
-        documents_data = []
-        for item in repo_contents:
-            document_path = item.path.replace(config.REPO_DIRECTORY_PATH, "").lstrip(
-                "/"
-            )
-            document_name, _ = os.path.splitext(document_path)
+    form = st.form(key="document_list_form", border=False)
+    with form:
+        st.data_editor(
+            df,
+            key="document_list_df",
+            hide_index=True,
+            use_container_width=True,
+            height=300,
+            column_order=["selected", "name", "html_url", "download_url", "size"],
+            column_config={
+                "selected": st.column_config.CheckboxColumn(
+                    "Seleccionar",
+                    width="small",
+                ),
+                "name": st.column_config.TextColumn(
+                    "📄 Nombre",
+                    width="medium",
+                ),
+                "html_url": st.column_config.LinkColumn(
+                    "🔗 URL",
+                    display_text="Ver en GitHub",
+                    width="small",
+                ),
+                "download_url": st.column_config.LinkColumn(
+                    "⬇️ Descarga",
+                    display_text="Descargar",
+                    width="small",
+                ),
+                "size": st.column_config.NumberColumn(
+                    "📏 Tamaño (Kb)",
+                    format="%.1f",
+                    width="small",
+                ),
+            },
+            disabled=["name", "html_url", "download_url", "size"],
+        )
+    selected_rows = st.session_state.document_list_df["edited_rows"]
 
-            documents_data.append(
-                {
-                    "Document Name": document_name,
-                    "File Path": item.path,
-                    "Selected": False,
-                }
-            )
+    confirm_dialog = st.empty()
+    action_button = st.empty()
 
-        # Create a DataFrame from the documents data
-        documents_df = pd.DataFrame(documents_data)
+    action_button = form.form_submit_button(
+        "Eliminar documentos seleccionados",
+        use_container_width=True,
+    )
 
-        # Create a dictionary to store the checkbox states
-        checkbox_states = {}
-
-        # Display the DataFrame with checkboxes
-        with st.container(border=True):
-            for i in range(len(documents_df)):
-                checkbox_states[i] = st.checkbox(
-                    documents_df.loc[i, "Document Name"], key=i
-                )
-
-        # Create placeholders for the buttons
-        confirm_dialog = st.empty()
-        action_button = st.empty()
+    bcol1, bcol2 = st.columns(2)
+    with bcol1:
+        confirm_button = st.empty()
+    with bcol2:
         cancel_button = st.empty()
 
-        # Display the appropriate action button
-        if st.session_state.get("delete_selected"):
-            confirm_dialog.markdown(
-                ":red[¿Seguro que desea eliminar los documentos seleccionados?]",
-            )
-            if action_button.button("Confirmar"):
-                for i, selected in checkbox_states.items():
-                    if selected:
-                        document_to_delete = documents_df.loc[i, "File Path"]
-                        if delete_repo_doc(document_to_delete):
-                            st.toast(
-                                f"Documento '{documents_df.loc[i, 'Document Name']}' eliminado.",
-                                icon="⚠️",
-                            )
-                            get_repo_documents.clear()
-                        else:
-                            st.error(
-                                f"Hubo un error al intentar eliminar '{documents_df.loc[i, 'Document Name']}'."
-                            )
-                st.session_state.delete_selected = False
-                time.sleep(2)
-                st.rerun()
-            elif cancel_button.button("Cancelar"):
-                st.session_state.delete_selected = False
-                st.rerun()
+    if st.session_state.get("delete_selected_docs"):
+        confirm_dialog.warning(
+            "¿Seguro que desea eliminar los documentos seleccionados?",
+            icon="⚠️",
+        )
+        if confirm_button.button("Confirmar", use_container_width=True, type="primary"):
+            for index in selected_rows:
+                doc_name = df.loc[index, "name"]
+                doc_path = df.loc[index, "path"]
+                if delete_repo_doc(doc_path):
+                    st.toast(
+                        f"Documento '{doc_name}' eliminado.",
+                        icon="⚠️",
+                    )
+            get_repo_documents.clear()
+            st.session_state.delete_selected_docs = False
+            time.sleep(1)
+            st.rerun()
+        elif cancel_button.button("Cancelar", use_container_width=True):
+            st.session_state.delete_selected_docs = False
+            st.rerun()
+    elif action_button:
+        if selected_rows:
+            st.session_state.delete_selected_docs = True
+            st.rerun()
         else:
-            action_button = st.button(
-                "Eliminar documentos seleccionados",
-                disabled=not any(checkbox_states.values()),
+            confirm_dialog.error(
+                "No se ha seleccionado ningún documento para eliminar.",
+                icon="❌",
             )
-            if action_button:
-                st.session_state.delete_selected = True
-                st.rerun()
-    else:
-        st.info("ℹ️ No hay documentos en el repositorio.")
 
     uploaded_files = st.file_uploader(
         "Sube un nuevo documento",
