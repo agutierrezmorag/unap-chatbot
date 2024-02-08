@@ -1,8 +1,9 @@
 import time
 from typing import List
 
+import pandas as pd
 import streamlit as st
-from github import Auth, Github, GithubException, Repository
+from github import Auth, ContentFile, Github, GithubException, Repository
 from langchain_community.document_loaders import GitLoader
 from streamlit.delta_generator import DeltaGenerator
 from termcolor import cprint
@@ -31,7 +32,7 @@ def get_repo() -> Repository.Repository:
 @st.cache_resource(
     ttl=60 * 60 * 24, show_spinner="Recuperando listado de documentos..."
 )
-def get_repo_documents() -> List[str]:
+def get_repo_documents() -> List[ContentFile]:
     """
     Recupera los documentos del repositorio.
 
@@ -47,6 +48,33 @@ def get_repo_documents() -> List[str]:
     except GithubException as e:
         cprint(f"Error al recuperar documentos del repositorio: {e}", "red")
         return []
+
+
+def content_files_to_df(content_files: List[ContentFile]) -> pd.DataFrame:
+    """
+    Converts a list of ContentFile objects into a pandas DataFrame.
+
+    Args:
+        content_files (List[ContentFile]): A list of ContentFile objects.
+
+    Returns:
+        pd.DataFrame: A DataFrame where each row represents a ContentFile.
+    """
+    data = []
+    for file in content_files:
+        data.append(
+            {
+                "type": file.type,
+                "path": file.path,
+                "name": file.name,
+                "sha": file.sha,
+                "html_url": file.html_url,
+                "size": file.size,
+                "download_url": file.download_url,
+                "selected": False,
+            }
+        )
+    return pd.DataFrame(data)
 
 
 def delete_repo_doc(
