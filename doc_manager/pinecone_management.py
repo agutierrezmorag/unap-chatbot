@@ -105,4 +105,4 @@ def delete_all_namespaces():
     for namespace in index_stats.namespaces:
         delete_namespace(namespace)
     cprint("Todos los namespaces eliminados.", "yellow")
-    st.success("Todos los namespaces eliminados.", icon="✅")
+    st.success("La memoria de la IA ha sido limpiada.", icon="✅")
