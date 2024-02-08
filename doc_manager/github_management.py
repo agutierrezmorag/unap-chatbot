@@ -9,8 +9,8 @@ from doc_manager.pinecone_management import split_and_load_documents_to_vectorst
 from utils import config
 
 
-@st.cache_resource
-def get_repo(show_loader=False):
+@st.cache_resource(show_spinner=False)
+def get_repo():
     """
     Recupera el objeto del repositorio de GitHub basado en el token de acceso proporcionado, el propietario del repositorio y el nombre del repositorio.
 
