@@ -31,7 +31,7 @@ def get_pinecone():
     return SingletonPinecone.get_instance()
 
 
-def get_vectorstore(namespace: str) -> pcvs.VectorStore:
+def get_or_create_vectorstore(namespace: str) -> pcvs.VectorStore:
     """
     Recupera el almacenamiento de vectores para un espacio de nombres dado. Creando un nuevo espacio de nombres si no existe.
 
@@ -90,7 +90,7 @@ def ensure_index_exists() -> None:
             cprint(f"Error al crear el índice {config.PINECONE_INDEX_NAME}: {e}", "red")
 
 
-def get_index_stats() -> Dict:
+def get_index_data() -> Dict:
     """
     Recupera las estadísticas del índice Pinecone.
 
@@ -100,9 +100,9 @@ def get_index_stats() -> Dict:
     pc = get_pinecone()
     host = pc.describe_index(config.PINECONE_INDEX_NAME).host
     index = pc.Index(host=host)
-    index_stats = index.describe_index_stats()
+    index_data = index.describe_index_stats()
 
-    return index_stats
+    return index_data
 
 
 def delete_all_namespaces() -> None:
@@ -112,8 +112,8 @@ def delete_all_namespaces() -> None:
     Returns:
         None
     """
-    index_stats = get_index_stats()
-    for namespace in index_stats.namespaces:
+    index_data = get_index_data()
+    for namespace in index_data.namespaces:
         delete_namespace(namespace)
     cprint("Todos los namespaces eliminados.", "yellow")
 
@@ -133,15 +133,21 @@ def split_and_load_documents_to_vectorstore(docs: List[str], namespace: str) -> 
         None
     """
     splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
-    splits = splitter.split_documents(docs)
-    try:
-        ensure_index_exists()
+    split_docs = splitter.split_documents(docs)
+
+    ensure_index_exists()
+
+    index_data = get_index_data()
+    if namespace in index_data.namespaces:
         delete_namespace(namespace)
 
-        vectorstore = get_vectorstore(namespace)
-        vectorstore.add_documents(documents=splits)
+    try:
+        vectorstore = get_or_create_vectorstore(namespace)
+        vectorstore.add_documents(documents=split_docs)
 
-        cprint(f"Documentos añadidos al namespace '{namespace}'", "green")
+        cprint(
+            f"{len(split_docs)} vectores añadidos al namespace '{namespace}'", "green"
+        )
     except Exception as e:
         cprint(
             f"Hubo un error al intentar añadir el contenido al vector store: {e}",
