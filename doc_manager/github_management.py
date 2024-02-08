@@ -13,7 +13,7 @@ from utils import config
 
 
 @st.cache_resource(show_spinner=False)
-def get_repo() -> Repository.Repository:
+def _get_repo() -> Repository.Repository:
     """
     Recupera el objeto del repositorio de GitHub basado en el token de acceso proporcionado, el propietario del repositorio y el nombre del repositorio.
 
@@ -29,10 +29,7 @@ def get_repo() -> Repository.Repository:
     return repo
 
 
-@st.cache_resource(
-    ttl=60 * 60 * 24, show_spinner="Recuperando listado de documentos..."
-)
-def get_repo_documents() -> List[ContentFile]:
+def _get_repo_documents() -> List[ContentFile]:
     """
     Recupera los documentos del repositorio.
 
@@ -41,7 +38,7 @@ def get_repo_documents() -> List[ContentFile]:
     """
 
     try:
-        repo = get_repo()
+        repo = _get_repo()
         docs = repo.get_contents(config.REPO_DIRECTORY_PATH, ref=config.REPO_BRANCH)
         cprint(f"Recuperados {len(docs)} documentos del repositorio", "green")
         return docs
@@ -50,7 +47,10 @@ def get_repo_documents() -> List[ContentFile]:
         return []
 
 
-def content_files_to_df(content_files: List[ContentFile]) -> pd.DataFrame:
+@st.cache_resource(
+    ttl=60 * 60 * 24, show_spinner="Recuperando listado de documentos..."
+)
+def content_files_to_df() -> pd.DataFrame:
     """
     Converts a list of ContentFile objects into a pandas DataFrame.
 
@@ -60,6 +60,7 @@ def content_files_to_df(content_files: List[ContentFile]) -> pd.DataFrame:
     Returns:
         pd.DataFrame: A DataFrame where each row represents a ContentFile.
     """
+    content_files = _get_repo_documents()
     data = []
     for file in content_files:
         data.append(
@@ -90,7 +91,7 @@ def delete_repo_doc(
     Returns:
         bool: Verdadero si el archivo se eliminó con éxito, Falso en caso contrario.
     """
-    repo = get_repo()
+    repo = _get_repo()
     try:
         doc = repo.get_contents(file_path, ref=config.REPO_BRANCH)
         message = f"Documento '{doc.name}' eliminado."
@@ -124,7 +125,7 @@ def add_files_to_repo(
     Returns:
         None
     """
-    repo = get_repo()
+    repo = _get_repo()
 
     progress_bar.progress(0)
     for i, uploaded_file in enumerate(file_list):
