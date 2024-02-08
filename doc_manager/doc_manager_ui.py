@@ -9,6 +9,7 @@ from doc_manager.github_management import (
     add_files_to_repo,
     delete_repo_doc,
     get_repo_docs_as_pd,
+    get_repo_documents,
     upload_repo_docs,
 )
 from doc_manager.pinecone_management import (
@@ -34,12 +35,7 @@ def _general_info_section():
     space_used = index_data.index_fullness
     st.progress(
         1 - space_used,
-        f"{100-space_used:.3f}% espacio disponible en memoria de la IA",
-    )
-    st.info(
-        "**Importante**: La IA solo sera consciente de que ha habido modificaciones "
-        "en los documentos una vez se [registren los cambios](#Registro).",
-        icon="📢",
+        f"{100-space_used:.2f}% espacio disponible en memoria de la IA",
     )
 
 
@@ -50,46 +46,47 @@ def _doc_list_section():
 
     progress_bar_placeholder = st.empty()
     container_placeholder = st.empty()
-    df = get_repo_docs_as_pd()
-    df["size"] = df["size"] / 1024
-
     form = st.form(key="document_list_form", border=False)
-    with form:
-        st.data_editor(
-            df,
-            key="document_list_df",
-            hide_index=True,
-            use_container_width=True,
-            height=300,
-            column_order=["selected", "name", "html_url", "download_url", "size"],
-            column_config={
-                "selected": st.column_config.CheckboxColumn(
-                    "Seleccionar",
-                    width="small",
-                ),
-                "name": st.column_config.TextColumn(
-                    "📄 Nombre",
-                    width="medium",
-                ),
-                "html_url": st.column_config.LinkColumn(
-                    "🔗 URL",
-                    display_text="Ver en GitHub",
-                    width="small",
-                ),
-                "download_url": st.column_config.LinkColumn(
-                    "⬇️ Descarga",
-                    display_text="Descargar",
-                    width="small",
-                ),
-                "size": st.column_config.NumberColumn(
-                    "📏 Tamaño (Kb)",
-                    format="%.1f",
-                    width="small",
-                ),
-            },
-            disabled=["name", "html_url", "download_url", "size"],
-        )
-    selected_rows = st.session_state.document_list_df["edited_rows"]
+
+    df = get_repo_docs_as_pd()
+    if df.empty:
+        container_placeholder.warning("No hay documentos en el repositorio.", icon="⚠️")
+    else:
+        with form:
+            st.data_editor(
+                df,
+                key="document_list_df",
+                hide_index=True,
+                use_container_width=True,
+                column_order=["selected", "name", "html_url", "download_url", "size"],
+                column_config={
+                    "selected": st.column_config.CheckboxColumn(
+                        "Seleccionar",
+                        width="small",
+                    ),
+                    "name": st.column_config.TextColumn(
+                        "📄 Nombre",
+                        width="medium",
+                    ),
+                    "html_url": st.column_config.LinkColumn(
+                        "🔗 URL",
+                        display_text="Ver en GitHub",
+                        width="small",
+                    ),
+                    "download_url": st.column_config.LinkColumn(
+                        "⬇️ Descarga",
+                        display_text="Descargar",
+                        width="small",
+                    ),
+                    "size": st.column_config.NumberColumn(
+                        "📏 Tamaño (Kb)",
+                        format="%.1f",
+                        width="small",
+                    ),
+                },
+                disabled=["name", "html_url", "download_url", "size"],
+            )
+        selected_rows = st.session_state.document_list_df["edited_rows"]
 
     confirm_dialog = st.empty()
     action_button = st.empty()
@@ -97,6 +94,7 @@ def _doc_list_section():
     action_button = form.form_submit_button(
         "Eliminar documentos seleccionados",
         use_container_width=True,
+        disabled=df.empty,
     )
 
     bcol1, bcol2 = st.columns(2)
@@ -119,7 +117,7 @@ def _doc_list_section():
                         f"Documento '{doc_name}' eliminado.",
                         icon="⚠️",
                     )
-            get_repo_docs_as_pd.clear()
+            get_repo_documents.clear()
             st.session_state.delete_selected_docs = False
             time.sleep(1)
             st.rerun()
@@ -151,12 +149,18 @@ def _doc_list_section():
                     uploaded_files, container_placeholder, progress_bar_placeholder
                 )
                 st.session_state.upload_key = str(uuid.uuid4())
-                get_repo_docs_as_pd.clear()
+                get_repo_documents.clear()
                 st.rerun()
 
         if st.button("Limpiar"):
             st.session_state.upload_key = str(uuid.uuid4())
             st.rerun()
+
+    st.info(
+        "**Importante**: La IA solo sera consciente de que ha habido modificaciones "
+        "en los documentos una vez se [registren los cambios](#Registro).",
+        icon="📢",
+    )
 
 
 def _wikipedia_section():
@@ -167,8 +171,8 @@ def _wikipedia_section():
         "Si se añade, la IA podrá responder preguntas basándose en esta información."
     )
     st.markdown(
-        "Cada vez que se realice esta operación, el contenido anterior de la página de Wikipedia se eliminará y se reemplazará automáticamente "
-        "por el contenido actual. Se recomienda hacerlo solo si se está seguro de que el contenido es relevante y actualizado."
+        "Cada vez que se realice esta operación, el contenido anterior de la página de Wikipedia es olvidado y se reemplazará automáticamente "
+        "por el contenido nuevo. Se recomienda hacerlo solo si se está seguro de que el contenido es relevante y actualizado."
     )
     st.caption(
         "No es necesario realizar el proceso de registro de cambios para que la IA conozca el contenido de Wikipedia, esto se hace automáticamente."
@@ -215,7 +219,8 @@ def save_changes_section():
                 preguntas basándose en la información contenida en estos documentos."
     )
     st.info(
-        "Este proceso puede tardar varios minutos. No refresque la página mientras se esté realizando el registro.",
+        "Este proceso puede tardar varios minutos. No refresque la página mientras se esté realizando el registro. \
+        Es posible que la IA no responda preguntas mientras se esté realizando el registro.",
         icon="💡",
     )
 

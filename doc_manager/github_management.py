@@ -29,7 +29,10 @@ def _get_repo() -> Repository.Repository:
     return repo
 
 
-def _get_repo_documents() -> List[ContentFile]:
+@st.cache_resource(
+    ttl=60 * 60 * 24, show_spinner="Recuperando listado de documentos..."
+)
+def get_repo_documents() -> List[ContentFile]:
     """
     Recupera los documentos del repositorio.
 
@@ -47,9 +50,6 @@ def _get_repo_documents() -> List[ContentFile]:
         return []
 
 
-@st.cache_resource(
-    ttl=60 * 60 * 24, show_spinner="Recuperando listado de documentos..."
-)
 def get_repo_docs_as_pd() -> pd.DataFrame:
     """
     Converts a list of ContentFile objects into a pandas DataFrame.
@@ -60,7 +60,7 @@ def get_repo_docs_as_pd() -> pd.DataFrame:
     Returns:
         pd.DataFrame: A DataFrame where each row represents a ContentFile.
     """
-    content_files = _get_repo_documents()
+    content_files = get_repo_documents()
     data = []
     for file in content_files:
         data.append(
@@ -70,7 +70,7 @@ def get_repo_docs_as_pd() -> pd.DataFrame:
                 "name": file.name,
                 "sha": file.sha,
                 "html_url": file.html_url,
-                "size": file.size,
+                "size": file.size / 1024,
                 "download_url": file.download_url,
                 "selected": False,
             }
