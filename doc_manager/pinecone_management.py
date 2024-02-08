@@ -31,7 +31,7 @@ def get_pinecone():
     return SingletonPinecone.get_instance()
 
 
-def get_or_create_vectorstore(namespace: str) -> pcvs.VectorStore:
+def get_or_create_vectorstore(namespace: str) -> pcvs:
     """
     Recupera el almacenamiento de vectores para un espacio de nombres dado. Creando un nuevo espacio de nombres si no existe.
 
@@ -39,7 +39,7 @@ def get_or_create_vectorstore(namespace: str) -> pcvs.VectorStore:
         namespace (str): El espacio de nombres del almacenamiento de vectores.
 
     Returns:
-        vectorstore (pcvs.VectorStore): El objeto de almacenamiento de vectores.
+        vectorstore (pcvs): El objeto de almacenamiento de vectores.
     """
     embeddings = OpenAIEmbeddings(openai_api_key=config.OPENAI_API_KEY)
     vectorstore = pcvs.from_existing_index(
