@@ -1,3 +1,4 @@
+import os
 import shutil
 import time
 from typing import Dict
@@ -184,6 +185,10 @@ def split_and_load_files_to_vectorstore(directory_path, namespace: str) -> None:
         return
 
     docs = loader.load()
+    for doc in docs:
+        file_name_with_ext = os.path.basename(doc.metadata["source"])
+        file_name, _ = os.path.splitext(file_name_with_ext)
+        doc.metadata["file_name"] = file_name
 
     time.sleep(1)
     try:
