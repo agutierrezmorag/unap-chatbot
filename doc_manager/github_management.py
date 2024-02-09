@@ -32,7 +32,7 @@ def _get_repo() -> Repository.Repository:
 @st.cache_resource(
     ttl=60 * 60 * 24, show_spinner="Recuperando listado de documentos..."
 )
-def get_repo_documents() -> List[ContentFile]:
+def get_repo_documents(subdirectory: str) -> List[ContentFile]:
     """
     Recupera los documentos del repositorio.
 
@@ -42,7 +42,8 @@ def get_repo_documents() -> List[ContentFile]:
 
     try:
         repo = _get_repo()
-        docs = repo.get_contents(config.REPO_DIRECTORY_PATH, ref=config.REPO_BRANCH)
+        directory_path = f"{config.REPO_DIRECTORY_PATH}/{subdirectory}"
+        docs = repo.get_contents(directory_path, ref=config.REPO_BRANCH)
         cprint(f"Recuperados {len(docs)} documentos del repositorio", "green")
         return docs
     except GithubException as e:
@@ -50,7 +51,7 @@ def get_repo_documents() -> List[ContentFile]:
         return []
 
 
-def get_repo_docs_as_pd() -> pd.DataFrame:
+def get_repo_docs_as_pd(subdirectory: str) -> pd.DataFrame:
     """
     Converts a list of ContentFile objects into a pandas DataFrame.
 
@@ -60,7 +61,7 @@ def get_repo_docs_as_pd() -> pd.DataFrame:
     Returns:
         pd.DataFrame: A DataFrame where each row represents a ContentFile.
     """
-    content_files = get_repo_documents()
+    content_files = get_repo_documents(subdirectory)
     data = []
     for file in content_files:
         data.append(
@@ -109,7 +110,10 @@ def delete_repo_doc(
 
 
 def add_files_to_repo(
-    file_list: List[str], container: DeltaGenerator, progress_bar: DeltaGenerator
+    file_list: List[str],
+    subdirectory: str,
+    container: DeltaGenerator,
+    progress_bar: DeltaGenerator,
 ) -> None:
     """
     Añade una lista de archivos a un repositorio de GitHub.
@@ -130,7 +134,7 @@ def add_files_to_repo(
     progress_bar.progress(0)
     for i, uploaded_file in enumerate(file_list):
         content = uploaded_file.read().decode("utf-8")
-        file_path = f"{config.REPO_DIRECTORY_PATH}/{uploaded_file.name}"
+        file_path = f"{config.REPO_DIRECTORY_PATH}/{subdirectory}/{uploaded_file.name}"
 
         try:
             repo.get_contents(file_path, ref=config.REPO_BRANCH)
@@ -160,7 +164,7 @@ def add_files_to_repo(
     time.sleep(1)
 
 
-def upload_repo_docs(namespace: str = "Reglamentos") -> None:
+def upload_repo_docs(directory_path, file_type, namespace) -> None:
     """
     Carga documentos de un repositorio Git, los divide en fragmentos y los añade a un almacenamiento de vectores.
 
@@ -172,9 +176,9 @@ def upload_repo_docs(namespace: str = "Reglamentos") -> None:
     """
     loader = GitLoader(
         clone_url=config.REPO_URL,
-        repo_path=config.REPO_DIRECTORY_PATH,
+        repo_path=directory_path,
         branch=config.REPO_BRANCH,
-        file_filter=lambda x: x.endswith(".txt"),
+        file_filter=lambda x: x.endswith(f".{file_type}"),
     )
     docs = loader.load()
     cprint(f"Cargados {len(docs)} documentos desde {config.REPO_URL}", "yellow")

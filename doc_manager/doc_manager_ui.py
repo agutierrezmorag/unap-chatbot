@@ -48,7 +48,7 @@ def _doc_list_section():
     container_placeholder = st.empty()
     form = st.form(key="document_list_form", border=False)
 
-    df = get_repo_docs_as_pd()
+    df = get_repo_docs_as_pd("txt")
     if df.empty:
         container_placeholder.warning("No hay documentos en el repositorio.", icon="⚠️")
     else:
@@ -146,7 +146,10 @@ def _doc_list_section():
         if st.button("Subir archivos"):
             if uploaded_files:
                 add_files_to_repo(
-                    uploaded_files, container_placeholder, progress_bar_placeholder
+                    uploaded_files,
+                    "txt",
+                    container_placeholder,
+                    progress_bar_placeholder,
                 )
                 st.session_state.upload_key = str(uuid.uuid4())
                 get_repo_documents.clear()
@@ -263,6 +266,7 @@ def main():
     st.set_page_config(
         page_title="Administrador de Documentos UNAP",
         page_icon="📚",
+        initial_sidebar_state="collapsed",
     )
 
     st.markdown(
