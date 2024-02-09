@@ -14,7 +14,7 @@ from doc_manager.github_management import (
 from doc_manager.pinecone_management import (
     delete_namespace,
     get_index_data,
-    split_and_load_files_to_vectorstore,
+    process_and_load_documents,
 )
 from doc_manager.register import fetch_users
 
@@ -196,7 +196,7 @@ def manage_docs(
             type="primary",
             disabled=df.empty,
         ):
-            split_and_load_files_to_vectorstore(doc_type, register_type)
+            process_and_load_documents(doc_type, register_type)
             st.success(f"{register_type} registrados exitosamente.", icon="✅")
             st.rerun()
 
@@ -243,7 +243,7 @@ def wikipedia():
             use_container_width=True,
             type="primary",
         ):
-            split_and_load_files_to_vectorstore()
+            process_and_load_documents()
             time.sleep(10)
             st.rerun()
     with col2:

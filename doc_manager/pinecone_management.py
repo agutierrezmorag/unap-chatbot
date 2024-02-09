@@ -1,7 +1,7 @@
 import os
 import shutil
 import time
-from typing import Dict
+from typing import Dict, List, Optional, Union
 
 import pinecone
 import streamlit as st
@@ -9,11 +9,13 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import (
     DirectoryLoader,
     GitLoader,
+    NewsURLLoader,
     PyMuPDFLoader,
     TextLoader,
     WikipediaLoader,
 )
 from langchain_community.vectorstores import Pinecone as pcvs
+from langchain_core.documents import Document
 from langchain_openai import OpenAIEmbeddings
 from termcolor import cprint
 
@@ -129,66 +131,104 @@ def delete_all_namespaces() -> None:
     cprint("Todos los namespaces eliminados.", "yellow")
 
 
-def split_and_load_files_to_vectorstore(directory_path, namespace: str) -> None:
+def get_document_loader(
+    namespace: str, path: str
+) -> Optional[Union[DirectoryLoader, WikipediaLoader, NewsURLLoader]]:
     """
-    Divide documentos y los añade a un almacenamiento de vectores.
+    Obtiene el cargador de documentos basado en el namespace especificado.
 
     Args:
-        docs (list): Una lista de documentos a añadir al almacenamiento de vectores.
-        namespace (str): El espacio de nombres en el almacenamiento de vectores para añadir los documentos.
+        namespace (str): El namespace del cargador de documentos.
+        path (str): La ruta al directorio o archivo.
 
-    Throws:
-        Exception: Si hay un error al cargar los documentos en el almacenamiento de vectores.
+    Returns:
+        DocumentLoader: El cargador de documentos basado en el namespace especificado.
+    """
+    loaders = {
+        "Reglamentos": DirectoryLoader(
+            path=path,
+            glob="**/*.txt",
+            loader_cls=TextLoader,
+            loader_kwargs={"autodetect_encoding": True, "encoding": "utf-8"},
+            use_multithreading=True,
+            silent_errors=True,
+        ),
+        "Wikipedia": WikipediaLoader(
+            query="Universidad Arturo Prat",
+            lang="es",
+            load_max_docs=1,
+            load_all_available_meta=True,
+            doc_content_chars_max=20000,
+        ),
+        "Calendarios": DirectoryLoader(
+            path=path,
+            glob="**/*.pdf",
+            loader_cls=PyMuPDFLoader,
+            loader_kwargs={"extract_images": True},
+            use_multithreading=True,
+            silent_errors=True,
+        ),
+        "Noticias": NewsURLLoader(
+            # Add the necessary arguments for NewsURLLoader here
+        ),
+    }
+
+    return loaders.get(namespace)
+
+
+def process_and_load_documents(directory_path: str, namespace: str) -> None:
+    """
+    Procesa y carga documentos desde un directorio a un namespace especificado.
+
+    Args:
+        directory_path (str): La ruta al directorio que contiene los documentos.
+        namespace (str): El namespace donde se cargarán los documentos.
 
     Returns:
         None
     """
-    GitLoader(
-        clone_url=config.REPO_URL,
-        repo_path=config.REPO_DIRECTORY_PATH,
-        branch=config.REPO_BRANCH,
-        file_filter=lambda x: x.endswith(f".{directory_path}"),
-    ).load()
+    if namespace in ["Reglamentos", "Calendarios"]:
+        GitLoader(
+            clone_url=config.REPO_URL,
+            repo_path=config.REPO_DIRECTORY_PATH,
+            branch=config.REPO_BRANCH,
+        ).load()
 
     path = f"{config.REPO_DIRECTORY_PATH}/{config.REPO_DIRECTORY_PATH}/{directory_path}"
 
     try:
-        if namespace == "Reglamentos":
-            loader = DirectoryLoader(
-                path=path,
-                glob="**/*.txt",
-                loader_cls=TextLoader,
-                loader_kwargs={"autodetect_encoding": True, "encoding": "utf-8"},
-                use_multithreading=True,
-                silent_errors=True,
-            )
-        elif namespace == "Wikipedia":
-            loader = WikipediaLoader(
-                query="Universidad Arturo Prat",
-                lang="es",
-                load_max_docs=1,
-                load_all_available_meta=True,
-                doc_content_chars_max=20000,
-            )
-        else:
-            loader = DirectoryLoader(
-                path=path,
-                glob="**/*.pdf",
-                loader_cls=PyMuPDFLoader,
-                loader_kwargs={"extract_images": True},
-                use_multithreading=True,
-                silent_errors=True,
-            )
+        loader = get_document_loader(namespace, path)
+        if loader is None:
+            raise ValueError(f"Namespace no existe en el index: {namespace}")
+        docs = loader.load()
     except FileNotFoundError:
         cprint(f"Error: No se encontraron documentos en {path}", "red")
         st.error("No hay documentos en el directorio seleccionado.", icon="📁")
         return
 
-    docs = loader.load()
-    for doc in docs:
-        file_name_with_ext = os.path.basename(doc.metadata["source"])
-        file_name, _ = os.path.splitext(file_name_with_ext)
-        doc.metadata["file_name"] = file_name
+    split_and_store_documents(docs, namespace, directory_path, path)
+
+
+def split_and_store_documents(
+    docs: List[Document], namespace: str, directory_path: str, path: str
+) -> None:
+    """
+    Divide y almacena documentos en un namespace dado.
+
+    Args:
+        docs (list): Lista de documentos a dividir y almacenar.
+        namespace (str): Namespace donde se almacenarán los documentos.
+        directory_path (str): Ruta al directorio donde se encuentran los documentos.
+        path (str): Ruta a los documentos.
+
+    Returns:
+        None
+    """
+    if namespace == "Reglamentos":
+        for doc in docs:
+            file_name_with_ext = os.path.basename(doc.metadata["source"])
+            file_name, _ = os.path.splitext(file_name_with_ext)
+            doc.metadata["file_name"] = file_name
 
     time.sleep(1)
     try:
