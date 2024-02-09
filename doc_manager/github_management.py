@@ -1,16 +1,12 @@
-import base64
-import os
 import time
 from typing import List
 
 import pandas as pd
 import streamlit as st
 from github import Auth, ContentFile, Github, GithubException, Repository
-from langchain_community.document_loaders import GitLoader
 from streamlit.delta_generator import DeltaGenerator
 from termcolor import cprint
 
-from doc_manager.pinecone_management import split_and_load_documents_to_vectorstore
 from utils import config
 
 
@@ -164,64 +160,3 @@ def add_files_to_repo(
     time.sleep(1)
     progress_bar.progress(1.0, text="Todos los documentos añadidos.")
     time.sleep(1)
-
-
-def get_files_from_repo(directory_path, namespace) -> None:
-    """
-    Carga documentos de un repositorio Git, los divide en fragmentos y los añade a un almacenamiento de vectores.
-
-    Args:
-        namespace (str, opcional): El espacio de nombres en el almacenamiento de vectores para añadir los documentos. Por defecto es "Reglamentos".
-
-    Throws:
-        Exception: Si hay un error al cargar los documentos en el almacenamiento de vectores.
-    """
-    loader = GitLoader(
-        clone_url=config.REPO_URL,
-        repo_path=config.REPO_DIRECTORY_PATH,
-        branch=config.REPO_BRANCH,
-        file_filter=lambda x: x.endswith(f".{directory_path}"),
-    )
-    docs = loader.load()
-    cprint(f"Cargados {len(docs)} documentos desde {config.REPO_URL}", "yellow")
-
-    if namespace == "Reglamentos":
-        split_and_load_documents_to_vectorstore(docs=docs, namespace=namespace)
-    elif namespace == "Calendarios":
-        split_and_load_documents_to_vectorstore(docs=docs, namespace=namespace)
-
-
-def clone_repo(token: str, repo_name: str, branch: str, local_dir: str) -> None:
-    """
-    Clona el contenido de una rama de un repositorio de GitHub en un directorio local.
-
-    Args:
-        token (str): El token de acceso personal de GitHub.
-        repo_name (str): El nombre del repositorio de GitHub.
-        branch (str): La rama del repositorio a clonar.
-        local_dir (str): El directorio local donde se clonará el repositorio.
-
-    Returns:
-        None
-    """
-    # Crea una instancia de Github con el token de acceso
-    g = Github(token)
-
-    # Obtiene el repositorio
-    repo = g.get_repo(repo_name)
-
-    # Obtiene los contenidos de la rama especificada
-    contents = repo.get_contents("", ref=branch)
-
-    while contents:
-        file_content = contents.pop(0)
-        if file_content.type == "dir":
-            contents.extend(repo.get_contents(file_content.path, ref=branch))
-        else:
-            print(f"Descargando {file_content.path}")
-            file_data = base64.b64decode(file_content.content)
-            file_path = os.path.join(local_dir, file_content.path)
-
-            os.makedirs(os.path.dirname(file_path), exist_ok=True)
-            with open(file_path, "wb") as file:
-                file.write(file_data)

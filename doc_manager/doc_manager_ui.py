@@ -8,7 +8,6 @@ from st_pages import show_pages_from_config
 from doc_manager.github_management import (
     add_files_to_repo,
     delete_repo_doc,
-    get_files_from_repo,
     get_repo_docs_as_pd,
     get_repo_documents,
 )
@@ -19,7 +18,6 @@ from doc_manager.pinecone_management import (
     split_and_load_files_to_vectorstore,
 )
 from doc_manager.register import fetch_users
-from doc_manager.wikipedia_management import upload_wikipedia_page
 
 logo_path = "logos/unap_negativo.png"
 
@@ -162,11 +160,50 @@ def manage_docs(
             st.session_state[upload_key] = str(uuid.uuid4())
             st.rerun()
 
-    if st.button(register_button_text, use_container_width=True, type="primary"):
-        split_and_load_files_to_vectorstore(doc_type, register_type)
-        st.success(f"{register_type} registrados exitosamente.", icon="✅")
-        time.sleep(10)
-        st.rerun()
+    st.markdown(
+        "Cuando se presione el botón `Registrar cambios`, los documentos que se hayan subido se procesan y \
+                se integran en la base de conocimientos de la IA. Solo a partir de ese momento, la IA podrá responder \
+                preguntas basándose en la información contenida en estos documentos."
+    )
+    st.info(
+        "Este proceso puede tardar varios minutos. No refresque la página mientras se esté realizando el registro. \
+        Es posible que la IA no responda preguntas mientras se esté realizando el registro.",
+        icon="💡",
+    )
+
+    confirm_dialog = st.empty()
+    save_changes_button = st.empty()
+    delete_mem_button = st.empty()
+    cancel_button = st.empty()
+
+    if st.session_state.get(f"delete_all_{doc_type}"):
+        confirm_dialog.error(
+            f"Esto eliminará **TODA** la memoria de la IA sobre {register_type}. ¿Está seguro de que desea continuar?",
+            icon="❌",
+        )
+        if delete_mem_button.button("Confirmar", key=f"confirm_delete_{doc_type}"):
+            delete_all_namespaces()
+            st.session_state.delete_all_mem = False
+            time.sleep(2)
+            st.rerun()
+        elif cancel_button.button("Cancelar", key=f"cancel_delete_{doc_type}"):
+            st.session_state.delete_all_mem = False
+            st.rerun()
+    else:
+        if save_changes_button.button(
+            register_button_text, use_container_width=True, type="primary"
+        ):
+            split_and_load_files_to_vectorstore(doc_type, register_type)
+            st.success(f"{register_type} registrados exitosamente.", icon="✅")
+            time.sleep(10)
+            st.rerun()
+
+        if delete_mem_button.button(
+            f"Eliminar memoria de la IA sobre {register_type}",
+            use_container_width=True,
+        ):
+            st.session_state.delete_all_mem = True
+            st.rerun()
 
 
 def wikipedia():
@@ -204,7 +241,7 @@ def wikipedia():
             use_container_width=True,
             type="primary",
         ):
-            upload_wikipedia_page()
+            split_and_load_files_to_vectorstore()
             time.sleep(10)
             st.rerun()
     with col2:
@@ -215,53 +252,6 @@ def wikipedia():
         ):
             delete_namespace("Wikipedia")
             time.sleep(4)
-            st.rerun()
-
-
-def save_changes_section():
-    st.markdown(
-        "Cuando se presione el botón `Registrar cambios`, los documentos que se hayan subido se procesan y \
-                se integran en la base de conocimientos de la IA. Solo a partir de ese momento, la IA podrá responder \
-                preguntas basándose en la información contenida en estos documentos."
-    )
-    st.info(
-        "Este proceso puede tardar varios minutos. No refresque la página mientras se esté realizando el registro. \
-        Es posible que la IA no responda preguntas mientras se esté realizando el registro.",
-        icon="💡",
-    )
-
-    confirm_dialog = st.empty()
-    save_changes_button = st.empty()
-    delete_mem_button = st.empty()
-    cancel_button = st.empty()
-
-    if st.session_state.get("delete_all_mem"):
-        confirm_dialog.error(
-            "Esto eliminará **TODA** la memoria de la IA. ¿Está seguro de que desea continuar?",
-            icon="❌",
-        )
-        if delete_mem_button.button("Confirmar"):
-            delete_all_namespaces()
-            st.session_state.delete_all_mem = False
-            time.sleep(2)
-            st.rerun()
-        elif cancel_button.button("Cancelar"):
-            st.session_state.delete_all_mem = False
-            st.rerun()
-    else:
-        if save_changes_button.button(
-            "Registrar cambios", use_container_width=True, type="primary"
-        ):
-            get_files_from_repo("txt", "Reglamentos")
-            st.success("Cambios registrados exitosamente.", icon="✅")
-            time.sleep(10)
-            st.rerun()
-
-        if delete_mem_button.button(
-            "Eliminar memoria de la IA",
-            use_container_width=True,
-        ):
-            st.session_state.delete_all_mem = True
             st.rerun()
 
 

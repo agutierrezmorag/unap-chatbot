@@ -8,6 +8,7 @@ from langchain_community.document_loaders import (
     GitLoader,
     PyMuPDFLoader,
     TextLoader,
+    WikipediaLoader,
 )
 from langchain_community.vectorstores import Pinecone as pcvs
 from langchain_openai import OpenAIEmbeddings
@@ -147,9 +148,8 @@ def split_and_load_files_to_vectorstore(directory_path, namespace: str) -> None:
     ).load()
 
     path = f"{config.REPO_DIRECTORY_PATH}/{config.REPO_DIRECTORY_PATH}/{directory_path}"
-    print(path)
-    if namespace != "Calendarios":
-        dir_loader = DirectoryLoader(
+    if namespace == "Reglamentos":
+        loader = DirectoryLoader(
             path=path,
             glob="**/*.txt",
             loader_cls=TextLoader,
@@ -157,8 +157,16 @@ def split_and_load_files_to_vectorstore(directory_path, namespace: str) -> None:
             use_multithreading=True,
             silent_errors=True,
         )
+    elif namespace == "Wikipedia":
+        loader = WikipediaLoader(
+            query="Universidad Arturo Prat",
+            lang="es",
+            load_max_docs=1,
+            load_all_available_meta=True,
+            doc_content_chars_max=20000,
+        )
     else:
-        dir_loader = DirectoryLoader(
+        loader = DirectoryLoader(
             path=path,
             glob="**/*.pdf",
             loader_cls=PyMuPDFLoader,
@@ -167,10 +175,10 @@ def split_and_load_files_to_vectorstore(directory_path, namespace: str) -> None:
             silent_errors=True,
         )
 
-    docs = dir_loader.load()
+    docs = loader.load()
 
     cprint(
-        f"Cargados {len(docs)} documentos {directory_path} desde {config.REPO_URL}",
+        f"Cargados {len(docs)} documentos {directory_path} desde {path}",
         "blue",
     )
 
