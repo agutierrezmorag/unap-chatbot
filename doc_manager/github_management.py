@@ -1,3 +1,5 @@
+import base64
+import os
 import time
 from typing import List
 
@@ -164,7 +166,7 @@ def add_files_to_repo(
     time.sleep(1)
 
 
-def upload_files_to_repo(directory_path, namespace) -> None:
+def get_files_from_repo(directory_path, namespace) -> None:
     """
     Carga documentos de un repositorio Git, los divide en fragmentos y los añade a un almacenamiento de vectores.
 
@@ -176,11 +178,50 @@ def upload_files_to_repo(directory_path, namespace) -> None:
     """
     loader = GitLoader(
         clone_url=config.REPO_URL,
-        repo_path=directory_path,
+        repo_path=config.REPO_DIRECTORY_PATH,
         branch=config.REPO_BRANCH,
         file_filter=lambda x: x.endswith(f".{directory_path}"),
     )
     docs = loader.load()
     cprint(f"Cargados {len(docs)} documentos desde {config.REPO_URL}", "yellow")
 
-    split_and_load_documents_to_vectorstore(docs=docs, namespace=namespace)
+    if namespace == "Reglamentos":
+        split_and_load_documents_to_vectorstore(docs=docs, namespace=namespace)
+    elif namespace == "Calendarios":
+        split_and_load_documents_to_vectorstore(docs=docs, namespace=namespace)
+
+
+def clone_repo(token: str, repo_name: str, branch: str, local_dir: str) -> None:
+    """
+    Clona el contenido de una rama de un repositorio de GitHub en un directorio local.
+
+    Args:
+        token (str): El token de acceso personal de GitHub.
+        repo_name (str): El nombre del repositorio de GitHub.
+        branch (str): La rama del repositorio a clonar.
+        local_dir (str): El directorio local donde se clonará el repositorio.
+
+    Returns:
+        None
+    """
+    # Crea una instancia de Github con el token de acceso
+    g = Github(token)
+
+    # Obtiene el repositorio
+    repo = g.get_repo(repo_name)
+
+    # Obtiene los contenidos de la rama especificada
+    contents = repo.get_contents("", ref=branch)
+
+    while contents:
+        file_content = contents.pop(0)
+        if file_content.type == "dir":
+            contents.extend(repo.get_contents(file_content.path, ref=branch))
+        else:
+            print(f"Descargando {file_content.path}")
+            file_data = base64.b64decode(file_content.content)
+            file_path = os.path.join(local_dir, file_content.path)
+
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+            with open(file_path, "wb") as file:
+                file.write(file_data)

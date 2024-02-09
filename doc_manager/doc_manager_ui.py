@@ -8,14 +8,15 @@ from st_pages import show_pages_from_config
 from doc_manager.github_management import (
     add_files_to_repo,
     delete_repo_doc,
+    get_files_from_repo,
     get_repo_docs_as_pd,
     get_repo_documents,
-    upload_files_to_repo,
 )
 from doc_manager.pinecone_management import (
     delete_all_namespaces,
     delete_namespace,
     get_index_data,
+    split_and_load_documents_to_vectorstore,
 )
 from doc_manager.register import fetch_users
 from doc_manager.wikipedia_management import upload_wikipedia_page
@@ -287,7 +288,7 @@ def _calendar_list_section():
     )
 
     if st.button("Registrar calendarios", use_container_width=True, type="primary"):
-        upload_files_to_repo("pdf", "Calendarios")
+        split_and_load_documents_to_vectorstore("pdf", "Calendarios")
         st.success("Calendarios registrados exitosamente.", icon="✅")
         time.sleep(10)
         st.rerun()
@@ -376,7 +377,7 @@ def save_changes_section():
         if save_changes_button.button(
             "Registrar cambios", use_container_width=True, type="primary"
         ):
-            upload_files_to_repo("txt", "Reglamentos")
+            get_files_from_repo("txt", "Reglamentos")
             st.success("Cambios registrados exitosamente.", icon="✅")
             time.sleep(10)
             st.rerun()

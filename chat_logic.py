@@ -176,11 +176,12 @@ Eres un asistente que ayuda a estudiantes a responder dudas sobre la Universidad
 Tienes a tu disposición dos herramientas:
 1. Una para buscar reglamentos de la Universidad Arturo Prat.
 2. Otra para buscar información general sobre la universidad Arturo Prat.
+3. Otra para buscar información sobre el calendario de la Universidad Arturo Prat.
 
 Sigue estos pasos:
 - Primero, utiliza la herramienta de búsqueda de documentos para encontrar informacion relevante para la pregunta.
 - Utiliza el contenido de estos documentos para responder la pregunta.
-- Si no puedes encontrar la respuesta en los documentos o necesitas información adicional, utiliza la herramienta de búsqueda de información general.
+- Si no puedes encontrar la respuesta en los documentos o necesitas información adicional, utiliza la herramienta de búsqueda de información general o de calendario.
 - Utiliza toda la información reunida hasta ahora para responder la pregunta.
 - Si luego de todos estos pasos aun no puedes responder la pregunta, responde indicando que no sabes la respuesta.
 
@@ -220,8 +221,13 @@ Respuesta:
         "search_general_info_unap",
         "Busca y devuelve información general sobre la Universidad Arturo Prat. Utilízalo para encontrar información que no esté en los reglamentos.",
     )
+    calendar_retriever_tool = create_retriever_tool(
+        get_agent_retriever(namespace="Calendarios"),
+        "search_unap_calendar",
+        "Busca y devuelve información sobre el calendario de la Universidad Arturo Prat. Utilízalo para encontrar información sobre fechas importantes.",
+    )
 
-    tools = [doc_retriever_tool, wikipedia_retriever_tool]
+    tools = [doc_retriever_tool, wikipedia_retriever_tool, calendar_retriever_tool]
 
     agent = create_openai_tools_agent(get_llm(), tools, prompt)
     agent_executor = AgentExecutor(

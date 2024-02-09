@@ -1,7 +1,12 @@
-from typing import Dict, List
+from typing import Dict
 
 import pinecone
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_community.document_loaders import (
+    DirectoryLoader,
+    GitLoader,
+    PyMuPDFLoader,
+)
 from langchain_community.vectorstores import Pinecone as pcvs
 from langchain_openai import OpenAIEmbeddings
 from termcolor import cprint
@@ -118,7 +123,7 @@ def delete_all_namespaces() -> None:
     cprint("Todos los namespaces eliminados.", "yellow")
 
 
-def split_and_load_documents_to_vectorstore(docs: List[str], namespace: str) -> None:
+def split_and_load_documents_to_vectorstore(directory_path, namespace: str) -> None:
     """
     Divide documentos y los añade a un almacenamiento de vectores.
 
@@ -132,6 +137,31 @@ def split_and_load_documents_to_vectorstore(docs: List[str], namespace: str) -> 
     Returns:
         None
     """
+    loader = GitLoader(
+        clone_url=config.REPO_URL,
+        repo_path=config.REPO_DIRECTORY_PATH,
+        branch=config.REPO_BRANCH,
+        file_filter=lambda x: x.endswith(f".{directory_path}"),
+    ).load()
+    if namespace != "Calendarios":
+        docs = loader.load()
+    else:
+        path = f"{config.REPO_DIRECTORY_PATH}/{config.REPO_DIRECTORY_PATH}/{directory_path}"
+        dir_loader = DirectoryLoader(
+            path=path,
+            glob="**/*.pdf",
+            loader_cls=PyMuPDFLoader,
+            loader_kwargs={"extract_images": True},
+            use_multithreading=True,
+            silent_errors=True,
+        )
+        docs = dir_loader.load()
+
+    cprint(
+        f"Cargados {len(docs)} documentos {directory_path} desde {config.REPO_URL}",
+        "blue",
+    )
+
     splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
     split_docs = splitter.split_documents(docs)
 
