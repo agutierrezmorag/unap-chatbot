@@ -161,9 +161,9 @@ def manage_docs(
             st.rerun()
 
     st.markdown(
-        "Cuando se presione el botón `Registrar cambios`, los documentos que se hayan subido se procesan y \
-                se integran en la base de conocimientos de la IA. Solo a partir de ese momento, la IA podrá responder \
-                preguntas basándose en la información contenida en estos documentos."
+        "Presione el botón `Registrar cambios` después de subir o eliminar documentos. "
+        "Este paso procesa los documentos y los integra en la base de conocimientos de la IA. "
+        "Una vez hecho esto, la IA podrá responder preguntas utilizando la información de estos documentos."
     )
     st.info(
         "Este proceso puede tardar varios minutos. No refresque la página mientras se esté realizando el registro. \
