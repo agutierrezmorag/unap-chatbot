@@ -10,7 +10,7 @@ from doc_manager.github_management import (
     delete_repo_doc,
     get_repo_docs_as_pd,
     get_repo_documents,
-    upload_repo_docs,
+    upload_files_to_repo,
 )
 from doc_manager.pinecone_management import (
     delete_all_namespaces,
@@ -286,6 +286,12 @@ def _calendar_list_section():
         icon="📢",
     )
 
+    if st.button("Registrar calendarios", use_container_width=True, type="primary"):
+        upload_files_to_repo("pdf", "Calendarios")
+        st.success("Calendarios registrados exitosamente.", icon="✅")
+        time.sleep(10)
+        st.rerun()
+
 
 def _wikipedia_section():
     st.markdown(
@@ -370,7 +376,7 @@ def save_changes_section():
         if save_changes_button.button(
             "Registrar cambios", use_container_width=True, type="primary"
         ):
-            upload_repo_docs()
+            upload_files_to_repo("txt", "Reglamentos")
             st.success("Cambios registrados exitosamente.", icon="✅")
             time.sleep(10)
             st.rerun()

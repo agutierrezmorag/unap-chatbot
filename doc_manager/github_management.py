@@ -164,7 +164,7 @@ def add_files_to_repo(
     time.sleep(1)
 
 
-def upload_repo_docs(directory_path, file_type, namespace) -> None:
+def upload_files_to_repo(directory_path, namespace) -> None:
     """
     Carga documentos de un repositorio Git, los divide en fragmentos y los añade a un almacenamiento de vectores.
 
@@ -178,7 +178,7 @@ def upload_repo_docs(directory_path, file_type, namespace) -> None:
         clone_url=config.REPO_URL,
         repo_path=directory_path,
         branch=config.REPO_BRANCH,
-        file_filter=lambda x: x.endswith(f".{file_type}"),
+        file_filter=lambda x: x.endswith(f".{directory_path}"),
     )
     docs = loader.load()
     cprint(f"Cargados {len(docs)} documentos desde {config.REPO_URL}", "yellow")
