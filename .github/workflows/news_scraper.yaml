@@ -1,0 +1,25 @@
+name: Weekly News Update
+
+on:
+  schedule:
+    - cron: '0 0 * * 0'  # Run this workflow every Sunday at midnight
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Update news
+      run: python news_scraper.py
