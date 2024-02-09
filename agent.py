@@ -67,9 +67,9 @@ async def agent_answer(prompt, agent_thoughts_placeholder, response_placeholder)
                         full_output += output
                         agent_thoughts_placeholder.text_area(
                             "Contexto",
-                            help="La IA utiliza este contexto para generar la respuesta. Este texto proviene de los reglamentos y la información general de la universidad. \
-                            Si es necesario, puedes reformular tu pregunta para obtener una mejor respuesta",
-                            value=full_output + "▌",
+                            help="La IA utiliza este contexto para generar la respuesta. \
+                                Este texto proviene de una variedad de reglamentos y documentos generales de la universidad.",
+                            value=full_output,
                             disabled=True,
                         )
 
