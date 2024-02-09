@@ -9,7 +9,11 @@ from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain.retrievers import EnsembleRetriever
 from langchain.tools.retriever import create_retriever_tool
 from langchain_community.vectorstores import Pinecone as pcvs
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.prompts import (
+    ChatPromptTemplate,
+    MessagesPlaceholder,
+    PromptTemplate,
+)
 from langchain_core.runnables import ConfigurableField
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langsmith import Client
@@ -182,11 +186,10 @@ Sigue estos pasos:
 
 Considera lo siguiente:
 - Siempre responde de forma formal, amigable y conversacional. Si el usuario te saluda, responde adecuadamente.
-- Cuando respondas segun los documentos de reglamentos, cita el documento y el número de artículo. Si no sabes el numero de articulo, no cites.
-- No realices citas para la información general, solo para los documentos de reglamentos.
+- No repitas texto en tu respuesta. Si ya has mencionado algo, no lo vuelvas a mencionar.
 - Ignora las preguntas que no sean relevantes para los documentos o el historial de conversación.
 
-Genera tu respuesta en formato Markdown y utiliza notas al pie para las referencias.
+Genera tu respuesta en formato Markdown.
 
 Pregunta: {question}
 Respuesta:
@@ -204,10 +207,15 @@ Respuesta:
         ]
     )
 
+    document_prompt = PromptTemplate.from_template(
+        "Nombre documento: {file_name} \nContenido: {page_content}"
+    )
+
     doc_retriever_tool = create_retriever_tool(
         get_agent_retriever(namespace="Reglamentos"),
         "search_unap_documents",
         "Busca y devuelve información sobre los reglamentos de la Universidad Arturo Prat. Utilízalo para encontrar información relevante para dar respuesta a la pregunta.",
+        document_prompt=document_prompt,
     )
     wikipedia_retriever_tool = create_retriever_tool(
         get_agent_retriever(namespace="Wikipedia"),
