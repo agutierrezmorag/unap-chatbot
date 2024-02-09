@@ -7,8 +7,3 @@ icon = "🤖"
 path = "doc_manager/doc_manager_ui.py"
 name = "Administracion"
 icon = "👷‍♂️"
-
-[[pages]]
-path = "services_check.py"
-name = "Servicios"
-icon = "💻"
