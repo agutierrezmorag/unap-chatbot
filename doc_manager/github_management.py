@@ -133,7 +133,7 @@ def add_files_to_repo(
 
     progress_bar.progress(0)
     for i, uploaded_file in enumerate(file_list):
-        content = uploaded_file.read().decode("utf-8")
+        content = uploaded_file.getvalue()
         file_path = f"{config.REPO_DIRECTORY_PATH}/{subdirectory}/{uploaded_file.name}"
 
         try:

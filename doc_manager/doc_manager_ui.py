@@ -40,10 +40,6 @@ def _general_info_section():
 
 
 def _doc_list_section():
-    st.markdown(
-        "Listado de documentos presentes en el repositorio. Es posible seleccionar uno o más documentos para eliminarlos."
-    )
-
     progress_bar_placeholder = st.empty()
     container_placeholder = st.empty()
     form = st.form(key="document_list_form", border=False)
@@ -157,6 +153,131 @@ def _doc_list_section():
 
         if st.button("Limpiar"):
             st.session_state.upload_key = str(uuid.uuid4())
+            st.rerun()
+
+    st.info(
+        "**Importante**: La IA solo sera consciente de que ha habido modificaciones "
+        "en los documentos una vez se [registren los cambios](#Registro).",
+        icon="📢",
+    )
+
+
+def _calendar_list_section():
+    progress_bar_placeholder = st.empty()
+    container_placeholder = st.empty()
+    form = st.form(key="calendar_list_form", border=False)
+
+    df = get_repo_docs_as_pd("pdf")
+    if df.empty:
+        container_placeholder.warning("No hay documentos en el repositorio.", icon="⚠️")
+    else:
+        with form:
+            st.data_editor(
+                df,
+                key="calendar_list_df",
+                hide_index=True,
+                use_container_width=True,
+                column_order=["selected", "name", "html_url", "download_url", "size"],
+                column_config={
+                    "selected": st.column_config.CheckboxColumn(
+                        "Seleccionar",
+                        width="small",
+                    ),
+                    "name": st.column_config.TextColumn(
+                        "📄 Nombre",
+                        width="medium",
+                    ),
+                    "html_url": st.column_config.LinkColumn(
+                        "🔗 URL",
+                        display_text="Ver en GitHub",
+                        width="small",
+                    ),
+                    "download_url": st.column_config.LinkColumn(
+                        "⬇️ Descarga",
+                        display_text="Descargar",
+                        width="small",
+                    ),
+                    "size": st.column_config.NumberColumn(
+                        "📏 Tamaño (Kb)",
+                        format="%.1f",
+                        width="small",
+                    ),
+                },
+                disabled=["name", "html_url", "download_url", "size"],
+            )
+        selected_rows = st.session_state.calendar_list_df["edited_rows"]
+
+    confirm_dialog = st.empty()
+    action_button = st.empty()
+
+    action_button = form.form_submit_button(
+        "Eliminar calendarios seleccionados",
+        use_container_width=True,
+        disabled=df.empty,
+    )
+
+    bcol1, bcol2 = st.columns(2)
+    with bcol1:
+        confirm_button = st.empty()
+    with bcol2:
+        cancel_button = st.empty()
+
+    if st.session_state.get("delete_selected_calendars"):
+        confirm_dialog.warning(
+            "¿Seguro que desea eliminar los documentos seleccionados?",
+            icon="⚠️",
+        )
+        if confirm_button.button(
+            "Confirmarr", use_container_width=True, type="primary"
+        ):
+            for index in selected_rows:
+                doc_name = df.loc[index, "name"]
+                doc_path = df.loc[index, "path"]
+                if delete_repo_doc(doc_path):
+                    st.toast(
+                        f"Documento '{doc_name}' eliminado.",
+                        icon="⚠️",
+                    )
+            get_repo_documents.clear()
+            st.session_state.delete_selected_calendars = False
+            time.sleep(1)
+            st.rerun()
+        elif cancel_button.button("Cancelarr", use_container_width=True):
+            st.session_state.delete_selected_calendars = False
+            st.rerun()
+    elif action_button:
+        if selected_rows:
+            st.session_state.delete_selected_calendars = True
+            st.rerun()
+        else:
+            confirm_dialog.error(
+                "No se ha seleccionado ningún documento para eliminar.",
+                icon="❌",
+            )
+
+    uploaded_files = st.file_uploader(
+        "Sube un nuevo calendario",
+        type="pdf",
+        accept_multiple_files=True,
+        help="Selecciona uno o más archivos. Solo se permiten PDF.",
+        key=st.session_state.calendar_upload_key,
+    )
+
+    if uploaded_files:
+        if st.button("Subir calendarios"):
+            if uploaded_files:
+                add_files_to_repo(
+                    uploaded_files,
+                    "pdf",
+                    container_placeholder,
+                    progress_bar_placeholder,
+                )
+                st.session_state.calendar_upload_key = str(uuid.uuid4())
+                get_repo_documents.clear()
+                st.rerun()
+
+        if st.button("Limpiar"):
+            st.session_state.calendar_upload_key = str(uuid.uuid4())
             st.rerun()
 
     st.info(
@@ -291,6 +412,8 @@ def main():
 
     if "upload_key" not in st.session_state:
         st.session_state.upload_key = str(uuid.uuid4())
+    if "calendar_upload_key" not in st.session_state:
+        st.session_state.calendar_upload_key = str(uuid.uuid4())
     if "delete_selected" not in st.session_state:
         st.session_state.delete_selected = False
 
@@ -347,7 +470,13 @@ def main():
             _general_info_section()
 
             st.header("🗃️ Documentos en el repositorio", divider=True)
+            st.markdown(
+                "Listado de documentos presentes en el repositorio. Es posible seleccionar uno o más documentos para eliminarlos."
+            )
             _doc_list_section()
+
+            st.header("🗃️ Calendarios", divider=True)
+            _calendar_list_section()
 
             st.header("🌐 Wikipedia", divider=True)
             _wikipedia_section()
