@@ -1,7 +1,9 @@
 import shutil
+import time
 from typing import Dict
 
 import pinecone
+import streamlit as st
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import (
     DirectoryLoader,
@@ -148,34 +150,52 @@ def split_and_load_files_to_vectorstore(directory_path, namespace: str) -> None:
     ).load()
 
     path = f"{config.REPO_DIRECTORY_PATH}/{config.REPO_DIRECTORY_PATH}/{directory_path}"
-    if namespace == "Reglamentos":
-        loader = DirectoryLoader(
-            path=path,
-            glob="**/*.txt",
-            loader_cls=TextLoader,
-            loader_kwargs={"autodetect_encoding": True, "encoding": "utf-8"},
-            use_multithreading=True,
-            silent_errors=True,
-        )
-    elif namespace == "Wikipedia":
-        loader = WikipediaLoader(
-            query="Universidad Arturo Prat",
-            lang="es",
-            load_max_docs=1,
-            load_all_available_meta=True,
-            doc_content_chars_max=20000,
-        )
-    else:
-        loader = DirectoryLoader(
-            path=path,
-            glob="**/*.pdf",
-            loader_cls=PyMuPDFLoader,
-            loader_kwargs={"extract_images": True},
-            use_multithreading=True,
-            silent_errors=True,
-        )
+
+    try:
+        if namespace == "Reglamentos":
+            loader = DirectoryLoader(
+                path=path,
+                glob="**/*.txt",
+                loader_cls=TextLoader,
+                loader_kwargs={"autodetect_encoding": True, "encoding": "utf-8"},
+                use_multithreading=True,
+                silent_errors=True,
+            )
+        elif namespace == "Wikipedia":
+            loader = WikipediaLoader(
+                query="Universidad Arturo Prat",
+                lang="es",
+                load_max_docs=1,
+                load_all_available_meta=True,
+                doc_content_chars_max=20000,
+            )
+        else:
+            loader = DirectoryLoader(
+                path=path,
+                glob="**/*.pdf",
+                loader_cls=PyMuPDFLoader,
+                loader_kwargs={"extract_images": True},
+                use_multithreading=True,
+                silent_errors=True,
+            )
+    except FileNotFoundError:
+        cprint(f"Error: No se encontraron documentos en {path}", "red")
+        st.error("No hay documentos en el directorio seleccionado.", icon="📁")
+        return
 
     docs = loader.load()
+
+    time.sleep(1)
+    try:
+        shutil.rmtree(config.REPO_DIRECTORY_PATH)
+        cprint("Archivos residuales eliminados.", "blue")
+    except PermissionError:
+        cprint(
+            "Error: No se tienen los permisos necesarios para eliminar el directorio.",
+            "red",
+        )
+    except Exception as e:
+        cprint(f"Error: {e}", "red")
 
     cprint(
         f"Cargados {len(docs)} documentos {directory_path} desde {path}",
@@ -203,6 +223,3 @@ def split_and_load_files_to_vectorstore(directory_path, namespace: str) -> None:
             f"Hubo un error al intentar añadir el contenido al vector store: {e}",
             "red",
         )
-
-    shutil.rmtree(config.REPO_DIRECTORY_PATH)
-    cprint("Archivos residuales eliminados.", "blue")

@@ -12,7 +12,6 @@ from doc_manager.github_management import (
     get_repo_documents,
 )
 from doc_manager.pinecone_management import (
-    delete_all_namespaces,
     delete_namespace,
     get_index_data,
     split_and_load_files_to_vectorstore,
@@ -41,7 +40,8 @@ def general_info():
 def manage_docs(
     doc_type: str,
     upload_key: str,
-    delete_key: str,
+    delete_doc_key: str,
+    delete_mem_key: str,
     register_button_text: str,
     register_type: str,
 ):
@@ -104,7 +104,7 @@ def manage_docs(
     with bcol2:
         cancel_button = st.empty()
 
-    if st.session_state.get(delete_key):
+    if st.session_state.get(delete_doc_key):
         confirm_dialog.warning(
             "¿Seguro que desea eliminar los documentos seleccionados?",
             icon="⚠️",
@@ -119,15 +119,15 @@ def manage_docs(
                         icon="⚠️",
                     )
             get_repo_documents.clear()
-            st.session_state[delete_key] = False
+            st.session_state[delete_doc_key] = False
             time.sleep(1)
             st.rerun()
         elif cancel_button.button("Cancelar", use_container_width=True):
-            st.session_state[delete_key] = False
+            st.session_state[delete_doc_key] = False
             st.rerun()
     elif action_button:
         if selected_rows:
-            st.session_state[delete_key] = True
+            st.session_state[delete_doc_key] = True
             st.rerun()
         else:
             confirm_dialog.error(
@@ -176,33 +176,35 @@ def manage_docs(
     delete_mem_button = st.empty()
     cancel_button = st.empty()
 
-    if st.session_state.get(f"delete_all_{doc_type}"):
+    if st.session_state.get(delete_mem_key):
         confirm_dialog.error(
             f"Esto eliminará **TODA** la memoria de la IA sobre {register_type}. ¿Está seguro de que desea continuar?",
             icon="❌",
         )
         if delete_mem_button.button("Confirmar", key=f"confirm_delete_{doc_type}"):
-            delete_all_namespaces()
-            st.session_state.delete_all_mem = False
-            time.sleep(2)
+            delete_namespace(register_type)
+            st.toast("Memoria eliminada.", icon="⚠️")
+            st.session_state[delete_mem_key] = False
             st.rerun()
         elif cancel_button.button("Cancelar", key=f"cancel_delete_{doc_type}"):
-            st.session_state.delete_all_mem = False
+            st.session_state[delete_mem_key] = False
             st.rerun()
     else:
         if save_changes_button.button(
-            register_button_text, use_container_width=True, type="primary"
+            register_button_text,
+            use_container_width=True,
+            type="primary",
+            disabled=df.empty,
         ):
             split_and_load_files_to_vectorstore(doc_type, register_type)
             st.success(f"{register_type} registrados exitosamente.", icon="✅")
-            time.sleep(10)
             st.rerun()
 
         if delete_mem_button.button(
             f"Eliminar memoria de la IA sobre {register_type}",
             use_container_width=True,
         ):
-            st.session_state.delete_all_mem = True
+            st.session_state[delete_mem_key] = True
             st.rerun()
 
 
@@ -286,8 +288,10 @@ def main():
         st.session_state.upload_key = str(uuid.uuid4())
     if "calendar_upload_key" not in st.session_state:
         st.session_state.calendar_upload_key = str(uuid.uuid4())
-    if "delete_selected" not in st.session_state:
-        st.session_state.delete_selected = False
+    if "delete_txt_key" not in st.session_state:
+        st.session_state.delete_txt_key = False
+    if "delete_pdf_key" not in st.session_state:
+        st.session_state.delete_pdf_key = False
 
     try:
         users = fetch_users()
@@ -348,6 +352,7 @@ def main():
                 manage_docs(
                     "txt",
                     "upload_key",
+                    "delete_txt_key",
                     "delete_selected_docs",
                     "Registrar reglamentos",
                     "Reglamentos",
@@ -358,6 +363,7 @@ def main():
                 manage_docs(
                     "pdf",
                     "calendar_upload_key",
+                    "delete_pdf_key,",
                     "delete_selected_calendars",
                     "Registrar calendarios",
                     "Calendarios",
