@@ -223,7 +223,7 @@ Respuesta:
     )
     calendar_retriever_tool = create_retriever_tool(
         get_agent_retriever(namespace="Calendarios"),
-        "search_unap_calendar",
+        "check_unap_calendar",
         "Busca y devuelve información sobre el calendario de la Universidad Arturo Prat. Utilízalo para encontrar información sobre fechas importantes.",
     )
 
