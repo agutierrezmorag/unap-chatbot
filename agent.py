@@ -35,7 +35,7 @@ async def agent_answer(prompt, agent_thoughts_placeholder, response_placeholder)
                 kind = event["event"]
                 if kind == "on_chain_end":
                     if event["name"] == "Agent":
-                        time.sleep(0.5)
+                        time.sleep(1)
                         agent_thoughts_placeholder.update(
                             label="🤗 Respuesta generada.",
                             expanded=False,
