@@ -186,10 +186,8 @@ Sigue estos pasos:
 
 Considera lo siguiente:
 - Siempre responde de forma formal, amigable y conversacional. Si el usuario te saluda, responde adecuadamente.
-- No repitas texto en tu respuesta. Si ya has mencionado algo, no lo vuelvas a mencionar.
 - Ignora las preguntas que no sean relevantes para los documentos o el historial de conversación.
-
-Genera tu respuesta en formato Markdown.
+- Genera tu respuesta en formato Markdown.
 
 Pregunta: {question}
 Respuesta:
