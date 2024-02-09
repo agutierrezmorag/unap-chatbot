@@ -2,9 +2,12 @@ import os
 import shutil
 import time
 from typing import Dict, List, Optional, Union
+from urllib.parse import urljoin
 
 import pinecone
+import requests
 import streamlit as st
+from bs4 import BeautifulSoup
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import (
     DirectoryLoader,
@@ -131,8 +134,28 @@ def delete_all_namespaces() -> None:
     cprint("Todos los namespaces eliminados.", "yellow")
 
 
+def get_article_urls(index_url: str) -> List[str]:
+    """
+    Extrae las URLs de los artículos de noticias de la página de índice.
+
+    Args:
+        index_url (str): La URL de la página de índice de noticias.
+
+    Returns:
+        List[str]: Una lista de URLs de los artículos de noticias.
+    """
+    response = requests.get(index_url)
+    soup = BeautifulSoup(response.text, "html.parser")
+
+    article_links = soup.select(".uap-port-tit a")
+
+    article_urls = [urljoin(index_url, link.get("href")) for link in article_links]
+
+    return article_urls
+
+
 def get_document_loader(
-    namespace: str, path: str
+    namespace: str, path: str, index_url: str = None
 ) -> Optional[Union[DirectoryLoader, WikipediaLoader, NewsURLLoader]]:
     """
     Obtiene el cargador de documentos basado en el namespace especificado.
@@ -140,6 +163,7 @@ def get_document_loader(
     Args:
         namespace (str): El namespace del cargador de documentos.
         path (str): La ruta al directorio o archivo.
+        index_url (str): The URL of the news index page. Default is None.
 
     Returns:
         DocumentLoader: El cargador de documentos basado en el namespace especificado.
@@ -169,20 +193,23 @@ def get_document_loader(
             silent_errors=True,
         ),
         "Noticias": NewsURLLoader(
-            # Add the necessary arguments for NewsURLLoader here
+            urls=get_article_urls(index_url),
         ),
     }
 
     return loaders.get(namespace)
 
 
-def process_and_load_documents(directory_path: str, namespace: str) -> None:
+def process_and_load_documents(
+    directory_path: str, namespace: str, index_url: str = None
+) -> None:
     """
     Procesa y carga documentos desde un directorio a un namespace especificado.
 
     Args:
         directory_path (str): La ruta al directorio que contiene los documentos.
         namespace (str): El namespace donde se cargarán los documentos.
+        index_url (str): The URL of the news index page. Default is None.
 
     Returns:
         None
@@ -197,7 +224,7 @@ def process_and_load_documents(directory_path: str, namespace: str) -> None:
     path = f"{config.REPO_DIRECTORY_PATH}/{config.REPO_DIRECTORY_PATH}/{directory_path}"
 
     try:
-        loader = get_document_loader(namespace, path)
+        loader = get_document_loader(namespace, path, index_url)
         if loader is None:
             raise ValueError(f"Namespace no existe en el index: {namespace}")
         docs = loader.load()
@@ -231,16 +258,17 @@ def split_and_store_documents(
             doc.metadata["file_name"] = file_name
 
     time.sleep(1)
-    try:
-        shutil.rmtree(config.REPO_DIRECTORY_PATH)
-        cprint("Archivos residuales eliminados.", "blue")
-    except PermissionError:
-        cprint(
-            "Error: No se tienen los permisos necesarios para eliminar el directorio.",
-            "red",
-        )
-    except Exception as e:
-        cprint(f"Error: {e}", "red")
+    if namespace in ["Reglamentos", "Calendarios"]:
+        try:
+            shutil.rmtree(config.REPO_DIRECTORY_PATH)
+            cprint("Archivos residuales eliminados.", "blue")
+        except PermissionError:
+            cprint(
+                "Error: No se tienen los permisos necesarios para eliminar el directorio.",
+                "red",
+            )
+        except Exception as e:
+            cprint(f"Error: {e}", "red")
 
     cprint(
         f"Cargados {len(docs)} documentos {directory_path} desde {path}",
