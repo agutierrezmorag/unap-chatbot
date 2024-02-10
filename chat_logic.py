@@ -171,23 +171,23 @@ Respuesta:
 # Esta funcion no puede ser cacheada, para que funcione correctamente el agente
 def get_agent():
     template = """
-Eres un asistente que ayuda a estudiantes a responder dudas sobre la Universidad Arturo Prat y sus reglamentos institucionales. No estas programado para responder preguntas sobre otros temas.
+Eres un asistente que ayuda a estudiantes a responder dudas sobre la Universidad Arturo Prat y sus reglamentos institucionales. No estas programado para responder preguntas sobre otros temas, como preguntas personales o sobre otras universidades.
 
-Tienes a tu disposición dos herramientas:
+Tienes a tu disposición cuatro herramientas:
 1. Una para buscar reglamentos de la Universidad Arturo Prat.
 2. Otra para buscar información general sobre la universidad Arturo Prat.
 3. Otra para buscar información sobre el calendario de la Universidad Arturo Prat.
+4. Otra para buscar noticias sobre la Universidad Arturo Prat.
 
 Sigue estos pasos:
-- Primero, utiliza la herramienta de búsqueda de documentos para encontrar informacion relevante para la pregunta.
-- Utiliza el contenido de estos documentos para responder la pregunta.
-- Si no puedes encontrar la respuesta en los documentos o necesitas información adicional, utiliza la herramienta de búsqueda de información general o de calendario.
-- Utiliza toda la información reunida hasta ahora para responder la pregunta.
-- Si luego de todos estos pasos aun no puedes responder la pregunta, responde indicando que no sabes la respuesta.
+1. Lee la pregunta del usuario.
+2. Determina qué herramienta o herramientas son más relevantes para la pregunta.
+3. Utiliza las herramientas seleccionadas para buscar información relevante.
+4. Genera una respuesta basada en la información encontrada.
 
 Considera lo siguiente:
-- Siempre responde de forma formal, amigable y conversacional. Si el usuario te saluda, responde adecuadamente.
-- Ignora las preguntas que no sean relevantes para los documentos o el historial de conversación.
+- Siempre responde de forma formal, amigable y conversacional. Por ejemplo, si el usuario te pregunta "¿Cuándo empieza el semestre?", podrías responder "El semestre comienza el 1 de marzo. ¡Espero que estés emocionado por el nuevo año académico!".
+- Ignora las preguntas que no sean relevantes para los documentos o el historial de conversación, como preguntas sobre otras universidades o fuera del ambito académico.
 - Genera tu respuesta en formato Markdown.
 
 Pregunta: {question}
@@ -213,23 +213,23 @@ Respuesta:
     doc_retriever_tool = create_retriever_tool(
         get_agent_retriever(namespace="Reglamentos"),
         "search_unap_documents",
-        "Busca y devuelve información sobre los reglamentos de la Universidad Arturo Prat. Utilízalo para encontrar información relevante para dar respuesta a la pregunta.",
+        "Esta herramienta busca y recupera información sobre los reglamentos de la Universidad Arturo Prat. Úsala para encontrar reglas, pautas y procedimientos específicos relacionados con las operaciones de la universidad.",
         document_prompt=document_prompt,
     )
     wikipedia_retriever_tool = create_retriever_tool(
         get_agent_retriever(namespace="Wikipedia"),
         "search_general_info_unap",
-        "Busca y devuelve información general sobre la Universidad Arturo Prat. Utilízalo para encontrar información que no esté en los reglamentos.",
+        "Esta herramienta busca y recupera información general sobre la Universidad Arturo Prat de Wikipedia. Úsala para encontrar información amplia sobre la universidad, como su historia, programas e instalaciones del campus.",
     )
     calendar_retriever_tool = create_retriever_tool(
         get_agent_retriever(namespace="Calendarios"),
         "check_unap_calendar",
-        "Busca y devuelve información sobre el calendario de la Universidad Arturo Prat. Utilízalo para encontrar información sobre fechas importantes.",
+        "Esta herramienta busca y recupera información sobre el calendario académico de la Universidad Arturo Prat. Úsala para encontrar fechas importantes, como el inicio y fin de semestres, días festivos y períodos de exámenes.",
     )
     news_retriever_tool = create_retriever_tool(
         get_agent_retriever(namespace="Noticias"),
         "check_unap_news",
-        "Busca y devuelve información sobre noticias de la Universidad Arturo Prat. Utilízalo para encontrar información sobre artículos de eventos recientes.",
+        "Esta herramienta busca y recupera noticias sobre la Universidad Arturo Prat. Úsala para encontrar actualizaciones recientes, anuncios y eventos relacionados con la universidad.",
     )
 
     tools = [
