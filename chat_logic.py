@@ -226,8 +226,18 @@ Respuesta:
         "check_unap_calendar",
         "Busca y devuelve información sobre el calendario de la Universidad Arturo Prat. Utilízalo para encontrar información sobre fechas importantes.",
     )
+    news_retriever_tool = create_retriever_tool(
+        get_agent_retriever(namespace="Noticias"),
+        "check_unap_news",
+        "Busca y devuelve información sobre noticias de la Universidad Arturo Prat. Utilízalo para encontrar información sobre artículos de eventos recientes.",
+    )
 
-    tools = [doc_retriever_tool, wikipedia_retriever_tool, calendar_retriever_tool]
+    tools = [
+        doc_retriever_tool,
+        wikipedia_retriever_tool,
+        calendar_retriever_tool,
+        news_retriever_tool,
+    ]
 
     agent = create_openai_tools_agent(get_llm(), tools, prompt)
     agent_executor = AgentExecutor(
