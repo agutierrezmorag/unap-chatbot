@@ -49,15 +49,15 @@ async def agent_answer(prompt, agent_thoughts_placeholder, response_placeholder)
                 elif kind == "on_tool_start":
                     event_name = event["name"]
                     query = event["data"].get("input")["query"]
-                    if event_name == "search_unap_documents":
+                    if event_name == "busqueda_reglamentos_unap":
                         agent_thoughts_placeholder.markdown(
                             f"- 📚 Consultando **{query}** en los reglamentos..."
                         )
-                    if event_name == "check_unap_calendar":
+                    if event_name == "calendario_academico_unap":
                         agent_thoughts_placeholder.markdown(
                             f"- 📅 Consultando **{query}** en el calendario académico..."
                         )
-                    if event_name == "check_unap_news":
+                    if event_name == "noticias_unap":
                         agent_thoughts_placeholder.markdown(
                             f"- 📰 Consultando **{query}** en las noticias..."
                         )
