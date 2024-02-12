@@ -1,5 +1,5 @@
 [[pages]]
-path = "agent.py"
+path = "llm.py"
 name = "Chatbot"
 icon = "🤖"
 
