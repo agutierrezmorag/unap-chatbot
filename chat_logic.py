@@ -8,7 +8,7 @@ from langchain.chains import create_history_aware_retriever, create_retrieval_ch
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain.retrievers import EnsembleRetriever
 from langchain.tools.retriever import create_retriever_tool
-from langchain_community.tools import WikipediaQueryRun
+from langchain.tools.wikipedia import Wikipedia
 from langchain_community.vectorstores import Pinecone as pcvs
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import ConfigurableField
@@ -159,6 +159,7 @@ def get_agent():
             lang="es",
             load_max_docs=1,
             top_k_results=1,
+            doc_content_chars_max=1000,
         ),
         "busqueda_wikipedia_unap",
         "Esta herramienta busca y recupera información desde Wikipedia. Úsala para consultar la pagina de la Universidad Arturo Prat y obtener información general sobre la universidad, como su historia, ubicación, facultades y carreras.",
