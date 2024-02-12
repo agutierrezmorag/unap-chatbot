@@ -1,14 +1,8 @@
-import os
-
 import pinecone
 import streamlit as st
 from langchain import hub
 from langchain.agents import AgentExecutor, create_openai_tools_agent
-from langchain.chains import create_history_aware_retriever, create_retrieval_chain
-from langchain.chains.combine_documents import create_stuff_documents_chain
-from langchain.retrievers import EnsembleRetriever
 from langchain.tools.retriever import create_retriever_tool
-from langchain.tools.wikipedia import Wikipedia
 from langchain_community.vectorstores import Pinecone as pcvs
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import ConfigurableField
@@ -17,13 +11,6 @@ from langsmith import Client
 
 from utils import config
 from utils.wikipedia_retriever import CustomWikipediaRetriever
-
-
-def format_docs(docs):
-    return "\n\n".join(
-        f"<TITULO> {os.path.splitext(doc.metadata.get('file_name', doc.metadata.get('title')))[0]} </TITULO>\n<CONTENIDO> {doc.page_content} </CONTENIDO>"
-        for doc in docs
-    )
 
 
 @st.cache_resource(show_spinner=False)
@@ -55,45 +42,6 @@ def get_llm():
 
 
 @st.cache_resource(show_spinner=False)
-def get_retriever(namespace="Reglamentos"):
-    pc = pinecone.Pinecone(  # noqa: F841
-        api_key=config.PINECONE_API_KEY,
-        environment=config.PINECONE_ENV,
-    )
-    embeddings = OpenAIEmbeddings(openai_api_key=config.OPENAI_API_KEY)
-    try:
-        vectorstore = pcvs.from_existing_index(
-            index_name=config.PINECONE_INDEX_NAME,
-            embedding=embeddings,
-            namespace=namespace,
-        )
-        retriever = vectorstore.as_retriever(
-            search_type="similarity", search_kwargs={"k": 3}
-        )
-
-        wiki_vectorstore = pcvs.from_existing_index(
-            index_name=config.PINECONE_INDEX_NAME,
-            embedding=embeddings,
-            namespace="Wikipedia",
-        )
-        wiki_retriever = wiki_vectorstore.as_retriever(
-            search_type="similarity", search_kwargs={"k": 2}
-        )
-
-        ensembled_retrievers = EnsembleRetriever(
-            retrievers=[retriever, wiki_retriever], weights=[0.2, 0.8]
-        )
-
-        return ensembled_retrievers
-    except Exception as e:
-        print(e)
-        st.error(
-            "Hubo un error al cargar el índice de documentos. Por favor, recarga la página y vuelve a intentarlo."
-        )
-        return None
-
-
-@st.cache_resource(show_spinner=False)
 def get_agent_retriever(namespace):
     pc = pinecone.Pinecone(  # noqa: F841
         api_key=config.PINECONE_API_KEY,
@@ -117,25 +65,6 @@ def get_agent_retriever(namespace):
             "Hubo un error al cargar el índice de documentos. Por favor, recarga la página y vuelve a intentarlo."
         )
         return None
-
-
-@st.cache_resource(show_spinner=False)
-def get_chain():
-    retriever = get_retriever()
-    llm = get_llm()
-
-    prompt = hub.pull("unap-chatbot/unap-rag-chat_model")
-
-    rephrase_prompt = hub.pull("langchain-ai/chat-langchain-rephrase")
-
-    # Esta cadena de ejecución se encarga de combinar los documentos recuperados
-    combine_docs_chain = create_stuff_documents_chain(llm, prompt)
-    # Esta cadena de ejecución se encarga de reformular la pregunta acorde al historial de conversación
-    retriever_chain = create_history_aware_retriever(llm, retriever, rephrase_prompt)
-    # Esta cadena de ejecución se encarga de dar respuesta a la pregunta, considerando las cadenas de ejecución anteriores
-    retrieval_chain = create_retrieval_chain(retriever_chain, combine_docs_chain)
-
-    return retrieval_chain
 
 
 # Funciones de agente
