@@ -11,7 +11,7 @@ from streamlit_feedback import streamlit_feedback
 from termcolor import cprint
 
 from chat_logic import get_chain, get_langsmith_client
-from doc_manager.github_management import get_repo_documents
+from doc_manager.github_management import get_repo_docs_as_pd
 from utils import config
 
 
@@ -119,10 +119,23 @@ if __name__ == "__main__":
     )
 
     # Lista de documentos disponibles para consultar
-    docs = get_repo_documents()
+    docs = get_repo_docs_as_pd("txt")
     with st.expander("Puedes realizar consultas sobre los siguientes documentos:"):
-        for doc in docs:
-            st.caption(doc.path.strip("documentos/").strip(".txt"))
+        st.dataframe(
+            docs,
+            height=200,
+            use_container_width=True,
+            hide_index=True,
+            column_order=["name", "download_url"],
+            column_config={
+                "name": st.column_config.Column("📄 Nombre documento", width="large"),
+                "download_url": st.column_config.LinkColumn(
+                    "⬇️ Descarga",
+                    display_text="Descargar",
+                    width="small",
+                ),
+            },
+        )
 
     # Inicializacion de variables de estado
     if "session_id" not in st.session_state:
