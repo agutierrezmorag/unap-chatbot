@@ -19,6 +19,7 @@ from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langsmith import Client
 
 from utils import config
+from utils.wikipedia_retriever import CustomWikipediaRetriever
 
 
 def format_docs(docs):
@@ -212,23 +213,28 @@ Respuesta:
 
     doc_retriever_tool = create_retriever_tool(
         get_agent_retriever(namespace="Reglamentos"),
-        "search_unap_documents",
+        "busqueda_reglamentos_unap",
         "Esta herramienta busca y recupera información sobre los reglamentos de la Universidad Arturo Prat. Úsala para encontrar reglas, pautas y procedimientos específicos relacionados con las operaciones de la universidad.",
         document_prompt=document_prompt,
     )
     wikipedia_retriever_tool = create_retriever_tool(
-        get_agent_retriever(namespace="Wikipedia"),
-        "search_general_info_unap",
-        "Esta herramienta busca y recupera información general sobre la Universidad Arturo Prat de Wikipedia. Úsala para encontrar información amplia sobre la universidad, como su historia, programas e instalaciones del campus.",
+        CustomWikipediaRetriever(
+            page_name="Universidad Arturo Prat",
+            lang="es",
+            load_max_docs=1,
+            top_k_results=1,
+        ),
+        "busqueda_wikipedia_unap",
+        "Esta herramienta busca y recupera información desde Wikipedia. Úsala para consultar la pagina de la Universidad Arturo Prat y obtener información general sobre la universidad, como su historia, ubicación, facultades y carreras.",
     )
     calendar_retriever_tool = create_retriever_tool(
         get_agent_retriever(namespace="Calendarios"),
-        "check_unap_calendar",
+        "calendario_academico_unap",
         "Esta herramienta busca y recupera información sobre el calendario académico de la Universidad Arturo Prat. Úsala para encontrar fechas importantes, como el inicio y fin de semestres, días festivos y períodos de exámenes.",
     )
     news_retriever_tool = create_retriever_tool(
         get_agent_retriever(namespace="Noticias"),
-        "check_unap_news",
+        "noticias_unap",
         "Esta herramienta busca y recupera noticias sobre la Universidad Arturo Prat. Úsala para encontrar actualizaciones recientes, anuncios y eventos relacionados con la universidad.",
     )
 
