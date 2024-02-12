@@ -209,55 +209,6 @@ def manage_docs(
             st.rerun()
 
 
-def wikipedia():
-    st.markdown(
-        "El contenido de la página de Wikipedia de la [Universidad Arturo Prat](https://es.wikipedia.org/wiki/Universidad_Arturo_Prat) "
-        "está disponible para añadirse a la base de conocimientos de la IA. "
-        "Este contenido puede ser útil para responder preguntas generales sobre la universidad o sobre datos que no estén en los reglamentos. "
-        "Si se añade, la IA podrá responder preguntas basándose en esta información."
-    )
-    st.markdown(
-        "Cada vez que se realice esta operación, el contenido anterior de la página de Wikipedia es olvidado y se reemplazará automáticamente "
-        "por el contenido nuevo. Se recomienda hacerlo solo si se está seguro de que el contenido es relevante y actualizado."
-    )
-    st.caption(
-        "No es necesario realizar el proceso de registro de cambios para que la IA conozca el contenido de Wikipedia, esto se hace automáticamente."
-    )
-    index_data = get_index_data()
-    knows_wikipedia = "Wikipedia" in index_data.namespaces
-
-    if knows_wikipedia:
-        st.success(
-            "Actualmente, la IA SI conoce el contenido de la página de Wikipedia.",
-            icon="✅",
-        )
-    else:
-        st.warning(
-            "Actualmente, la IA NO conoce el contenido de la página de Wikipedia.",
-            icon="⚠️",
-        )
-
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button(
-            "Añadir contenido de Wikipedia",
-            use_container_width=True,
-            type="primary",
-        ):
-            process_and_load_documents()
-            time.sleep(10)
-            st.rerun()
-    with col2:
-        if st.button(
-            "Eliminar contenido de Wikipedia",
-            use_container_width=True,
-            type="secondary",
-        ):
-            delete_namespace("Wikipedia")
-            time.sleep(4)
-            st.rerun()
-
-
 @st.cache_data
 def get_last_update_date():
     if "last_update_date" not in st.session_state:
@@ -354,9 +305,7 @@ def main():
             st.header("📚 Gestión de documentos", divider=True)
             general_info()
 
-            tab1, tab2, tab3, tab4 = st.tabs(
-                ["Reglamentos", "Calendarios", "Wikipedia", "Noticias"]
-            )
+            tab1, tab2, tab3 = st.tabs(["Reglamentos", "Calendarios", "Noticias"])
 
             with tab1:
                 st.header("🗃️ Reglamentos", divider=True)
@@ -381,10 +330,6 @@ def main():
                 )
 
             with tab3:
-                st.header("🌐 Wikipedia", divider=True)
-                wikipedia()
-
-            with tab4:
                 st.header("📰 Noticias", divider=True)
                 st.markdown(
                     "Es posible informar a la IA sobre las noticias más recientes, disponibles en [Actualidad UNAP](https://www.unap.cl/prontus_unap/site/edic/base/port/actualidad.html)."
