@@ -150,7 +150,7 @@ def get_agent():
     doc_retriever_tool = create_retriever_tool(
         get_agent_retriever(namespace="Reglamentos"),
         "busqueda_reglamentos_unap",
-        "Esta herramienta busca y recupera información sobre los reglamentos de la Universidad Arturo Prat. Úsala para encontrar reglas, pautas y procedimientos específicos relacionados con las operaciones de la universidad.",
+        "Esta herramienta busca y recupera información sobre los reglamentos de la Universidad Arturo Prat. Úsala para encontrar reglas, pautas y procedimientos específicos de la universidad.",
         document_prompt=document_prompt,
     )
     wikipedia_retriever_tool = create_retriever_tool(
