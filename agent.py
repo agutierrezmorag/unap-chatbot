@@ -25,7 +25,7 @@ async def agent_answer(prompt, agent_thoughts_placeholder, response_placeholder)
     with collect_runs() as cb:
         try:
             async for event in agent.astream_events(
-                {"question": user_question},
+                {"input": user_question},
                 config={
                     "tags": [config.CHAT_ENVIRONMENT, st.session_state.model_type],
                     "metadata": {"user_session": st.session_state.session_id},
@@ -156,7 +156,7 @@ if __name__ == "__main__":
         st.session_state.memory = ConversationBufferWindowMemory(
             k=5,
             memory_key="chat_history",
-            input_key="question",
+            input_key="input",
             output_key="output",
             chat_memory=st.session_state.msgs,
             return_messages=True,

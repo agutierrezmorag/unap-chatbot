@@ -8,12 +8,9 @@ from langchain.chains import create_history_aware_retriever, create_retrieval_ch
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain.retrievers import EnsembleRetriever
 from langchain.tools.retriever import create_retriever_tool
+from langchain_community.tools import WikipediaQueryRun
 from langchain_community.vectorstores import Pinecone as pcvs
-from langchain_core.prompts import (
-    ChatPromptTemplate,
-    MessagesPlaceholder,
-    PromptTemplate,
-)
+from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import ConfigurableField
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langsmith import Client
@@ -127,34 +124,7 @@ def get_chain():
     retriever = get_retriever()
     llm = get_llm()
 
-    template = """
-Eres un asistente cuyo encargo es responder preguntas sobre documentos institucionales. 
-Mantén un tono amigable y conversacional. Si el usuario te saluda, responde adecuadamente. 
-Si la pregunta no es relevante para los documentos o el historial de conversación, responde 'Solo puedo responder preguntas sobre documentos de la Universidad Arturo Prat.'
-Evita párrafos largos. Utiliza listas y puntos para facilitar la lectura. Cuando respondas según los documentos, cita el documento y el número de artículo, si corresponde.
-Genera tu respuesta en formato Markdown y utiliza notas al pie para las referencias. Aquí tienes un ejemplo de cómo debería verse una respuesta basada en documentos:
--------------
-El decano es el encargado de la administración de la facultad. [^1]
-
-### Referencias
-[^1]: Reglamento de la facultad de ingeniería, articulo 1.
--------------
-Escribe el nombre del documento con un formato adecuado cuando lo cites. 
-Sigue estas instrucciones y genera una respuesta para la pregunta.
-Pregunta: {input}
-Utiliza los siguientes fragmentos de contexto recuperados para responder a la pregunta:
--------------
-{context}
--------------
-Respuesta:
-"""
-    prompt = ChatPromptTemplate.from_messages(
-        [
-            ("system", template),
-            MessagesPlaceholder(variable_name="chat_history"),
-            ("human", "{input}"),
-        ]
-    )
+    prompt = hub.pull("unap-chatbot/unap-rag-chat_model")
 
     rephrase_prompt = hub.pull("langchain-ai/chat-langchain-rephrase")
 
@@ -171,41 +141,7 @@ Respuesta:
 # Funciones de agente
 # Esta funcion no puede ser cacheada, para que funcione correctamente el agente
 def get_agent():
-    template = """
-Eres un asistente que ayuda a estudiantes a responder dudas sobre la Universidad Arturo Prat y sus reglamentos institucionales. No estas programado para responder preguntas sobre otros temas, como preguntas personales o sobre otras universidades.
-
-Tienes a tu disposición cuatro herramientas:
-1. Una para buscar reglamentos de la Universidad Arturo Prat.
-2. Otra para buscar información general sobre la universidad Arturo Prat.
-3. Otra para buscar información sobre el calendario de la Universidad Arturo Prat.
-4. Otra para buscar noticias sobre la Universidad Arturo Prat.
-
-Sigue estos pasos:
-1. Lee la pregunta del usuario.
-2. Determina qué herramienta o herramientas son más relevantes para la pregunta.
-3. Utiliza las herramientas seleccionadas para buscar información relevante.
-4. Genera una respuesta basada en la información encontrada.
-
-Considera lo siguiente:
-- Siempre responde de forma formal, amigable y conversacional. Por ejemplo, si el usuario te pregunta "¿Cuándo empieza el semestre?", podrías responder "El semestre comienza el 1 de marzo. ¡Espero que estés emocionado por el nuevo año académico!".
-- Ignora las preguntas que no sean relevantes para los documentos o el historial de conversación, como preguntas sobre otras universidades o fuera del ambito académico.
-- Genera tu respuesta en formato Markdown.
-
-Pregunta: {question}
-Respuesta:
-"""
-
-    prompt = ChatPromptTemplate.from_messages(
-        [
-            (
-                "system",
-                template,
-            ),
-            MessagesPlaceholder(variable_name="chat_history"),
-            ("user", "{question}"),
-            MessagesPlaceholder(variable_name="agent_scratchpad"),
-        ]
-    )
+    prompt = hub.pull("unap-chatbot/unap-rag-agent")
 
     document_prompt = PromptTemplate.from_template(
         "Nombre documento: {file_name} \nContenido: {page_content}"

@@ -18,6 +18,9 @@ REPO_URL = st.secrets.github.repo_url
 REPO_DIRECTORY_PATH = st.secrets.github.directory_path
 GITHUB_ACCESS_TOKEN = st.secrets.github.access_token
 
+# Google Cloud keys
+AI_STUDIO_API_KEY = st.secrets.google.ai_studio_api_key
+
 # Firestore keys
 FIRESTORE_TEXT_KEY = st.secrets.firestore.textkey
 
