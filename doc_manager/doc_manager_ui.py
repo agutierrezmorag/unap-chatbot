@@ -197,7 +197,7 @@ def manage_docs(
             type="primary",
             disabled=df.empty,
         ):
-            process_and_load_documents(register_type, doc_type)
+            process_and_load_documents(namespace=register_type, directory_path=doc_type)
             st.success(f"{register_type} registrados exitosamente.", icon="✅")
             st.rerun()
 
@@ -244,7 +244,7 @@ def wikipedia():
             use_container_width=True,
             type="primary",
         ):
-            process_and_load_documents("Wikipedia")
+            process_and_load_documents(namespace="Wikipedia")
             time.sleep(10)
             st.rerun()
     with col2:
@@ -402,8 +402,8 @@ def main():
                         type="primary",
                     ):
                         process_and_load_documents(
-                            "Noticias",
-                            "https://www.unap.cl/prontus_unap/site/edic/base/port/actualidad.html",
+                            namespace="Noticias",
+                            directory_path="https://www.unap.cl/prontus_unap/site/edic/base/port/actualidad.html",
                         )
                         get_last_update_date.clear()
                         st.session_state["last_update_date"] = datetime.datetime.now()
