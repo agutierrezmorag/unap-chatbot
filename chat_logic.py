@@ -93,7 +93,7 @@ def get_agent():
     )
 
     news_doc_prompt = PromptTemplate.from_template(
-        "Contenido: {page_content} \nFuente:{link} ({publish_date})"
+        "Titulo:{title} \nContenido: {page_content} \nFuente:{link} ({publish_date})"
     )
     news_retriever_tool = create_retriever_tool(
         get_agent_retriever(namespace="Noticias"),
