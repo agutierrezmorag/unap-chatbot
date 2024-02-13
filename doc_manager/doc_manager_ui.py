@@ -185,9 +185,8 @@ def manage_docs(
         if delete_mem_button.button(
             "Confirmar",
             key=f"confirm_delete_{doc_type}",
-            on_click=delete_namespace,
-            kwargs={"namespace": register_type},
         ):
+            delete_namespace(register_type)
             st.toast("Memoria eliminada.", icon="⚠️")
             st.session_state[delete_mem_key] = False
             st.rerun()
