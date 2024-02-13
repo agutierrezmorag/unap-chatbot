@@ -64,6 +64,7 @@ def get_retriever(namespace: str, k_results: int, time_aware: bool = False):
                 vectorstore=vectorstore,
                 decay_rate=0.01,
                 k=k_results,
+                other_score_keys=["publish_date"],
             )
 
         return retriever
