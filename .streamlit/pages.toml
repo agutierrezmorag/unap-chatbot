@@ -1,9 +1,0 @@
-[[pages]]
-path = "llm.py"
-name = "Chatbot"
-icon = "🤖"
-
-[[pages]]
-path = "doc_manager/doc_manager_ui.py"
-name = "Administracion"
-icon = "👷‍♂️"

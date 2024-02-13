@@ -10,7 +10,6 @@ from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langsmith import Client
 
 from utils import config
-from utils.wikipedia_retriever import CustomWikipediaRetriever
 
 
 @st.cache_resource(show_spinner=False)
@@ -42,30 +41,57 @@ def get_llm():
 
 
 @st.cache_resource(show_spinner=False)
-def get_retriever(namespace):
+def get_retriever():
     pc = pinecone.Pinecone(  # noqa: F841
         api_key=config.PINECONE_API_KEY,
         environment=config.PINECONE_ENV,
     )
     embeddings = OpenAIEmbeddings(openai_api_key=config.OPENAI_API_KEY)
     try:
-        vectorstore = pcvs.from_existing_index(
+        doc_vectorstore = pcvs.from_existing_index(
             index_name=config.PINECONE_INDEX_NAME,
             embedding=embeddings,
-            namespace=namespace,
+            namespace="Reglamentos",
         )
-        retriever = vectorstore.as_retriever(
+        doc_retriever = doc_vectorstore.as_retriever(
             search_type="similarity", search_kwargs={"k": 3}
         )
 
-        wiki_retriever = CustomWikipediaRetriever(
-            page_name="Universidad Arturo Prat",
-            lang="es",
-            load_max_docs=1,
-            top_k_results=1,
+        wiki_vectorstore = pcvs.from_existing_index(
+            index_name=config.PINECONE_INDEX_NAME,
+            embedding=embeddings,
+            namespace="Wikipedia",
+        )
+        wiki_retriever = wiki_vectorstore.as_retriever(
+            search_type="similarity", search_kwargs={"k": 3}
         )
 
-        ensembled_retrievers = EnsembleRetriever(retrievers=[retriever, wiki_retriever])
+        news_vectorstore = pcvs.from_existing_index(
+            index_name=config.PINECONE_INDEX_NAME,
+            embedding=embeddings,
+            namespace="Noticias",
+        )
+        news_retriever = news_vectorstore.as_retriever(
+            search_type="similarity", search_kwargs={"k": 3}
+        )
+
+        calendar_vectorstore = pcvs.from_existing_index(
+            index_name=config.PINECONE_INDEX_NAME,
+            embedding=embeddings,
+            namespace="Calendarios",
+        )
+        calendar_retriever = calendar_vectorstore.as_retriever(
+            search_type="similarity", search_kwargs={"k": 3}
+        )
+
+        ensembled_retrievers = EnsembleRetriever(
+            retrievers=[
+                doc_retriever,
+                wiki_retriever,
+                news_retriever,
+                calendar_retriever,
+            ]
+        )
 
         return ensembled_retrievers
     except Exception as e:
@@ -78,7 +104,7 @@ def get_retriever(namespace):
 
 @st.cache_resource(show_spinner=False)
 def get_chain():
-    retriever = get_retriever("Reglamentos")
+    retriever = get_retriever()
     llm = get_llm()
 
     prompt = hub.pull("unap-chatbot/unap-rag-chat_model")

@@ -6,12 +6,10 @@ from langchain.callbacks.manager import collect_runs
 from langchain.globals import set_llm_cache
 from langchain.memory import ConversationBufferWindowMemory
 from langchain_community.chat_message_histories import StreamlitChatMessageHistory
-from st_pages import show_pages_from_config
 from streamlit_feedback import streamlit_feedback
 from termcolor import cprint
 
 from chat_logic import get_chain, get_langsmith_client
-from doc_manager.github_management import get_repo_docs_as_pd
 from utils import config
 
 
@@ -92,50 +90,16 @@ if __name__ == "__main__":
             "About": "Chat capaz de responder preguntas relacionadas a reglamentos y documentos de la universidad Arturo Prat."
         },
     )
-    show_pages_from_config()
-
-    # Eliminar el texto 'footnotes' generado por streamlit
-    st.markdown(
-        """
-    <style>
-    #footnotes {
-        display: none
-    }
-    </style>
-    """,
-        unsafe_allow_html=True,
-    )
 
     # Variables utiles a lo largo de la app
     set_llm_cache(InMemoryCache())
     logo_path = "logos/unap_negativo.png"
     client = get_langsmith_client()
-    with st.sidebar:
-        st.image(logo_path)
 
     st.title("🤖 Chatbot UNAP")
     st.caption(
         "Este chatbot puede cometer errores. Si encuentras inexactitudes, reformula tu pregunta o consulta los documentos oficiales."
     )
-
-    # Lista de documentos disponibles para consultar
-    docs = get_repo_docs_as_pd("txt")
-    with st.expander("Puedes realizar consultas sobre los siguientes documentos:"):
-        st.dataframe(
-            docs,
-            height=200,
-            use_container_width=True,
-            hide_index=True,
-            column_order=["name", "download_url"],
-            column_config={
-                "name": st.column_config.Column("📄 Nombre documento", width="large"),
-                "download_url": st.column_config.LinkColumn(
-                    "⬇️ Descarga",
-                    display_text="Descargar",
-                    width="small",
-                ),
-            },
-        )
 
     # Inicializacion de variables de estado
     if "session_id" not in st.session_state:
