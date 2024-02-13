@@ -1,4 +1,3 @@
-import datetime
 import time
 import uuid
 
@@ -260,14 +259,6 @@ def wikipedia():
             st.rerun()
 
 
-@st.cache_data
-def get_last_update_date():
-    if "last_update_date" not in st.session_state:
-        st.session_state["last_update_date"] = None
-
-    return st.session_state["last_update_date"]
-
-
 def main():
     st.set_page_config(
         page_title="Administrador de Documentos UNAP",
@@ -378,44 +369,6 @@ def main():
 
             st.header("🌐 Wikipedia", divider=True)
             wikipedia()
-
-            st.header("📰 Noticias", divider=True)
-            st.markdown(
-                "Es posible informar a la IA sobre las noticias más recientes, disponibles en [Actualidad UNAP](https://www.unap.cl/prontus_unap/site/edic/base/port/actualidad.html)."
-            )
-
-            last_update = get_last_update_date()
-            st.info(f"Última actualización: **{last_update}**")
-
-            col1, col2 = st.columns(2)
-            with col1:
-                if st.button(
-                    "Añadir noticias a memoria",
-                    use_container_width=True,
-                    type="primary",
-                ):
-                    process_and_load_documents(
-                        namespace="Noticias",
-                        directory_path="https://www.unap.cl/prontus_unap/site/edic/base/port/actualidad.html",
-                    )
-                    st.toast("Noticias añadidas a memoria.", icon="✅")
-                    get_last_update_date.clear()
-                    st.session_state[
-                        "last_update_date"
-                    ] = datetime.datetime.now().strftime("%d/%m/%Y %H:%M")
-                    st.rerun()
-            with col2:
-                if st.button(
-                    "Eliminar noticias de memoria",
-                    use_container_width=True,
-                    type="secondary",
-                ):
-                    delete_namespace("Noticias")
-                    st.toast("Noticias eliminadas de memoria", icon="⚠️")
-                    get_last_update_date.clear()
-                    st.session_state["last_update_date"] = None
-                    time.sleep(4)
-                    st.rerun()
 
     except Exception as e:
         print(e)
