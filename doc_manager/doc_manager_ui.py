@@ -182,8 +182,12 @@ def manage_docs(
             f"Esto eliminará **TODA** la memoria de la IA sobre {register_type}. ¿Está seguro de que desea continuar?",
             icon="❌",
         )
-        if delete_mem_button.button("Confirmar", key=f"confirm_delete_{doc_type}"):
-            delete_namespace(register_type)
+        if delete_mem_button.button(
+            "Confirmar",
+            key=f"confirm_delete_{doc_type}",
+            on_click=delete_namespace,
+            kwargs={"namespace": register_type},
+        ):
             st.toast("Memoria eliminada.", icon="⚠️")
             st.session_state[delete_mem_key] = False
             st.rerun()
@@ -196,8 +200,9 @@ def manage_docs(
             use_container_width=True,
             type="primary",
             disabled=df.empty,
+            on_click=process_and_load_documents,
+            kwargs={"namespace": register_type, "directory_path": doc_type},
         ):
-            process_and_load_documents(namespace=register_type, directory_path=doc_type)
             st.success(f"{register_type} registrados exitosamente.", icon="✅")
             st.rerun()
 
