@@ -371,8 +371,7 @@ def main():
             st.header("🌐 Wikipedia", divider=True)
             wikipedia()
 
-        if st.button("delete memory"):
-            delete_all_namespaces()
+        st.button("delete_memory", on_click=delete_all_namespaces)
 
     except Exception as e:
         print(e)
