@@ -415,6 +415,7 @@ def main():
                         type="secondary",
                     ):
                         delete_namespace("Noticias")
+                        st.toast("Noticias eliminadas de memoria", icon="⚠️")
                         get_last_update_date.clear()
                         st.session_state["last_update_date"] = None
                         time.sleep(4)
