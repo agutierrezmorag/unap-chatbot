@@ -254,6 +254,7 @@ def wikipedia():
             type="secondary",
         ):
             delete_namespace("Wikipedia")
+            st.toast("Contenido de Wikipedia eliminado de memoria", icon="⚠️")
             time.sleep(4)
             st.rerun()
 
