@@ -168,40 +168,42 @@ def get_document_loader(
     Returns:
         DocumentLoader: El cargador de documentos basado en el namespace especificado.
     """
-    loaders = {
-        "Reglamentos": DirectoryLoader(
+    if namespace == "Reglamentos":
+        return DirectoryLoader(
             path=path,
             glob="**/*.txt",
             loader_cls=TextLoader,
             loader_kwargs={"autodetect_encoding": True, "encoding": "utf-8"},
             use_multithreading=True,
             silent_errors=True,
-        ),
-        "Wikipedia": WikipediaLoader(
+        )
+    elif namespace == "Wikipedia":
+        return WikipediaLoader(
             query="Universidad Arturo Prat",
             lang="es",
             load_max_docs=1,
             load_all_available_meta=True,
             doc_content_chars_max=20000,
-        ),
-        "Calendarios": DirectoryLoader(
+        )
+    elif namespace == "Calendarios":
+        return DirectoryLoader(
             path=path,
             glob="**/*.pdf",
             loader_cls=PyMuPDFLoader,
             loader_kwargs={"extract_images": True},
             use_multithreading=True,
             silent_errors=True,
-        ),
-        "Noticias": NewsURLLoader(
+        )
+    elif namespace == "Noticias":
+        return NewsURLLoader(
             urls=get_article_urls(index_url),
-        ),
-    }
-
-    return loaders.get(namespace)
+        )
+    else:
+        return None
 
 
 def process_and_load_documents(
-    directory_path: str, namespace: str, index_url: str = None
+    namespace: str, directory_path: str = None, index_url: str = None
 ) -> None:
     """
     Procesa y carga documentos desde un directorio a un namespace especificado.
@@ -233,19 +235,16 @@ def process_and_load_documents(
         st.error("No hay documentos en el directorio seleccionado.", icon="📁")
         return
 
-    split_and_store_documents(docs, namespace, directory_path, path)
+    split_and_store_documents(docs, namespace)
 
 
-def split_and_store_documents(
-    docs: List[Document], namespace: str, directory_path: str, path: str
-) -> None:
+def split_and_store_documents(docs: List[Document], namespace: str) -> None:
     """
     Divide y almacena documentos en un namespace dado.
 
     Args:
         docs (list): Lista de documentos a dividir y almacenar.
         namespace (str): Namespace donde se almacenarán los documentos.
-        directory_path (str): Ruta al directorio donde se encuentran los documentos.
         path (str): Ruta a los documentos.
 
     Returns:
@@ -269,11 +268,6 @@ def split_and_store_documents(
             )
         except Exception as e:
             cprint(f"Error: {e}", "red")
-
-    cprint(
-        f"Cargados {len(docs)} documentos {directory_path} desde {path}",
-        "blue",
-    )
 
     splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
     split_docs = splitter.split_documents(docs)

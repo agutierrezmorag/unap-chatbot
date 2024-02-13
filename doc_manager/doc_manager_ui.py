@@ -197,7 +197,7 @@ def manage_docs(
             type="primary",
             disabled=df.empty,
         ):
-            process_and_load_documents(doc_type, register_type)
+            process_and_load_documents(register_type, doc_type)
             st.success(f"{register_type} registrados exitosamente.", icon="✅")
             st.rerun()
 
@@ -244,7 +244,7 @@ def wikipedia():
             use_container_width=True,
             type="primary",
         ):
-            process_and_load_documents()
+            process_and_load_documents("Wikipedia")
             time.sleep(10)
             st.rerun()
     with col2:
@@ -401,7 +401,6 @@ def main():
                         type="primary",
                     ):
                         process_and_load_documents(
-                            "news",
                             "Noticias",
                             "https://www.unap.cl/prontus_unap/site/edic/base/port/actualidad.html",
                         )
