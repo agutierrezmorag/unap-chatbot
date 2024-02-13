@@ -245,6 +245,7 @@ def wikipedia():
             type="primary",
         ):
             process_and_load_documents(namespace="Wikipedia")
+            st.toast("Contenido de Wikipedia añadido a memoria.", icon="✅")
             time.sleep(10)
             st.rerun()
     with col2:
@@ -405,8 +406,11 @@ def main():
                             namespace="Noticias",
                             directory_path="https://www.unap.cl/prontus_unap/site/edic/base/port/actualidad.html",
                         )
+                        st.toast("Noticias añadidas a memoria.", icon="✅")
                         get_last_update_date.clear()
-                        st.session_state["last_update_date"] = datetime.datetime.now()
+                        st.session_state[
+                            "last_update_date"
+                        ] = datetime.datetime.now().strftime("%d/%m/%Y %H:%M")
                         st.rerun()
                 with col2:
                     if st.button(
