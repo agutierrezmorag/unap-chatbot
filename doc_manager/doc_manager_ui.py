@@ -12,6 +12,7 @@ from doc_manager.github_management import (
     get_repo_documents,
 )
 from doc_manager.pinecone_management import (
+    delete_all_namespaces,
     delete_namespace,
     get_index_data,
     process_and_load_documents,
@@ -369,6 +370,9 @@ def main():
 
             st.header("🌐 Wikipedia", divider=True)
             wikipedia()
+
+        if st.button("delete memory"):
+            delete_all_namespaces()
 
     except Exception as e:
         print(e)

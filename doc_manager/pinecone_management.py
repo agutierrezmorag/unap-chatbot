@@ -8,11 +8,12 @@ import pinecone
 import requests
 import streamlit as st
 from bs4 import BeautifulSoup
+from langchain.retrievers import ParentDocumentRetriever
+from langchain.storage import InMemoryStore
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import (
     DirectoryLoader,
     GitLoader,
-    NewsURLLoader,
     PyMuPDFLoader,
     TextLoader,
     WikipediaLoader,
@@ -47,7 +48,7 @@ def _get_pinecone() -> pinecone.Pinecone:
     return SingletonPinecone.get_instance()
 
 
-def _get_or_create_vectorstore(namespace: str) -> pcvs:
+def get_retriever(namespace: str) -> ParentDocumentRetriever:
     """
     Recupera el almacenamiento de vectores para un espacio de nombres dado. Creando un nuevo espacio de nombres si no existe.
 
@@ -63,7 +64,18 @@ def _get_or_create_vectorstore(namespace: str) -> pcvs:
         embedding=embeddings,
         namespace=namespace,
     )
-    return vectorstore
+
+    store = InMemoryStore()
+    parent_splitter = RecursiveCharacterTextSplitter(chunk_size=2048)
+    child_splitter = RecursiveCharacterTextSplitter(chunk_size=512)
+
+    retriever = ParentDocumentRetriever(
+        vectorstore=vectorstore,
+        docstore=store,
+        child_splitter=child_splitter,
+        parent_splitter=parent_splitter,
+    )
+    return retriever
 
 
 def delete_namespace(namespace: str) -> None:
@@ -156,7 +168,7 @@ def get_article_urls(index_url: str) -> List[str]:
 
 def get_document_loader(
     namespace: str, path: str, index_url: str = None
-) -> Optional[Union[DirectoryLoader, WikipediaLoader, NewsURLLoader]]:
+) -> Optional[Union[DirectoryLoader, WikipediaLoader]]:
     """
     Obtiene el cargador de documentos basado en el namespace especificado.
 
@@ -193,10 +205,6 @@ def get_document_loader(
             loader_kwargs={"extract_images": True},
             use_multithreading=True,
             silent_errors=True,
-        )
-    elif namespace == "Noticias":
-        return NewsURLLoader(
-            urls=get_article_urls(index_url),
         )
     else:
         return None
@@ -269,9 +277,6 @@ def split_and_store_documents(docs: List[Document], namespace: str) -> None:
         except Exception as e:
             cprint(f"Error: {e}", "red")
 
-    splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
-    split_docs = splitter.split_documents(docs)
-
     _ensure_index_exists()
 
     index_data = get_index_data()
@@ -279,12 +284,10 @@ def split_and_store_documents(docs: List[Document], namespace: str) -> None:
         delete_namespace(namespace)
 
     try:
-        vectorstore = _get_or_create_vectorstore(namespace)
-        vectorstore.add_documents(documents=split_docs)
+        retriever = get_retriever(namespace)
+        retriever.add_documents(documents=docs)
 
-        cprint(
-            f"{len(split_docs)} vectores añadidos al namespace '{namespace}'", "green"
-        )
+        cprint(f"{len(docs)} vectores añadidos al namespace '{namespace}'", "green")
     except Exception as e:
         cprint(
             f"Hubo un error al intentar añadir el contenido al vector store: {e}",
