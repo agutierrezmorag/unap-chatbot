@@ -86,7 +86,7 @@ def get_agent():
         CustomWikipediaRetriever(
             page_name="Universidad Arturo Prat",
             lang="es",
-            load_max_docs=1,
+            load_max_docs=3,
             top_k_results=1,
             doc_content_chars_max=1000,
         ),
