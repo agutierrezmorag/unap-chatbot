@@ -15,6 +15,7 @@ from langchain_community.document_loaders import (
     NewsURLLoader,
     PyMuPDFLoader,
     TextLoader,
+    WikipediaLoader,
 )
 from langchain_community.vectorstores import Pinecone as pcvs
 from langchain_core.documents import Document
@@ -155,7 +156,7 @@ def get_article_urls(index_url: str) -> List[str]:
 
 def get_document_loader(
     namespace: str, path: str, index_url: str = None
-) -> Optional[Union[DirectoryLoader, NewsURLLoader]]:
+) -> Optional[Union[DirectoryLoader, WikipediaLoader, NewsURLLoader]]:
     """
     Obtiene el cargador de documentos basado en el namespace especificado.
 
@@ -175,6 +176,13 @@ def get_document_loader(
             loader_kwargs={"autodetect_encoding": True, "encoding": "utf-8"},
             use_multithreading=True,
             silent_errors=True,
+        ),
+        "Wikipedia": WikipediaLoader(
+            query="Universidad Arturo Prat",
+            lang="es",
+            load_max_docs=1,
+            load_all_available_meta=True,
+            doc_content_chars_max=20000,
         ),
         "Calendarios": DirectoryLoader(
             path=path,

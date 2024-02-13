@@ -10,7 +10,6 @@ from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langsmith import Client
 
 from utils import config
-from utils.wikipedia_retriever import CustomWikipediaRetriever
 
 
 @st.cache_resource(show_spinner=False)
@@ -83,14 +82,9 @@ def get_agent():
         document_prompt=document_prompt,
     )
     wikipedia_retriever_tool = create_retriever_tool(
-        CustomWikipediaRetriever(
-            page_name="Universidad Arturo Prat",
-            lang="es",
-            top_k_results=3,
-            doc_content_chars_max=1000,
-        ),
+        get_agent_retriever(namespace="Wikipedia"),
         "busqueda_wikipedia_unap",
-        "Esta herramienta busca y recupera información desde Wikipedia. Úsala para consultar la pagina de la Universidad Arturo Prat y obtener información general sobre la universidad, como su historia, ubicación, facultades y carreras.",
+        "Esta herramienta busca y recupera información desde Wikipedia. Úsala para consultar la pagina de la Universidad Arturo Prat y obtener información general sobre la universidad, como su historia, funcionarios, ubicación, facultades y carreras.",
     )
     calendar_retriever_tool = create_retriever_tool(
         get_agent_retriever(namespace="Calendarios"),
