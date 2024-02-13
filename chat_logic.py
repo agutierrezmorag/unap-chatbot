@@ -1,13 +1,14 @@
+import pinecone
 import streamlit as st
 from langchain import hub
 from langchain.agents import AgentExecutor, create_openai_tools_agent
 from langchain.tools.retriever import create_retriever_tool
+from langchain_community.vectorstores import Pinecone as pcvs
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import ConfigurableField
-from langchain_openai import ChatOpenAI
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langsmith import Client
 
-from doc_manager.pinecone_management import get_retriever
 from utils import config
 
 
@@ -39,6 +40,32 @@ def get_llm():
     return llm
 
 
+@st.cache_resource(show_spinner=False)
+def get_retriever(namespace: str, k_results: int = 3):
+    pc = pinecone.Pinecone(  # noqa: F841
+        api_key=config.PINECONE_API_KEY,
+        environment=config.PINECONE_ENV,
+    )
+    embeddings = OpenAIEmbeddings(openai_api_key=config.OPENAI_API_KEY)
+    try:
+        vectorstore = pcvs.from_existing_index(
+            index_name=config.PINECONE_INDEX_NAME,
+            embedding=embeddings,
+            namespace=namespace,
+        )
+        retriever = vectorstore.as_retriever(
+            search_type="similarity", search_kwargs={"k": k_results}
+        )
+
+        return retriever
+    except Exception as e:
+        print(e)
+        st.error(
+            "Hubo un error al cargar el índice de documentos. Por favor, recarga la página y vuelve a intentarlo."
+        )
+        return None
+
+
 # Funciones de agente
 # Esta funcion no puede ser cacheada, para que funcione correctamente el agente
 def get_agent():
@@ -61,7 +88,7 @@ def get_agent():
     )
 
     calendar_retriever_tool = create_retriever_tool(
-        get_retriever(namespace="Calendarios"),
+        get_retriever(namespace="Calendarios", k_results=2),
         "calendario_academico_unap",
         "Esta herramienta busca y recupera información sobre el calendario académico de la Universidad Arturo Prat. Úsala para encontrar fechas importantes, como el inicio y fin de semestres, días festivos, períodos de exámenes y otros eventos académicos.",
     )

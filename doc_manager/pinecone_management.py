@@ -8,8 +8,6 @@ import pinecone
 import requests
 import streamlit as st
 from bs4 import BeautifulSoup
-from langchain.retrievers import ParentDocumentRetriever
-from langchain.storage import InMemoryStore
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import (
     DirectoryLoader,
@@ -48,7 +46,7 @@ def _get_pinecone() -> pinecone.Pinecone:
     return SingletonPinecone.get_instance()
 
 
-def get_retriever(namespace: str) -> ParentDocumentRetriever:
+def _get_or_create_vectorstore(namespace: str) -> pcvs:
     """
     Recupera el almacenamiento de vectores para un espacio de nombres dado. Creando un nuevo espacio de nombres si no existe.
 
@@ -64,18 +62,7 @@ def get_retriever(namespace: str) -> ParentDocumentRetriever:
         embedding=embeddings,
         namespace=namespace,
     )
-
-    store = InMemoryStore()
-    parent_splitter = RecursiveCharacterTextSplitter(chunk_size=2048)
-    child_splitter = RecursiveCharacterTextSplitter(chunk_size=512)
-
-    retriever = ParentDocumentRetriever(
-        vectorstore=vectorstore,
-        docstore=store,
-        child_splitter=child_splitter,
-        parent_splitter=parent_splitter,
-    )
-    return retriever
+    return vectorstore
 
 
 def delete_namespace(namespace: str) -> None:
@@ -277,6 +264,9 @@ def split_and_store_documents(docs: List[Document], namespace: str) -> None:
         except Exception as e:
             cprint(f"Error: {e}", "red")
 
+    splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+    split_docs = splitter.split_documents(docs)
+
     _ensure_index_exists()
 
     index_data = get_index_data()
@@ -284,10 +274,12 @@ def split_and_store_documents(docs: List[Document], namespace: str) -> None:
         delete_namespace(namespace)
 
     try:
-        retriever = get_retriever(namespace)
-        retriever.add_documents(documents=docs)
+        vectorstore = _get_or_create_vectorstore(namespace)
+        vectorstore.add_documents(documents=split_docs)
 
-        cprint(f"{len(docs)} vectores añadidos al namespace '{namespace}'", "green")
+        cprint(
+            f"{len(split_docs)} vectores añadidos al namespace '{namespace}'", "green"
+        )
     except Exception as e:
         cprint(
             f"Hubo un error al intentar añadir el contenido al vector store: {e}",
