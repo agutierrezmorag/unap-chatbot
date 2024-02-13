@@ -2,7 +2,6 @@ import pinecone
 import streamlit as st
 from langchain import hub
 from langchain.agents import AgentExecutor, create_openai_tools_agent
-from langchain.retrievers import TimeWeightedVectorStoreRetriever
 from langchain.tools.retriever import create_retriever_tool
 from langchain_community.vectorstores import Pinecone as pcvs
 from langchain_core.prompts import PromptTemplate
@@ -42,7 +41,7 @@ def get_llm():
 
 
 @st.cache_resource(show_spinner=False)
-def get_retriever(namespace: str, k_results: int, time_aware: bool = False):
+def get_retriever(namespace: str, k_results: int = 3):
     pc = pinecone.Pinecone(  # noqa: F841
         api_key=config.PINECONE_API_KEY,
         environment=config.PINECONE_ENV,
@@ -54,18 +53,9 @@ def get_retriever(namespace: str, k_results: int, time_aware: bool = False):
             embedding=embeddings,
             namespace=namespace,
         )
-
-        if not time_aware:
-            retriever = vectorstore.as_retriever(
-                search_type="similarity", search_kwargs={"k": k_results}
-            )
-        else:
-            retriever = TimeWeightedVectorStoreRetriever(
-                vectorstore=vectorstore,
-                decay_rate=0.01,
-                k=k_results,
-                other_score_keys=["publish_date"],
-            )
+        retriever = vectorstore.as_retriever(
+            search_type="similarity", search_kwargs={"k": k_results}
+        )
 
         return retriever
     except Exception as e:
@@ -85,14 +75,14 @@ def get_agent():
         "Nombre documento: {file_name} \nContenido: {page_content}"
     )
     doc_retriever_tool = create_retriever_tool(
-        get_retriever(namespace="Reglamentos", k_results=3),
+        get_retriever(namespace="Reglamentos"),
         "busqueda_reglamentos_unap",
         "Esta herramienta busca y recupera información sobre los reglamentos de la Universidad Arturo Prat. Úsala para encontrar reglas, pautas y procedimientos específicos de la universidad.",
         document_prompt=document_prompt,
     )
 
     wikipedia_retriever_tool = create_retriever_tool(
-        get_retriever(namespace="Wikipedia", k_results=3),
+        get_retriever(namespace="Wikipedia"),
         "busqueda_wikipedia_unap",
         "Esta herramienta busca y recupera información desde Wikipedia. Úsala para consultar la pagina de la Universidad Arturo Prat y obtener información general sobre la universidad, como su historia, funcionarios, ubicación, facultades y carreras.",
     )
@@ -107,7 +97,7 @@ def get_agent():
         "Titulo:{title} \nContenido: {page_content} \nFuente:{link} \nFecha de publicación: {publish_date}"
     )
     news_retriever_tool = create_retriever_tool(
-        get_retriever(namespace="Noticias", time_aware=True, k_results=3),
+        get_retriever(namespace="Noticias"),
         "noticias_unap",
         "Esta herramienta busca y recupera noticias sobre la Universidad Arturo Prat. Úsala para encontrar actualizaciones recientes, anuncios y eventos relacionados con la universidad.",
         document_prompt=news_doc_prompt,
