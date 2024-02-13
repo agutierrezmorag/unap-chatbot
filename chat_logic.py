@@ -41,7 +41,7 @@ def get_llm():
 
 
 @st.cache_resource(show_spinner=False)
-def get_agent_retriever(namespace):
+def get_agent_retriever(namespace: str):
     pc = pinecone.Pinecone(  # noqa: F841
         api_key=config.PINECONE_API_KEY,
         environment=config.PINECONE_ENV,
@@ -74,13 +74,13 @@ def get_agent():
     document_prompt = PromptTemplate.from_template(
         "Nombre documento: {file_name} \nContenido: {page_content}"
     )
-
     doc_retriever_tool = create_retriever_tool(
         get_agent_retriever(namespace="Reglamentos"),
         "busqueda_reglamentos_unap",
         "Esta herramienta busca y recupera información sobre los reglamentos de la Universidad Arturo Prat. Úsala para encontrar reglas, pautas y procedimientos específicos de la universidad.",
         document_prompt=document_prompt,
     )
+
     wikipedia_retriever_tool = create_retriever_tool(
         get_agent_retriever(namespace="Wikipedia"),
         "busqueda_wikipedia_unap",
@@ -91,10 +91,15 @@ def get_agent():
         "calendario_academico_unap",
         "Esta herramienta busca y recupera información sobre el calendario académico de la Universidad Arturo Prat. Úsala para encontrar fechas importantes, como el inicio y fin de semestres, días festivos, períodos de exámenes y otros eventos académicos.",
     )
+
+    news_doc_prompt = PromptTemplate.from_template(
+        "Contenido: {page_content} \nFuente:{link} ({publish_date})"
+    )
     news_retriever_tool = create_retriever_tool(
         get_agent_retriever(namespace="Noticias"),
         "noticias_unap",
         "Esta herramienta busca y recupera noticias sobre la Universidad Arturo Prat. Úsala para encontrar actualizaciones recientes, anuncios y eventos relacionados con la universidad.",
+        document_prompt=news_doc_prompt,
     )
 
     tools = [
