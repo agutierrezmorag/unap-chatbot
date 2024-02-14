@@ -159,7 +159,7 @@ def manage_docs(
             )
 
     uploaded_files = st.file_uploader(
-        f"Subir {doc_type}",
+        f"Subir archivo .{doc_type}",
         type=doc_type,
         accept_multiple_files=True,
         help=f"Selecciona uno o más archivos. Solo se permiten {doc_type}.",
@@ -167,7 +167,7 @@ def manage_docs(
     )
 
     if uploaded_files:
-        if st.button(f"Subir {doc_type}s"):
+        if st.button(f"Subir archivos .{doc_type}s"):
             if uploaded_files:
                 add_files_to_repo(
                     uploaded_files,
@@ -231,16 +231,6 @@ def manage_docs(
 
 
 def wikipedia():
-    st.markdown(
-        "El contenido de la página de Wikipedia de la [Universidad Arturo Prat](https://es.wikipedia.org/wiki/Universidad_Arturo_Prat) "
-        "está disponible para añadirse a la base de conocimientos de la IA. "
-        "Este contenido puede ser útil para responder preguntas generales sobre la universidad o sobre datos que no estén en los reglamentos. "
-        "Si se añade, la IA podrá responder preguntas basándose en esta información."
-    )
-    st.markdown(
-        "Cada vez que se realice esta operación, el contenido anterior de la página de Wikipedia es olvidado y se reemplazará automáticamente "
-        "por el contenido nuevo. Se recomienda hacerlo solo si se está seguro de que el contenido es relevante y actualizado."
-    )
     index_data = get_index_data()
     knows_wikipedia = "Wikipedia" in index_data.namespaces
 
@@ -254,6 +244,16 @@ def wikipedia():
             "Actualmente, la IA NO conoce el contenido de la página de Wikipedia.",
             icon="⚠️",
         )
+    st.markdown(
+        "El contenido de la página de Wikipedia de la [Universidad Arturo Prat](https://es.wikipedia.org/wiki/Universidad_Arturo_Prat) "
+        "está disponible para añadirse a la base de conocimientos de la IA. "
+        "Este contenido puede ser útil para responder preguntas generales sobre la universidad o sobre datos que no estén en los reglamentos. "
+        "Si se añade, la IA podrá responder preguntas basándose en esta información."
+    )
+    st.markdown(
+        "Cada vez que se realice esta operación, el contenido anterior de la página de Wikipedia es olvidado y se reemplazará automáticamente "
+        "por el contenido nuevo. Se recomienda hacerlo solo si se está seguro de que el contenido es relevante y actualizado."
+    )
 
     col1, col2 = st.columns(2)
     with col1:
