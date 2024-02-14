@@ -1,3 +1,4 @@
+import datetime
 import uuid
 
 import streamlit as st
@@ -202,6 +203,16 @@ def manage_docs(
             disabled=df.empty,
         ):
             process_and_load_documents(namespace=register_type, directory_path=doc_type)
+            if register_type == "Reglamentos":
+                get_last_doc_update.clear()
+                st.session_state.last_doc_update = datetime.datetime.now().strftime(
+                    "%d/%m/%Y %H:%M hrs."
+                )
+            elif register_type == "Calendarios":
+                get_last_calendar_update.clear()
+                st.session_state.last_calendar_update = (
+                    datetime.datetime.now().strftime("%d/%m/%Y %H:%M hrs.")
+                )
             st.success(f"{register_type} registrados exitosamente.", icon="✅")
             st.rerun()
 
@@ -211,6 +222,13 @@ def manage_docs(
         ):
             st.session_state[delete_mem_key] = True
             st.rerun()
+
+    if register_type == "Reglamentos":
+        last_doc_update = get_last_doc_update()
+        st.info(f"La memoria fue actualizada por última vez el: {last_doc_update}")
+    elif register_type == "Calendarios":
+        last_calendar_update = get_last_calendar_update()
+        st.info(f"La memoria fue actualizada por última vez el: {last_calendar_update}")
 
 
 def wikipedia():
@@ -255,6 +273,20 @@ def wikipedia():
         ):
             delete_namespace("Wikipedia")
             st.toast("Contenido de Wikipedia eliminado de memoria", icon="⚠️")
+
+
+@st.cache_data(show_spinner=False)
+def get_last_doc_update():
+    if "last_doc_update" in st.session_state:
+        return st.session_state["last_doc_update"]
+    return "Nunca"
+
+
+@st.cache_data(show_spinner=False)
+def get_last_calendar_update():
+    if "last_calendar_update" in st.session_state:
+        return st.session_state["last_calendar_update"]
+    return "Nunca"
 
 
 def main():
