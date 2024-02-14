@@ -187,7 +187,7 @@ def get_document_loader(
     elif namespace == "Calendarios":
         return DirectoryLoader(
             path=path,
-            glob="**/*.pdf",
+            glob="**/*.xml",
             loader_cls=UnstructuredXMLLoader,
             loader_kwargs={"mode": "single"},
             use_multithreading=True,
@@ -245,9 +245,10 @@ def split_and_store_documents(docs: List[Document], namespace: str) -> None:
     Returns:
         None
     """
-    if namespace == "Reglamentos":
+    if namespace in ["Reglamentos", "Calendarios"]:
         for doc in docs:
-            file_name_with_ext = os.path.basename(doc.metadata["source"])
+            normalized_path = doc.metadata["source"].replace("\\", "/")
+            file_name_with_ext = os.path.basename(normalized_path)
             file_name, _ = os.path.splitext(file_name_with_ext)
             doc.metadata["file_name"] = file_name
 
