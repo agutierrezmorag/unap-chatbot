@@ -12,8 +12,8 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import (
     DirectoryLoader,
     GitLoader,
-    PyMuPDFLoader,
     TextLoader,
+    UnstructuredXMLLoader,
     WikipediaLoader,
 )
 from langchain_community.vectorstores import Pinecone as pcvs
@@ -188,8 +188,8 @@ def get_document_loader(
         return DirectoryLoader(
             path=path,
             glob="**/*.pdf",
-            loader_cls=PyMuPDFLoader,
-            loader_kwargs={"extract_images": True},
+            loader_cls=UnstructuredXMLLoader,
+            loader_kwargs={"mode": "single"},
             use_multithreading=True,
             silent_errors=True,
         )

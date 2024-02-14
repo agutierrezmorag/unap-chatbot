@@ -390,9 +390,9 @@ def main():
 
             with tab2:
                 manage_docs(
-                    "pdf",
+                    "xml",
                     "calendar_upload_key",
-                    "delete_pdf_key,",
+                    "delete_xml_key,",
                     "delete_selected_calendars",
                     "Registrar calendarios",
                     "Calendarios",

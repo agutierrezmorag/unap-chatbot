@@ -94,7 +94,6 @@ def get_agent():
         get_retriever(namespace="Calendarios", k_results=2),
         "calendario_academico_unap",
         "Esta herramienta busca y recupera información sobre el calendario académico de la Universidad Arturo Prat. Úsala para encontrar fechas importantes, como el inicio y fin de semestres, días festivos, períodos de exámenes y otros eventos académicos.",
-        document_prompt=calendar_prompt,
     )
 
     news_doc_prompt = PromptTemplate.from_template(
