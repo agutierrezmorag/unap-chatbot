@@ -1,4 +1,3 @@
-import time
 import uuid
 
 import streamlit as st
@@ -12,7 +11,6 @@ from doc_manager.github_management import (
     get_repo_documents,
 )
 from doc_manager.pinecone_management import (
-    delete_all_namespaces,
     delete_namespace,
     get_index_data,
     process_and_load_documents,
@@ -24,17 +22,34 @@ logo_path = "logos/unap_negativo.png"
 
 def general_info():
     st.markdown(
-        "En esta sección se pueden gestionar los documentos del repositorio. "
-        "Es posible ver los documentos presentes en el repositorio, "
-        "subir nuevos documentos o eliminar documentos ya existentes."
+        """
+        # 📑 Información
+
+        ## 💬 Gestión de Documentos
+
+        1. **Visualización de Documentos**: En la interfaz principal, encontrará todos los documentos que han sido cargados al repositorio.
+
+        2. **Carga de Documentos**: Para incorporar un nuevo documento al repositorio, presione 'Cargar', seleccione el documento deseado y este se subirá de forma automática.
+
+        3. **Eliminación de Documentos**: Si desea eliminar un documento del repositorio, selecciónelo y presione 'Eliminar'. El documento será suprimido inmediatamente del repositorio.
+
+        ## 🧠 Memoria de la IA
+
+        Es importante resaltar que, aunque un documento se encuentre en el repositorio, la IA no estará consciente de su contenido hasta que se actualice su memoria. Para ello, es necesario presionar 'Guardar Cambios' tras la carga o eliminación de un documento.
+
+        Por favor, recuerde que cada vez que añada o suprima uno o más documentos, debe presionar 'Guardar Cambios' para asegurar que la IA esté al corriente de los cambios.
+
+        Con estos pasos, podrá gestionar documentos de manera eficiente y segura, y mantener actualizada la memoria de la IA.
+        """
     )
 
     index_data = get_index_data()
 
     space_used = index_data.index_fullness
+    percentage = 100 - (space_used * 100)
     st.progress(
         1 - space_used,
-        f"{100-space_used:.2f}% espacio disponible en memoria de la IA",
+        f"{percentage:.2f}% espacio disponible en memoria",
     )
 
 
@@ -59,6 +74,7 @@ def manage_docs(
                 df,
                 key=f"{doc_type}_list_df",
                 hide_index=True,
+                height=150,
                 use_container_width=True,
                 column_order=["selected", "name", "html_url", "download_url", "size"],
                 column_config={
@@ -121,7 +137,6 @@ def manage_docs(
                     )
             get_repo_documents.clear()
             st.session_state[delete_doc_key] = False
-            time.sleep(1)
             st.rerun()
         elif cancel_button.button("Cancelar", use_container_width=True):
             st.session_state[delete_doc_key] = False
@@ -137,7 +152,7 @@ def manage_docs(
             )
 
     uploaded_files = st.file_uploader(
-        f"Sube un nuevo {doc_type}",
+        f"Subir {doc_type}",
         type=doc_type,
         accept_multiple_files=True,
         help=f"Selecciona uno o más archivos. Solo se permiten {doc_type}.",
@@ -161,17 +176,6 @@ def manage_docs(
             st.session_state[upload_key] = str(uuid.uuid4())
             st.rerun()
 
-    st.markdown(
-        "Presione el botón `Registrar cambios` después de subir o eliminar documentos. "
-        "Este paso procesa los documentos y los integra en la base de conocimientos de la IA. "
-        "Una vez hecho esto, la IA podrá responder preguntas utilizando la información de estos documentos."
-    )
-    st.info(
-        "Este proceso puede tardar varios minutos. No refresque la página mientras se esté realizando el registro. \
-        Es posible que la IA no responda preguntas mientras se esté realizando el registro.",
-        icon="💡",
-    )
-
     confirm_dialog = st.empty()
     save_changes_button = st.empty()
     delete_mem_button = st.empty()
@@ -180,7 +184,7 @@ def manage_docs(
     if st.session_state.get(delete_mem_key):
         confirm_dialog.error(
             f"Esto eliminará **TODA** la memoria de la IA sobre {register_type}. ¿Está seguro de que desea continuar?",
-            icon="❌",
+            icon="🚩",
         )
         if delete_mem_button.button("Confirmar", key=f"confirm_delete_{doc_type}"):
             delete_namespace(register_type)
@@ -220,9 +224,6 @@ def wikipedia():
         "Cada vez que se realice esta operación, el contenido anterior de la página de Wikipedia es olvidado y se reemplazará automáticamente "
         "por el contenido nuevo. Se recomienda hacerlo solo si se está seguro de que el contenido es relevante y actualizado."
     )
-    st.caption(
-        "No es necesario realizar el proceso de registro de cambios para que la IA conozca el contenido de Wikipedia, esto se hace automáticamente."
-    )
     index_data = get_index_data()
     knows_wikipedia = "Wikipedia" in index_data.namespaces
 
@@ -246,8 +247,6 @@ def wikipedia():
         ):
             process_and_load_documents(namespace="Wikipedia")
             st.toast("Contenido de Wikipedia añadido a memoria.", icon="✅")
-            time.sleep(10)
-            st.rerun()
     with col2:
         if st.button(
             "Eliminar contenido de Wikipedia",
@@ -256,15 +255,12 @@ def wikipedia():
         ):
             delete_namespace("Wikipedia")
             st.toast("Contenido de Wikipedia eliminado de memoria", icon="⚠️")
-            time.sleep(4)
-            st.rerun()
 
 
 def main():
     st.set_page_config(
-        page_title="Administrador de Documentos UNAP",
-        page_icon="📚",
-        initial_sidebar_state="collapsed",
+        page_title="Administración de Documentos UNAP",
+        page_icon=":gear:",
     )
 
     st.markdown(
@@ -345,33 +341,34 @@ def main():
             st.sidebar.subheader(f"Bienvenido {username}")
             Authenticator.logout("Cerrar Sesión", "sidebar")
 
-            st.header("📚 Gestión de documentos", divider=True)
             general_info()
 
-            st.header("🗃️ Reglamentos", divider=True)
-            manage_docs(
-                "txt",
-                "upload_key",
-                "delete_txt_key",
-                "delete_selected_docs",
-                "Registrar reglamentos",
-                "Reglamentos",
+            tab1, tab2, tab3 = st.tabs(
+                ["📃 Reglamentos", "🗓️ Calendarios", "🌍 Wikipedia"]
             )
 
-            st.header("🗃️ Calendarios", divider=True)
-            manage_docs(
-                "pdf",
-                "calendar_upload_key",
-                "delete_pdf_key,",
-                "delete_selected_calendars",
-                "Registrar calendarios",
-                "Calendarios",
-            )
+            with tab1:
+                manage_docs(
+                    "txt",
+                    "upload_key",
+                    "delete_txt_key",
+                    "delete_selected_docs",
+                    "Registrar reglamentos",
+                    "Reglamentos",
+                )
 
-            st.header("🌐 Wikipedia", divider=True)
-            wikipedia()
+            with tab2:
+                manage_docs(
+                    "pdf",
+                    "calendar_upload_key",
+                    "delete_pdf_key,",
+                    "delete_selected_calendars",
+                    "Registrar calendarios",
+                    "Calendarios",
+                )
 
-        st.button("delete_memory", on_click=delete_all_namespaces)
+            with tab3:
+                wikipedia()
 
     except Exception as e:
         print(e)
