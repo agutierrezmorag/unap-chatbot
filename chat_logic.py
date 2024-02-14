@@ -87,10 +87,14 @@ def get_agent():
         "Esta herramienta busca y recupera información desde Wikipedia. Úsala para consultar la pagina de la Universidad Arturo Prat y obtener información general sobre la universidad, como su historia, funcionarios, ubicación, facultades y carreras.",
     )
 
+    calendar_prompt = PromptTemplate.from_template(
+        "Documento: {title} \nPagina:{page+1} \nContenido: {page_content}"
+    )
     calendar_retriever_tool = create_retriever_tool(
         get_retriever(namespace="Calendarios", k_results=2),
         "calendario_academico_unap",
         "Esta herramienta busca y recupera información sobre el calendario académico de la Universidad Arturo Prat. Úsala para encontrar fechas importantes, como el inicio y fin de semestres, días festivos, períodos de exámenes y otros eventos académicos.",
+        document_prompt=calendar_prompt,
     )
 
     news_doc_prompt = PromptTemplate.from_template(
