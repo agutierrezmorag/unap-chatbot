@@ -88,7 +88,7 @@ def get_agent():
     )
 
     calendar_prompt = PromptTemplate.from_template(
-        "Documento: {title} \nPagina:{page+1} \nContenido: {page_content}"
+        "Documento: {title} \nPagina:{page} \nContenido: {page_content}"
     )
     calendar_retriever_tool = create_retriever_tool(
         get_retriever(namespace="Calendarios", k_results=2),
