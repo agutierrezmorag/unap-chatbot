@@ -62,6 +62,12 @@ def manage_docs(
     register_button_text: str,
     register_type: str,
 ):
+    if register_type == "Reglamentos":
+        last_update = get_last_doc_update()
+    elif register_type == "Calendarios":
+        last_update = get_last_calendar_update()
+    st.info(f"La memoria fue actualizada por última vez el: {last_update}", icon="ℹ️")
+
     progress_bar_placeholder = st.empty()
     container_placeholder = st.empty()
     form = st.form(key=f"{doc_type}_list_form", border=False)
@@ -222,13 +228,6 @@ def manage_docs(
         ):
             st.session_state[delete_mem_key] = True
             st.rerun()
-
-    if register_type == "Reglamentos":
-        last_doc_update = get_last_doc_update()
-        st.info(f"La memoria fue actualizada por última vez el: {last_doc_update}")
-    elif register_type == "Calendarios":
-        last_calendar_update = get_last_calendar_update()
-        st.info(f"La memoria fue actualizada por última vez el: {last_calendar_update}")
 
 
 def wikipedia():
