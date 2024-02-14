@@ -35,6 +35,7 @@ async def agent_answer(prompt, agent_thoughts_placeholder, response_placeholder)
                 kind = event["event"]
                 if kind == "on_chain_end":
                     if event["name"] == "Agent":
+                        agent_thoughts_placeholder.markdown("- 🎉 Ya sé la respuesta.")
                         time.sleep(1)
                         agent_thoughts_placeholder.update(
                             label="🤗 Respuesta generada.",
@@ -70,7 +71,7 @@ async def agent_answer(prompt, agent_thoughts_placeholder, response_placeholder)
                     output = event["data"].get("output")
                     if output:
                         agent_thoughts_placeholder.markdown(
-                            "- 🤓 Creo haber encontrado textos relevantes:"
+                            "- ✨ Creo haber encontrado textos relevantes:"
                         )
                         full_output += output
                         agent_thoughts_placeholder.text_area(
@@ -88,8 +89,6 @@ async def agent_answer(prompt, agent_thoughts_placeholder, response_placeholder)
             )
             return
         st.session_state.run_id = cb.traced_runs[0].id
-
-    return full_response
 
 
 if __name__ == "__main__":
@@ -203,7 +202,7 @@ if __name__ == "__main__":
         with st.chat_message("assistant", avatar=logo_path):
             response_placeholder = st.empty()
             agent_thoughts_placeholder = st.status("🤔 Pensando...", expanded=True)
-            full_response = asyncio.run(
+            asyncio.run(
                 agent_answer(
                     user_question, agent_thoughts_placeholder, response_placeholder
                 )
