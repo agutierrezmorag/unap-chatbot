@@ -20,6 +20,8 @@ from langchain_openai import OpenAIEmbeddings
 
 from utils import config
 
+logging.basicConfig(level=logging.INFO)
+
 
 class SingletonPinecone:
     _instance = None
@@ -170,16 +172,13 @@ def get_document_loader(
         return None
 
 
-def process_and_load_documents(
-    namespace: str, directory_path: str = None, index_url: str = None
-) -> None:
+def process_and_load_documents(namespace: str, directory_path: str = None) -> None:
     """
     Procesa y carga documentos desde un directorio a un namespace especificado.
 
     Args:
         directory_path (str): La ruta al directorio que contiene los documentos.
         namespace (str): El namespace donde se cargarán los documentos.
-        index_url (str): The URL of the news index page. Default is None.
 
     Returns:
         None
