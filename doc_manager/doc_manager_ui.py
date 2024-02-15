@@ -111,10 +111,10 @@ def manage_docs(
             )
         selected_rows = st.session_state[f"{doc_type}_list_df"]["edited_rows"]
 
-    confirm_dialog = st.empty()
-    action_button = st.empty()
+    delete_confirmation_dialog = st.empty()
+    delete_action_button = st.empty()
 
-    action_button = form.form_submit_button(
+    delete_action_button = form.form_submit_button(
         f"Eliminar {doc_type}s seleccionados",
         use_container_width=True,
         disabled=df.empty,
@@ -122,16 +122,18 @@ def manage_docs(
 
     bcol1, bcol2 = st.columns(2)
     with bcol1:
-        confirm_button = st.empty()
+        confirm_delete_button = st.empty()
     with bcol2:
-        cancel_button = st.empty()
+        cancel_delete_button = st.empty()
 
     if st.session_state.get(delete_doc_key):
-        confirm_dialog.warning(
+        delete_confirmation_dialog.warning(
             "¿Seguro que desea eliminar los documentos seleccionados?",
             icon="⚠️",
         )
-        if confirm_button.button("Confirmar", use_container_width=True, type="primary"):
+        if confirm_delete_button.button(
+            "Confirmar", use_container_width=True, type="primary"
+        ):
             selected_indices = list(
                 st.session_state[f"{doc_type}_list_df"]["edited_rows"].keys()
             )
@@ -142,17 +144,15 @@ def manage_docs(
                 directory_path=doc_type,
             )
             time.sleep(2)
-            st.session_state[delete_doc_key] = False
-            st.rerun()
-        elif cancel_button.button("Cancelar", use_container_width=True):
-            st.session_state[delete_doc_key] = False
-            st.rerun()
-    elif action_button:
+            reset_state_and_rerun(delete_doc_key)
+        elif cancel_delete_button.button("Cancelar", use_container_width=True):
+            reset_state_and_rerun(delete_doc_key)
+    elif delete_action_button:
         if selected_rows:
             st.session_state[delete_doc_key] = True
             st.rerun()
         else:
-            confirm_dialog.error(
+            delete_confirmation_dialog.error(
                 "No se ha seleccionado ningún documento para eliminar.",
                 icon="❌",
             )
@@ -166,54 +166,59 @@ def manage_docs(
     )
 
     if uploaded_files:
-        if st.button(f"Subir archivos .{doc_type}s"):
-            if uploaded_files:
-                add_files_to_repo(
-                    file_list=uploaded_files,
-                    subdirectory=doc_type,
-                    namespace=namespace,
+        if st.button(f"Subir archivos .{doc_type}s al repositorio"):
+            add_files_to_repo(
+                file_list=uploaded_files,
+                subdirectory=doc_type,
+                namespace=namespace,
+            )
+            if namespace == "Reglamentos":
+                get_last_doc_update.clear()
+                st.session_state.last_doc_update = datetime.datetime.now().strftime(
+                    "%d/%m/%Y %H:%M a las hrs."
                 )
-                if namespace == "Reglamentos":
-                    get_last_doc_update.clear()
-                    st.session_state.last_doc_update = datetime.datetime.now().strftime(
-                        "%d/%m/%Y %H:%M a las hrs."
-                    )
-                elif namespace == "Calendarios":
-                    get_last_calendar_update.clear()
-                    st.session_state.last_calendar_update = (
-                        datetime.datetime.now().strftime("%d/%m/%Y a las %H:%M hrs.")
-                    )
-                st.session_state[upload_key] = str(uuid.uuid4())
-                st.rerun()
+            elif namespace == "Calendarios":
+                get_last_calendar_update.clear()
+                st.session_state.last_calendar_update = (
+                    datetime.datetime.now().strftime("%d/%m/%Y a las %H:%M hrs.")
+                )
+            update_session_and_rerun(upload_key)
 
-        if st.button("Limpiar"):
-            st.session_state[upload_key] = str(uuid.uuid4())
-            st.rerun()
+        if st.button("Limpiar lista de archivos a subir"):
+            update_session_and_rerun(upload_key)
 
-    confirm_dialog = st.empty()
-    delete_mem_button = st.empty()
-    cancel_button = st.empty()
+    delete_memory_confirmation = st.empty()
+    confirm_delete_button = st.empty()
+    cancel_delete_button = st.empty()
 
     if st.session_state.get(delete_mem_key):
-        confirm_dialog.error(
+        delete_memory_confirmation.error(
             f"Esto eliminará **TODA** la memoria de la IA sobre {namespace}. ¿Está seguro de que desea continuar?",
             icon="🚩",
         )
-        if delete_mem_button.button("Confirmar", key=f"confirm_delete_{doc_type}"):
+        if confirm_delete_button.button("Confirmar", key=f"confirm_delete_{doc_type}"):
             delete_namespace(namespace)
             st.toast("Memoria eliminada.", icon="⚠️")
-            st.session_state[delete_mem_key] = False
-            st.rerun()
-        elif cancel_button.button("Cancelar", key=f"cancel_delete_{doc_type}"):
-            st.session_state[delete_mem_key] = False
-            st.rerun()
+            reset_state_and_rerun(delete_mem_key)
+        elif cancel_delete_button.button("Cancelar", key=f"cancel_delete_{doc_type}"):
+            reset_state_and_rerun(delete_mem_key)
     else:
-        if delete_mem_button.button(
+        if delete_memory_confirmation.button(
             f"Eliminar memoria de la IA sobre {namespace}",
             use_container_width=True,
         ):
             st.session_state[delete_mem_key] = True
             st.rerun()
+
+
+def reset_state_and_rerun(state_key):
+    st.session_state[state_key] = False
+    st.rerun()
+
+
+def update_session_and_rerun(upload_key):
+    st.session_state[upload_key] = str(uuid.uuid4())
+    st.rerun()
 
 
 def wikipedia():
