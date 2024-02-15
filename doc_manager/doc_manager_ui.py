@@ -59,12 +59,11 @@ def manage_docs(
     upload_key: str,
     delete_doc_key: str,
     delete_mem_key: str,
-    register_button_text: str,
-    register_type: str,
+    namespace: str,
 ):
-    if register_type == "Reglamentos":
+    if namespace == "Reglamentos":
         last_update = get_last_doc_update()
-    elif register_type == "Calendarios":
+    elif namespace == "Calendarios":
         last_update = get_last_calendar_update()
     st.info(f"La memoria fue actualizada por última vez el: {last_update}", icon="ℹ️")
 
@@ -139,7 +138,7 @@ def manage_docs(
             selected_file_paths = df.loc[selected_indices, "path"].tolist()
             delete_repo_doc(
                 file_paths=selected_file_paths,
-                namespace=register_type,
+                namespace=namespace,
                 directory_path=doc_type,
             )
             time.sleep(2)
@@ -172,14 +171,14 @@ def manage_docs(
                 add_files_to_repo(
                     file_list=uploaded_files,
                     subdirectory=doc_type,
-                    namespace=register_type,
+                    namespace=namespace,
                 )
-                if register_type == "Reglamentos":
+                if namespace == "Reglamentos":
                     get_last_doc_update.clear()
                     st.session_state.last_doc_update = datetime.datetime.now().strftime(
                         "%d/%m/%Y %H:%M a las hrs."
                     )
-                elif register_type == "Calendarios":
+                elif namespace == "Calendarios":
                     get_last_calendar_update.clear()
                     st.session_state.last_calendar_update = (
                         datetime.datetime.now().strftime("%d/%m/%Y a las %H:%M hrs.")
@@ -197,11 +196,11 @@ def manage_docs(
 
     if st.session_state.get(delete_mem_key):
         confirm_dialog.error(
-            f"Esto eliminará **TODA** la memoria de la IA sobre {register_type}. ¿Está seguro de que desea continuar?",
+            f"Esto eliminará **TODA** la memoria de la IA sobre {namespace}. ¿Está seguro de que desea continuar?",
             icon="🚩",
         )
         if delete_mem_button.button("Confirmar", key=f"confirm_delete_{doc_type}"):
-            delete_namespace(register_type)
+            delete_namespace(namespace)
             st.toast("Memoria eliminada.", icon="⚠️")
             st.session_state[delete_mem_key] = False
             st.rerun()
@@ -210,7 +209,7 @@ def manage_docs(
             st.rerun()
     else:
         if delete_mem_button.button(
-            f"Eliminar memoria de la IA sobre {register_type}",
+            f"Eliminar memoria de la IA sobre {namespace}",
             use_container_width=True,
         ):
             st.session_state[delete_mem_key] = True
@@ -371,7 +370,6 @@ def main():
                     "upload_key",
                     "delete_txt_key",
                     "delete_selected_docs",
-                    "Registrar reglamentos",
                     "Reglamentos",
                 )
 
@@ -381,7 +379,6 @@ def main():
                     "calendar_upload_key",
                     "delete_xml_key,",
                     "delete_selected_calendars",
-                    "Registrar calendarios",
                     "Calendarios",
                 )
 
