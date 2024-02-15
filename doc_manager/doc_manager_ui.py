@@ -70,7 +70,7 @@ def manage_docs(
     container_placeholder = st.empty()
     form = st.form(key=f"{doc_type}_list_form", border=False)
 
-    df = get_repo_docs_as_pd(doc_type)
+    df = get_repo_docs_as_pd(namespace)
     if df.empty:
         container_placeholder.warning("No hay documentos en el repositorio.", icon="⚠️")
     else:
@@ -141,7 +141,6 @@ def manage_docs(
             delete_repo_doc(
                 file_paths=selected_file_paths,
                 namespace=namespace,
-                directory_path=doc_type,
             )
             time.sleep(2)
             reset_state_and_rerun(delete_doc_key)
@@ -169,7 +168,6 @@ def manage_docs(
         if st.button(f"Subir archivos .{doc_type}s al repositorio"):
             add_files_to_repo(
                 file_list=uploaded_files,
-                subdirectory=doc_type,
                 namespace=namespace,
             )
             if namespace == "Reglamentos":

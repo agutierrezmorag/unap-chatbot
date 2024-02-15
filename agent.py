@@ -126,7 +126,7 @@ if __name__ == "__main__":
     )
 
     # Lista de documentos disponibles para consultar
-    docs = get_repo_docs_as_pd("txt")
+    docs = get_repo_docs_as_pd("Reglamentos")
     with st.expander("Puedes realizar consultas sobre los siguientes documentos:"):
         st.dataframe(
             docs,

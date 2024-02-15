@@ -181,12 +181,11 @@ def get_document_loader(
         return None
 
 
-def process_and_load_documents(namespace: str, directory_path: str = None) -> None:
+def process_and_load_documents(namespace: str) -> None:
     """
     Procesa y carga documentos desde un directorio a un namespace especificado.
 
     Args:
-        directory_path (str): La ruta al directorio que contiene los documentos.
         namespace (str): El namespace donde se cargarán los documentos.
 
     Returns:
@@ -199,7 +198,7 @@ def process_and_load_documents(namespace: str, directory_path: str = None) -> No
             branch=config.REPO_BRANCH,
         ).load()
 
-    path = f"{config.REPO_DIRECTORY_PATH}/{config.REPO_DIRECTORY_PATH}/{directory_path}"
+    path = f"{config.REPO_DIRECTORY_PATH}/{config.REPO_DIRECTORY_PATH}/{namespace}"
     print(path)
 
     try:
