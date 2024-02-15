@@ -194,7 +194,7 @@ def process_and_load_documents(
     path = f"{config.REPO_DIRECTORY_PATH}/{config.REPO_DIRECTORY_PATH}/{directory_path}"
 
     try:
-        loader = get_document_loader(namespace, path, index_url)
+        loader = get_document_loader(namespace, path)
         if loader is None:
             raise ValueError(f"Namespace no existe en el index: {namespace}")
         docs = loader.load()
