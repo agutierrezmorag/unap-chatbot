@@ -68,7 +68,6 @@ def manage_docs(
         last_update = get_last_calendar_update()
     st.info(f"La memoria fue actualizada por última vez el: {last_update}", icon="ℹ️")
 
-    progress_bar_placeholder = st.empty()
     container_placeholder = st.empty()
     form = st.form(key=f"{doc_type}_list_form", border=False)
 
@@ -81,7 +80,7 @@ def manage_docs(
                 df,
                 key=f"{doc_type}_list_df",
                 hide_index=True,
-                height=150,
+                height=300,
                 use_container_width=True,
                 column_order=["selected", "name", "html_url", "download_url", "size"],
                 column_config={
@@ -170,10 +169,9 @@ def manage_docs(
         if st.button(f"Subir archivos .{doc_type}s"):
             if uploaded_files:
                 add_files_to_repo(
-                    uploaded_files,
-                    doc_type,
-                    container_placeholder,
-                    progress_bar_placeholder,
+                    file_list=uploaded_files,
+                    subdirectory=doc_type,
+                    namespace=register_type,
                 )
                 st.session_state[upload_key] = str(uuid.uuid4())
                 get_repo_documents.clear()

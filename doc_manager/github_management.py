@@ -1,13 +1,17 @@
+import logging
 import time
 from typing import List
 
 import pandas as pd
 import streamlit as st
 from github import Auth, ContentFile, Github, GithubException, Repository
-from streamlit.delta_generator import DeltaGenerator
+from streamlit.elements.widgets.file_uploader import UploadedFile
 from termcolor import cprint
 
+from doc_manager.pinecone_management import process_and_load_documents
 from utils import config
+
+logger = logging.getLogger(__name__)
 
 
 @st.cache_resource(show_spinner=False)
@@ -108,36 +112,37 @@ def delete_repo_doc(
 
 
 def add_files_to_repo(
-    file_list: List[str],
+    file_list: List[UploadedFile],
     subdirectory: str,
-    container: DeltaGenerator,
-    progress_bar: DeltaGenerator,
+    namespace: str,
 ) -> None:
     """
-    Añade una lista de archivos a un repositorio de GitHub.
-
-    Esta función recorre una lista de archivos, verifica si cada archivo ya existe en el repositorio y, si no existe, lo añade al repositorio.
-    La función actualiza una barra de progreso en cada iteración del bucle.
+    Añade archivos a un repositorio de GitHub. Luego, procesa y carga los documentos en Pinecone.
 
     Args:
-        file_list (List[str]): Una lista de archivos para añadir al repositorio.
-        container (DeltaGenerator): Un contenedor de Streamlit para mostrar mensajes.
-        progress_bar (DeltaGenerator): Un objeto de barra de progreso de Streamlit para mostrar el progreso de la adición de archivos.
+        file_list (List[UploadedFile]): Lista de archivos a añadir.
+        subdirectory (str): Subdirectorio dentro del repositorio donde añadir los archivos.
+        namespace (str): Espacio de nombres de los documentos en Pinecone.
+        progress_bar (DeltaGenerator): Objeto de barra de progreso para mostrar el progreso.
 
     Returns:
         None
     """
     repo = _get_repo()
 
-    progress_bar.progress(0)
-    for i, uploaded_file in enumerate(file_list):
+    update_container = st.status(
+        label="Añadiendo documentos al repositorio...",
+        state="running",
+        expanded=True,
+    )
+    for uploaded_file in file_list:
         content = uploaded_file.getvalue()
         file_path = f"{config.REPO_DIRECTORY_PATH}/{subdirectory}/{uploaded_file.name}"
 
         try:
             repo.get_contents(file_path, ref=config.REPO_BRANCH)
-            message = f"El documento '{uploaded_file.name}' ya existe. Omitiendo..."
-            cprint(message, "yellow")
+            message = f"Documento '{uploaded_file.name}' ya existe. Omitiendo..."
+            logger.warning(message)
         except GithubException as e:
             if e.status == 404:
                 try:
@@ -148,15 +153,19 @@ def add_files_to_repo(
                         content=content,
                         branch=config.REPO_BRANCH,
                     )
-                    cprint(message, "green")
+                    logger.info(message)
                 except GithubException as e:
                     message = f"Error al añadir el documento '{uploaded_file.name}'"
-                    cprint(f"{message} : {e}", "red")
+                    logger.error(f"{message} : {e}")
             else:
                 message = f"Error al obtener el documento '{uploaded_file.name}'"
-                cprint(f"{message} : {e}", "red")
+                logger.error(f"{message} : {e}")
 
-        progress_bar.progress((i + 1) / len(file_list), text=message)
+        update_container.markdown(f"- {message}")
     time.sleep(1)
-    progress_bar.progress(1.0, text="Todos los documentos añadidos.")
+    update_container.markdown("- Documentos cargados exitosamente.")
     time.sleep(1)
+
+    update_container.markdown("- Actualizando la memoria de la IA...")
+    process_and_load_documents(namespace=namespace, directory_path=subdirectory)
+    update_container.update(label="Memoria actualizada.", state="complete")
