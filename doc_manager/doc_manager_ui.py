@@ -10,7 +10,6 @@ from doc_manager.github_management import (
     add_files_to_repo,
     delete_repo_doc,
     get_repo_docs_as_pd,
-    get_repo_documents,
 )
 from doc_manager.pinecone_management import (
     delete_namespace,
@@ -144,7 +143,6 @@ def manage_docs(
                 directory_path=doc_type,
             )
             time.sleep(2)
-            get_repo_documents.clear()
             st.session_state[delete_doc_key] = False
             st.rerun()
         elif cancel_button.button("Cancelar", use_container_width=True):
@@ -187,7 +185,6 @@ def manage_docs(
                         datetime.datetime.now().strftime("%d/%m/%Y a las %H:%M hrs.")
                     )
                 st.session_state[upload_key] = str(uuid.uuid4())
-                get_repo_documents.clear()
                 st.rerun()
 
         if st.button("Limpiar"):

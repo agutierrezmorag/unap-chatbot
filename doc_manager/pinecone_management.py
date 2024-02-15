@@ -5,7 +5,6 @@ import time
 from typing import Dict, List, Optional, Union
 
 import pinecone
-import streamlit as st
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import (
     DirectoryLoader,
@@ -191,6 +190,7 @@ def process_and_load_documents(namespace: str, directory_path: str = None) -> No
         ).load()
 
     path = f"{config.REPO_DIRECTORY_PATH}/{config.REPO_DIRECTORY_PATH}/{directory_path}"
+    print(path)
 
     try:
         loader = get_document_loader(namespace, path)
