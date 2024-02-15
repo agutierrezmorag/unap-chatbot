@@ -199,7 +199,6 @@ def process_and_load_documents(namespace: str, directory_path: str = None) -> No
         docs = loader.load()
     except FileNotFoundError:
         logging.error(f"Error: No se encontraron documentos en {path}")
-        st.error("No hay documentos en el directorio seleccionado.", icon="📁")
         return
 
     split_and_store_documents(docs, namespace)
