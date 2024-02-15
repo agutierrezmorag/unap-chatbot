@@ -1,4 +1,5 @@
 import datetime
+import time
 import uuid
 
 import streamlit as st
@@ -142,6 +143,7 @@ def manage_docs(
                 namespace=register_type,
                 directory_path=doc_type,
             )
+            time.sleep(2)
             get_repo_documents.clear()
             st.session_state[delete_doc_key] = False
             st.rerun()
