@@ -1,3 +1,4 @@
+import logging
 import os
 import shutil
 import time
@@ -16,7 +17,6 @@ from langchain_community.document_loaders import (
 from langchain_community.vectorstores import Pinecone as pcvs
 from langchain_core.documents import Document
 from langchain_openai import OpenAIEmbeddings
-from termcolor import cprint
 
 from utils import config
 
@@ -79,12 +79,9 @@ def delete_namespace(namespace: str) -> None:
         pc = _get_pinecone()
         index = pc.Index(config.PINECONE_INDEX_NAME)
         index.delete(delete_all=True, namespace=namespace)
-        cprint(f"Namespace {namespace} eliminado exitosamente.", "yellow")
+        logging.info(f"Namespace {namespace} eliminado exitosamente.")
     except Exception as e:
-        cprint(
-            f"Hubo un error al eliminar el namespace {namespace}: {e}",
-            "red",
-        )
+        logging.error(f"Hubo un error al eliminar el namespace {namespace}: {e}")
 
 
 def _ensure_index_exists() -> None:
@@ -97,9 +94,9 @@ def _ensure_index_exists() -> None:
                 dimension=1536,
                 spec=pinecone.PodSpec(environment=config.PINECONE_ENV),
             )
-            cprint(f"Índice creado {config.PINECONE_INDEX_NAME}", "yellow")
+            logging.info(f"Índice creado {config.PINECONE_INDEX_NAME}")
         except Exception as e:
-            cprint(f"Error al crear el índice {config.PINECONE_INDEX_NAME}: {e}", "red")
+            logging.error(f"Error al crear el índice {config.PINECONE_INDEX_NAME}: {e}")
 
 
 def get_index_data() -> Dict:
@@ -127,7 +124,7 @@ def delete_all_namespaces() -> None:
     index_data = get_index_data()
     for namespace in index_data.namespaces:
         delete_namespace(namespace)
-    cprint("Todos los namespaces eliminados.", "yellow")
+    logging.info("Todos los namespaces eliminados.")
 
 
 def get_document_loader(
@@ -173,13 +170,16 @@ def get_document_loader(
         return None
 
 
-def process_and_load_documents(namespace: str, directory_path: str = None) -> None:
+def process_and_load_documents(
+    namespace: str, directory_path: str = None, index_url: str = None
+) -> None:
     """
     Procesa y carga documentos desde un directorio a un namespace especificado.
 
     Args:
         directory_path (str): La ruta al directorio que contiene los documentos.
         namespace (str): El namespace donde se cargarán los documentos.
+        index_url (str): The URL of the news index page. Default is None.
 
     Returns:
         None
@@ -194,12 +194,12 @@ def process_and_load_documents(namespace: str, directory_path: str = None) -> No
     path = f"{config.REPO_DIRECTORY_PATH}/{config.REPO_DIRECTORY_PATH}/{directory_path}"
 
     try:
-        loader = get_document_loader(namespace, path)
+        loader = get_document_loader(namespace, path, index_url)
         if loader is None:
             raise ValueError(f"Namespace no existe en el index: {namespace}")
         docs = loader.load()
     except FileNotFoundError:
-        cprint(f"Error: No se encontraron documentos en {path}", "red")
+        logging.error(f"Error: No se encontraron documentos en {path}")
         st.error("No hay documentos en el directorio seleccionado.", icon="📁")
         return
 
@@ -229,14 +229,13 @@ def split_and_store_documents(docs: List[Document], namespace: str) -> None:
     if namespace in ["Reglamentos", "Calendarios"]:
         try:
             shutil.rmtree(config.REPO_DIRECTORY_PATH)
-            cprint("Archivos residuales eliminados.", "blue")
+            logging.info("Archivos residuales eliminados.")
         except PermissionError:
-            cprint(
-                "Error: No se tienen los permisos necesarios para eliminar el directorio.",
-                "red",
+            logging.error(
+                "Error: No se tienen los permisos necesarios para eliminar el directorio."
             )
         except Exception as e:
-            cprint(f"Error: {e}", "red")
+            logging.error(f"Error: {e}")
 
     splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
     split_docs = splitter.split_documents(docs)
@@ -251,11 +250,8 @@ def split_and_store_documents(docs: List[Document], namespace: str) -> None:
         vectorstore = _get_or_create_vectorstore(namespace)
         vectorstore.add_documents(documents=split_docs)
 
-        cprint(
-            f"{len(split_docs)} vectores añadidos al namespace '{namespace}'", "green"
-        )
+        logging.info(f"{len(split_docs)} vectores añadidos al namespace '{namespace}'")
     except Exception as e:
-        cprint(
-            f"Hubo un error al intentar añadir el contenido al vector store: {e}",
-            "red",
+        logging.error(
+            f"Hubo un error al intentar añadir el contenido al vector store: {e}"
         )
