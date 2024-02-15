@@ -9,8 +9,8 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import (
     DirectoryLoader,
     GitLoader,
+    PyMuPDFLoader,
     TextLoader,
-    UnstructuredXMLLoader,
     WikipediaLoader,
 )
 from langchain_community.document_loaders.sitemap import SitemapLoader
@@ -162,9 +162,9 @@ def get_document_loader(
     elif namespace == "Calendarios":
         return DirectoryLoader(
             path=path,
-            glob="**/*.xml",
-            loader_cls=UnstructuredXMLLoader,
-            loader_kwargs={"mode": "single"},
+            glob="**/*.pdf",
+            loader_cls=PyMuPDFLoader,
+            loader_kwargs={"extract_images": True},
             use_multithreading=True,
             silent_errors=True,
         )
