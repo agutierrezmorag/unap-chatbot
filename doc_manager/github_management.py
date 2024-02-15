@@ -55,13 +55,13 @@ def get_repo_documents(subdirectory: str) -> List[ContentFile]:
 
 def get_repo_docs_as_pd(subdirectory: str) -> pd.DataFrame:
     """
-    Converts a list of ContentFile objects into a pandas DataFrame.
+    Obtiene los documentos del repositorio en formato pandas DataFrame.
 
     Args:
-        content_files (List[ContentFile]): A list of ContentFile objects.
+        subdirectory (str): Subdirectorio del repositorio.
 
     Returns:
-        pd.DataFrame: A DataFrame where each row represents a ContentFile.
+        pd.DataFrame: DataFrame que contiene la información de los documentos del repositorio.
     """
     content_files = get_repo_documents(subdirectory)
     data = []
@@ -81,34 +81,43 @@ def get_repo_docs_as_pd(subdirectory: str) -> pd.DataFrame:
     return pd.DataFrame(data)
 
 
-def delete_repo_doc(
-    file_path: str, commit_message: str = "Eliminar archivo a través de Streamlit"
-) -> bool:
+def delete_repo_doc(file_paths: List[str], namespace: str, directory_path: str) -> None:
     """
-    Elimina un archivo del repositorio.
+    Elimina los documentos especificados del repositorio y actualiza la memoria de la IA.
 
     Args:
-        file_path (str): La ruta del archivo a eliminar.
-        commit_message (str, optional): El mensaje de commit para la eliminación. Por defecto es "Eliminar archivo a través de Streamlit".
+        file_paths (List[str]): Lista de rutas de los archivos a eliminar.
+        namespace (str): Espacio de nombres en Pinecone.
+        directory_path (str): Ruta del directorio donde se encuentran los documentos.
 
     Returns:
-        bool: Verdadero si el archivo se eliminó con éxito, Falso en caso contrario.
+        None
     """
     repo = _get_repo()
+    progress_container = st.status(
+        "Eliminando documentos...", state="running", expanded=True
+    )
     try:
-        doc = repo.get_contents(file_path, ref=config.REPO_BRANCH)
-        message = f"Documento '{doc.name}' eliminado."
-        resp = repo.delete_file(
-            path=doc.path,
-            message=message,
-            sha=doc.sha,
-            branch=config.REPO_BRANCH,
-        )
-        cprint(f"Documento '{doc.name}' eliminado exitosamente.", "yellow")
-        return "commit" in resp
+        for file_path in file_paths:
+            doc = repo.get_contents(file_path, ref=config.REPO_BRANCH)
+            message = f"Documento '{doc.name}' eliminado."
+            resp = repo.delete_file(  # noqa: F841
+                path=doc.path,
+                message=message,
+                sha=doc.sha,
+                branch=config.REPO_BRANCH,
+            )
+            progress_container.markdown(f"- {message}")
+
+        progress_container.markdown("- Documentos eliminados exitosamente.")
+
+        progress_container.markdown("- Actualizando la memoria de la IA...")
+        process_and_load_documents(namespace=namespace, directory_path=directory_path)
+        progress_container.update(label="Memoria actualizada.", state="complete")
+        time.sleep(1)
     except GithubException as e:
         cprint(f"Error al eliminar el documento '{file_path}': {e}", "red")
-        return False
+        return
 
 
 def add_files_to_repo(

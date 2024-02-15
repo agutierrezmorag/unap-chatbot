@@ -133,14 +133,15 @@ def manage_docs(
             icon="⚠️",
         )
         if confirm_button.button("Confirmar", use_container_width=True, type="primary"):
-            for index in selected_rows:
-                doc_name = df.loc[index, "name"]
-                doc_path = df.loc[index, "path"]
-                if delete_repo_doc(doc_path):
-                    st.toast(
-                        f"Documento '{doc_name}' eliminado.",
-                        icon="⚠️",
-                    )
+            selected_indices = list(
+                st.session_state[f"{doc_type}_list_df"]["edited_rows"].keys()
+            )
+            selected_file_paths = df.loc[selected_indices, "path"].tolist()
+            delete_repo_doc(
+                file_paths=selected_file_paths,
+                namespace=register_type,
+                directory_path=doc_type,
+            )
             get_repo_documents.clear()
             st.session_state[delete_doc_key] = False
             st.rerun()
