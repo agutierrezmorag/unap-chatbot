@@ -278,8 +278,8 @@ def get_last_calendar_update():
 
 def main():
     st.set_page_config(
-        page_title="Administración de Documentos UNAP",
-        page_icon=":gear:",
+        page_title="Chatbot UNAP",
+        page_icon="🤖",
     )
 
     st.markdown(
