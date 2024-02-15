@@ -6,12 +6,9 @@ import pandas as pd
 import streamlit as st
 from github import Auth, ContentFile, Github, GithubException, Repository
 from streamlit.elements.widgets.file_uploader import UploadedFile
-from termcolor import cprint
 
 from doc_manager.pinecone_management import process_and_load_documents
 from utils import config
-
-logger = logging.getLogger(__name__)
 
 
 @st.cache_resource(show_spinner=False)
@@ -26,7 +23,7 @@ def _get_repo() -> Repository.Repository:
     g = Github(auth=auth)
     repo = g.get_repo(config.REPO_OWNER + "/" + config.REPO_NAME)
 
-    cprint(f"Repositorio recuperado {config.REPO_OWNER}/{config.REPO_NAME}", "green")
+    logging.info(f"Repositorio recuperado {config.REPO_OWNER}/{config.REPO_NAME}")
 
     return repo
 
@@ -46,10 +43,10 @@ def get_repo_documents(subdirectory: str) -> List[ContentFile]:
         repo = _get_repo()
         directory_path = f"{config.REPO_DIRECTORY_PATH}/{subdirectory}"
         docs = repo.get_contents(directory_path, ref=config.REPO_BRANCH)
-        cprint(f"Recuperados {len(docs)} documentos del repositorio", "green")
+        logging.info(f"Recuperados {len(docs)} documentos del repositorio")
         return docs
     except GithubException as e:
-        cprint(f"Error al recuperar documentos del repositorio: {e}", "red")
+        logging.error(f"Error al recuperar documentos del repositorio: {e}")
         return []
 
 
@@ -116,7 +113,7 @@ def delete_repo_doc(file_paths: List[str], namespace: str, directory_path: str) 
         progress_container.update(label="Memoria actualizada.", state="complete")
         time.sleep(1)
     except GithubException as e:
-        cprint(f"Error al eliminar el documento '{file_path}': {e}", "red")
+        logging.error(f"Error al eliminar el documento '{file_path}': {e}")
         return
 
 
@@ -151,7 +148,7 @@ def add_files_to_repo(
         try:
             repo.get_contents(file_path, ref=config.REPO_BRANCH)
             message = f"Documento '{uploaded_file.name}' ya existe. Omitiendo..."
-            logger.warning(message)
+            logging.warning(message)
         except GithubException as e:
             if e.status == 404:
                 try:
@@ -162,13 +159,13 @@ def add_files_to_repo(
                         content=content,
                         branch=config.REPO_BRANCH,
                     )
-                    logger.info(message)
+                    logging.info(message)
                 except GithubException as e:
                     message = f"Error al añadir el documento '{uploaded_file.name}'"
-                    logger.error(f"{message} : {e}")
+                    logging.error(f"{message} : {e}")
             else:
                 message = f"Error al obtener el documento '{uploaded_file.name}'"
-                logger.error(f"{message} : {e}")
+                logging.error(f"{message} : {e}")
 
         update_container.markdown(f"- {message}")
     time.sleep(1)
