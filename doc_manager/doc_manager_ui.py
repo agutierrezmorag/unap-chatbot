@@ -173,6 +173,16 @@ def manage_docs(
                     subdirectory=doc_type,
                     namespace=register_type,
                 )
+                if register_type == "Reglamentos":
+                    get_last_doc_update.clear()
+                    st.session_state.last_doc_update = datetime.datetime.now().strftime(
+                        "%d/%m/%Y %H:%M a las hrs."
+                    )
+                elif register_type == "Calendarios":
+                    get_last_calendar_update.clear()
+                    st.session_state.last_calendar_update = (
+                        datetime.datetime.now().strftime("%d/%m/%Y a las %H:%M hrs.")
+                    )
                 st.session_state[upload_key] = str(uuid.uuid4())
                 get_repo_documents.clear()
                 st.rerun()
@@ -182,7 +192,6 @@ def manage_docs(
             st.rerun()
 
     confirm_dialog = st.empty()
-    save_changes_button = st.empty()
     delete_mem_button = st.empty()
     cancel_button = st.empty()
 
@@ -200,26 +209,6 @@ def manage_docs(
             st.session_state[delete_mem_key] = False
             st.rerun()
     else:
-        if save_changes_button.button(
-            register_button_text,
-            use_container_width=True,
-            type="primary",
-            disabled=df.empty,
-        ):
-            process_and_load_documents(namespace=register_type, directory_path=doc_type)
-            if register_type == "Reglamentos":
-                get_last_doc_update.clear()
-                st.session_state.last_doc_update = datetime.datetime.now().strftime(
-                    "%d/%m/%Y %H:%M hrs."
-                )
-            elif register_type == "Calendarios":
-                get_last_calendar_update.clear()
-                st.session_state.last_calendar_update = (
-                    datetime.datetime.now().strftime("%d/%m/%Y %H:%M hrs.")
-                )
-            st.success(f"{register_type} registrados exitosamente.", icon="✅")
-            st.rerun()
-
         if delete_mem_button.button(
             f"Eliminar memoria de la IA sobre {register_type}",
             use_container_width=True,
