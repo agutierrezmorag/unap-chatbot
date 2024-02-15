@@ -132,22 +132,20 @@ def manage_docs(
             "¿Seguro que desea eliminar los documentos seleccionados?",
             icon="⚠️",
         )
-        selected_indices = list(
-            st.session_state[f"{doc_type}_list_df"]["edited_rows"].keys()
-        )
-        selected_file_paths = df.loc[selected_indices, "path"].tolist()
-        confirm_button.button(
-            "Confirmar",
-            use_container_width=True,
-            type="primary",
-            on_click=delete_repo_doc,
-            kwargs={
-                "file_paths": selected_file_paths,
-                "namespace": register_type,
-                "directory_path": doc_type,
-            },
-        )
-        if cancel_button.button("Cancelar", use_container_width=True):
+        if confirm_button.button("Confirmar", use_container_width=True, type="primary"):
+            selected_indices = list(
+                st.session_state[f"{doc_type}_list_df"]["edited_rows"].keys()
+            )
+            selected_file_paths = df.loc[selected_indices, "path"].tolist()
+            delete_repo_doc(
+                file_paths=selected_file_paths,
+                namespace=register_type,
+                directory_path=doc_type,
+            )
+            get_repo_documents.clear()
+            st.session_state[delete_doc_key] = False
+            st.rerun()
+        elif cancel_button.button("Cancelar", use_container_width=True):
             st.session_state[delete_doc_key] = False
             st.rerun()
     elif action_button:
