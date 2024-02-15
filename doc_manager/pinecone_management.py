@@ -13,6 +13,7 @@ from langchain_community.document_loaders import (
     UnstructuredXMLLoader,
     WikipediaLoader,
 )
+from langchain_community.document_loaders.sitemap import SitemapLoader
 from langchain_community.vectorstores import Pinecone as pcvs
 from langchain_core.documents import Document
 from langchain_openai import OpenAIEmbeddings
@@ -167,6 +168,15 @@ def get_document_loader(
             use_multithreading=True,
             silent_errors=True,
         )
+    elif namespace == "Sitemap":
+        return DirectoryLoader(
+            path=path,
+            glob="**/*.xml",
+            loader_cls=SitemapLoader,
+            loader_kwargs={"is_local": True},
+            use_multithreading=True,
+            silent_errors=True,
+        )
     else:
         return None
 
@@ -182,7 +192,7 @@ def process_and_load_documents(namespace: str, directory_path: str = None) -> No
     Returns:
         None
     """
-    if namespace in ["Reglamentos", "Calendarios"]:
+    if namespace != "Wikipedia":
         GitLoader(
             clone_url=config.REPO_URL,
             repo_path=config.REPO_DIRECTORY_PATH,
