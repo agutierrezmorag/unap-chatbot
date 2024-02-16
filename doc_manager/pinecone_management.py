@@ -216,9 +216,8 @@ def process_and_load_documents(namespace: str) -> None:
         if loader is None:
             raise ValueError(f"Namespace no existe en el index: {namespace}")
         docs = loader.load()
-        if len(docs) == 0:
-            raise FileNotFoundError
     except FileNotFoundError:
+        delete_namespace(namespace)
         logging.error(f"Error: No se encontraron documentos en {path}")
         return
 
@@ -251,7 +250,7 @@ def split_and_store_documents(docs: List[Document], namespace: str) -> None:
             logging.info("Archivos residuales eliminados.")
         except PermissionError:
             logging.error(
-                "Error: No se tienen los permisos necesarios para eliminar el directorio. Por favor, elimine el directorio manualmente."
+                f"Error: No se tienen los permisos necesarios para eliminar el directorio '{config.REPO_DIRECTORY_PATH}. Por favor, elimine el directorio manualmente."
             )
         except Exception as e:
             logging.error(f"Error: {e}")

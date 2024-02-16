@@ -22,28 +22,6 @@ logo_path = "logos/unap_negativo.png"
 
 
 def general_info():
-    st.markdown(
-        """
-        # 📑 Información
-
-        ## 💬 Gestión de Documentos
-
-        1. **Visualización de Documentos**: En la interfaz principal, encontrará todos los documentos que han sido cargados al repositorio.
-
-        2. **Carga de Documentos**: Para incorporar un nuevo documento al repositorio, presione 'Cargar', seleccione el documento deseado y este se subirá de forma automática.
-
-        3. **Eliminación de Documentos**: Si desea eliminar un documento del repositorio, selecciónelo y presione 'Eliminar'. El documento será suprimido inmediatamente del repositorio.
-
-        ## 🧠 Memoria de la IA
-
-        Es importante resaltar que, aunque un documento se encuentre en el repositorio, la IA no estará consciente de su contenido hasta que se actualice su memoria. Para ello, es necesario presionar 'Guardar Cambios' tras la carga o eliminación de un documento.
-
-        Por favor, recuerde que cada vez que añada o suprima uno o más documentos, debe presionar 'Guardar Cambios' para asegurar que la IA esté al corriente de los cambios.
-
-        Con estos pasos, podrá gestionar documentos de manera eficiente y segura, y mantener actualizada la memoria de la IA.
-        """
-    )
-
     index_data = get_index_data()
 
     space_used = index_data.index_fullness
@@ -167,7 +145,7 @@ def manage_docs(
             if namespace == "Reglamentos":
                 get_last_doc_update.clear()
                 st.session_state.last_doc_update = datetime.datetime.now().strftime(
-                    "%d/%m/%Y %H:%M a las hrs."
+                    "%d/%m/%Y a las %H:%M hrs."
                 )
             elif namespace == "Calendarios":
                 get_last_calendar_update.clear()
