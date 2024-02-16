@@ -3,10 +3,10 @@ import streamlit as st
 from langchain import hub
 from langchain.agents import AgentExecutor, create_openai_tools_agent
 from langchain.tools.retriever import create_retriever_tool
-from langchain_community.vectorstores import Pinecone as pcvs
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import ConfigurableField
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from langchain_pinecone import Pinecone
 from langsmith import Client
 
 from utils import config
@@ -48,7 +48,7 @@ def get_retriever(namespace: str, k_results: int = 3):
     )
     embeddings = OpenAIEmbeddings(openai_api_key=config.OPENAI_API_KEY)
     try:
-        vectorstore = pcvs.from_existing_index(
+        vectorstore = Pinecone.from_existing_index(
             index_name=config.PINECONE_INDEX_NAME,
             embedding=embeddings,
             namespace=namespace,

@@ -14,9 +14,9 @@ from langchain_community.document_loaders import (
     WikipediaLoader,
 )
 from langchain_community.document_loaders.sitemap import SitemapLoader
-from langchain_community.vectorstores import Pinecone as pcvs
 from langchain_core.documents import Document
 from langchain_openai import OpenAIEmbeddings
+from langchain_pinecone import Pinecone
 
 from utils import config
 
@@ -45,7 +45,7 @@ def _get_pinecone() -> pinecone.Pinecone:
     return SingletonPinecone.get_instance()
 
 
-def _get_or_create_vectorstore(namespace: str) -> pcvs:
+def _get_or_create_vectorstore(namespace: str) -> Pinecone:
     """
     Recupera el almacenamiento de vectores para un espacio de nombres dado. Creando un nuevo espacio de nombres si no existe.
 
@@ -53,10 +53,10 @@ def _get_or_create_vectorstore(namespace: str) -> pcvs:
         namespace (str): El espacio de nombres del almacenamiento de vectores.
 
     Returns:
-        vectorstore (pcvs): El objeto de almacenamiento de vectores.
+        vectorstore (Pinecone): El objeto de almacenamiento de vectores.
     """
     embeddings = OpenAIEmbeddings(openai_api_key=config.OPENAI_API_KEY)
-    vectorstore = pcvs.from_existing_index(
+    vectorstore = Pinecone.from_existing_index(
         index_name=config.PINECONE_INDEX_NAME,
         embedding=embeddings,
         namespace=namespace,
