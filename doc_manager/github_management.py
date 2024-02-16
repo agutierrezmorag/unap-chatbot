@@ -29,7 +29,7 @@ def _get_repo() -> Repository.Repository:
     return repo
 
 
-def get_repo_documents(subdirectory: str) -> List[ContentFile]:
+def _get_repo_documents(subdirectory: str) -> List[ContentFile]:
     """
     Recupera los documentos del repositorio.
 
@@ -58,7 +58,7 @@ def get_repo_docs_as_pd(subdirectory: str) -> pd.DataFrame:
     Returns:
         pd.DataFrame: DataFrame que contiene la información de los documentos del repositorio.
     """
-    content_files = get_repo_documents(subdirectory)
+    content_files = _get_repo_documents(subdirectory)
     data = []
     for file in content_files:
         data.append(
