@@ -128,7 +128,7 @@ def get_index_data() -> Dict:
     return index_data
 
 
-def get_document_loader(
+def _get_document_loader(
     namespace: str, path: str
 ) -> Optional[Union[DirectoryLoader, WikipediaLoader]]:
     """
@@ -199,7 +199,7 @@ def process_and_load_documents(namespace: str) -> None:
     path = f"{config.REPO_DIRECTORY_PATH}/{config.REPO_DIRECTORY_PATH}/{namespace}"
 
     try:
-        loader = get_document_loader(namespace, path)
+        loader = _get_document_loader(namespace, path)
         if loader is None:
             raise ValueError(f"Namespace no existe en el index: {namespace}")
         docs = loader.load()
