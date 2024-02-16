@@ -87,6 +87,18 @@ def delete_namespace(namespace: str) -> None:
 
 
 def _ensure_index_exists() -> None:
+    """
+    Asegura que el índice exista en Pinecone.
+
+    Verifica si el índice especificado en la configuración existe en Pinecone.
+    Si no existe, crea el índice con las especificaciones dadas.
+
+    Raises:
+        Exception: Si ocurre un error al crear el índice.
+
+    Returns:
+        None
+    """
     pc = _get_pinecone()
     if config.PINECONE_INDEX_NAME not in pc.list_indexes().names():
         try:
