@@ -208,10 +208,10 @@ def process_and_load_documents(namespace: str) -> None:
         logging.error(f"Error: No se encontraron documentos en {path}")
         return
 
-    split_and_store_documents(docs, namespace)
+    _split_and_store_documents(docs, namespace)
 
 
-def split_and_store_documents(docs: List[Document], namespace: str) -> None:
+def _split_and_store_documents(docs: List[Document], namespace: str) -> None:
     """
     Divide y almacena documentos en un namespace dado.
 
