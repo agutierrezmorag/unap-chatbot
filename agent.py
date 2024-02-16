@@ -62,6 +62,10 @@ async def agent_answer(prompt, agent_thoughts_placeholder, response_placeholder)
                         agent_thoughts_placeholder.markdown(
                             f"- 📰 Consultando **{query}** en las noticias..."
                         )
+                    if event_name == "web_unap":
+                        agent_thoughts_placeholder.markdown(
+                            f"- 🔗 Revisando **{query}** en la pagina web..."
+                        )
                     else:
                         agent_thoughts_placeholder.markdown(
                             f"- 🔍 Consultando **{query}** en los documentos..."
