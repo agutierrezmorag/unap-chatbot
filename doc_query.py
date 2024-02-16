@@ -3,6 +3,8 @@ import streamlit as st
 
 from doc_manager.pinecone_management import get_index_data, get_or_create_vectorstore
 
+logo_path = "logos/unap_negativo.png"
+
 
 def get_namespaces():
     """
@@ -24,6 +26,8 @@ def main():
         page_icon="🔍",
         layout="wide",
     )
+    with st.sidebar:
+        st.image(logo_path, use_column_width=True)
     st.header("🔍 Consultas de documentos")
     st.markdown("Esta herramienta permite buscar documentos similares a una consulta.")
     st.markdown("Los resultados se obtienen de la memoria de la IA. ")
