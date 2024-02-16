@@ -65,10 +65,12 @@ def manage_docs(
         last_update = get_last_doc_update()
     elif namespace == "Calendarios":
         last_update = get_last_calendar_update()
+    else:
+        last_update = "Nunca"
     st.info(f"La memoria fue actualizada por última vez el: {last_update}", icon="ℹ️")
 
     container_placeholder = st.empty()
-    form = st.form(key=f"{doc_type}_list_form", border=False)
+    form = st.form(key=f"{namespace}_list_form", border=False)
 
     df = get_repo_docs_as_pd(namespace)
     if df.empty:
@@ -77,7 +79,7 @@ def manage_docs(
         with form:
             st.data_editor(
                 df,
-                key=f"{doc_type}_list_df",
+                key=f"{namespace}_list_df",
                 hide_index=True,
                 height=300,
                 use_container_width=True,
@@ -109,7 +111,7 @@ def manage_docs(
                 },
                 disabled=["name", "html_url", "download_url", "size"],
             )
-        selected_rows = st.session_state[f"{doc_type}_list_df"]["edited_rows"]
+        selected_rows = st.session_state[f"{namespace}_list_df"]["edited_rows"]
 
     delete_confirmation_dialog = st.empty()
     delete_action_button = st.empty()
@@ -194,11 +196,11 @@ def manage_docs(
             f"Esto eliminará **TODA** la memoria de la IA sobre {namespace}. ¿Está seguro de que desea continuar?",
             icon="🚩",
         )
-        if confirm_delete_button.button("Confirmar", key=f"confirm_delete_{doc_type}"):
+        if confirm_delete_button.button("Confirmar", key=f"confirm_delete_{namespace}"):
             delete_namespace(namespace)
             st.toast("Memoria eliminada.", icon="⚠️")
             reset_state_and_rerun(delete_mem_key)
-        elif cancel_delete_button.button("Cancelar", key=f"cancel_delete_{doc_type}"):
+        elif cancel_delete_button.button("Cancelar", key=f"cancel_delete_{namespace}"):
             reset_state_and_rerun(delete_mem_key)
     else:
         if delete_memory_confirmation.button(
@@ -307,10 +309,12 @@ def main():
         st.session_state.upload_key = str(uuid.uuid4())
     if "calendar_upload_key" not in st.session_state:
         st.session_state.calendar_upload_key = str(uuid.uuid4())
+    if "website_upload_key" not in st.session_state:
+        st.session_state.website_upload_key = str(uuid.uuid4())
     if "delete_txt_key" not in st.session_state:
         st.session_state.delete_txt_key = False
-    if "delete_pdf_key" not in st.session_state:
-        st.session_state.delete_pdf_key = False
+    if "delete_website_key" not in st.session_state:
+        st.session_state.delete_website_key = False
 
     try:
         users = fetch_users()
@@ -363,8 +367,8 @@ def main():
 
             general_info()
 
-            tab1, tab2, tab3 = st.tabs(
-                ["📃 Reglamentos", "🗓️ Calendarios", "🌍 Wikipedia"]
+            tab1, tab2, tab3, tab4 = st.tabs(
+                ["📃 Reglamentos", "🗓️ Calendarios", "🔗 Web", "🌍 Wikipedia"]
             )
 
             with tab1:
@@ -378,14 +382,23 @@ def main():
 
             with tab2:
                 manage_docs(
-                    "pdf",
+                    "xml",
                     "calendar_upload_key",
-                    "delete_pdf_key,",
+                    "delete_xml_key,",
                     "delete_selected_calendars",
                     "Calendarios",
                 )
 
             with tab3:
+                manage_docs(
+                    "xml",
+                    "website_upload_key",
+                    "delete_website_key,",
+                    "delete_selected_websites",
+                    "Web",
+                )
+
+            with tab4:
                 wikipedia()
 
     except Exception as e:

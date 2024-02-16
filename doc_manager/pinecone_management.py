@@ -168,12 +168,12 @@ def get_document_loader(
             use_multithreading=True,
             silent_errors=True,
         )
-    elif namespace == "Sitemap":
+    elif namespace == "Web":
         return DirectoryLoader(
             path=path,
             glob="**/*.xml",
             loader_cls=SitemapLoader,
-            loader_kwargs={"is_local": True},
+            loader_kwargs={"is_local": True, "continue_on_failure": True},
             use_multithreading=True,
             silent_errors=True,
         )
