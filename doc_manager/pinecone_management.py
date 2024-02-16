@@ -128,19 +128,6 @@ def get_index_data() -> Dict:
     return index_data
 
 
-def delete_all_namespaces() -> None:
-    """
-    Elimina todos los espacios de nombres del índice Pinecone.
-
-    Returns:
-        None
-    """
-    index_data = get_index_data()
-    for namespace in index_data.namespaces:
-        delete_namespace(namespace)
-    logging.info("Todos los namespaces eliminados.")
-
-
 def get_document_loader(
     namespace: str, path: str
 ) -> Optional[Union[DirectoryLoader, WikipediaLoader]]:
