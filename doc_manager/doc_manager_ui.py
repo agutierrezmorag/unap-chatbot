@@ -122,22 +122,14 @@ def manage_docs(
         disabled=df.empty,
     )
 
-    bcol1, bcol2 = st.columns(2)
-    with bcol1:
-        confirm_delete_button = st.empty()
-    with bcol2:
-        cancel_delete_button = st.empty()
-
     if st.session_state.get(delete_doc_key):
         delete_confirmation_dialog.warning(
             "¿Seguro que desea eliminar los documentos seleccionados?",
             icon="⚠️",
         )
-        if confirm_delete_button.button(
-            "Confirmar", use_container_width=True, type="primary"
-        ):
+        if st.button("Confirmar", use_container_width=True, type="primary"):
             selected_indices = list(
-                st.session_state[f"{doc_type}_list_df"]["edited_rows"].keys()
+                st.session_state[f"{namespace}_list_df"]["edited_rows"].keys()
             )
             selected_file_paths = df.loc[selected_indices, "path"].tolist()
             delete_repo_doc(
@@ -146,7 +138,7 @@ def manage_docs(
             )
             time.sleep(2)
             reset_state_and_rerun(delete_doc_key)
-        elif cancel_delete_button.button("Cancelar", use_container_width=True):
+        elif st.button("Cancelar", use_container_width=True):
             reset_state_and_rerun(delete_doc_key)
     elif delete_action_button:
         if selected_rows:
@@ -186,29 +178,6 @@ def manage_docs(
 
         if st.button("Limpiar lista de archivos a subir"):
             update_session_and_rerun(upload_key)
-
-    delete_memory_confirmation = st.empty()
-    confirm_delete_button = st.empty()
-    cancel_delete_button = st.empty()
-
-    if st.session_state.get(delete_mem_key):
-        delete_memory_confirmation.error(
-            f"Esto eliminará **TODA** la memoria de la IA sobre {namespace}. ¿Está seguro de que desea continuar?",
-            icon="🚩",
-        )
-        if confirm_delete_button.button("Confirmar", key=f"confirm_delete_{namespace}"):
-            delete_namespace(namespace)
-            st.toast("Memoria eliminada.", icon="⚠️")
-            reset_state_and_rerun(delete_mem_key)
-        elif cancel_delete_button.button("Cancelar", key=f"cancel_delete_{namespace}"):
-            reset_state_and_rerun(delete_mem_key)
-    else:
-        if delete_memory_confirmation.button(
-            f"Eliminar memoria de la IA sobre {namespace}",
-            use_container_width=True,
-        ):
-            st.session_state[delete_mem_key] = True
-            st.rerun()
 
 
 def reset_state_and_rerun(state_key):
