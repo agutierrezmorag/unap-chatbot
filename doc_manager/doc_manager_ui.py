@@ -22,13 +22,24 @@ logo_path = "logos/unap_negativo.png"
 
 
 def general_info():
+    st.header("📚 Administración de documentos")
+    st.markdown(
+        "Esta herramienta permite administrar los documentos en memoria. \
+        Es posible ver, subir y eliminar documentos del repositorio. \
+        Todo documento subido al repositorio se procesa automáticamente y se almacena en memoria para ser consultado por la IA."
+    )
+
+    st.warning(
+        "Para evitar errores, no recargue ni cierre la página mientras se esté realizando una operación.",
+        icon="⚠️",
+    )
     index_data = get_index_data()
 
     space_used = index_data.index_fullness
     percentage = 100 - (space_used * 100)
     st.progress(
         1 - space_used,
-        f"{percentage:.2f}% espacio disponible en memoria",
+        f"{percentage:.2f}% de espacio disponible en memoria",
     )
 
 
