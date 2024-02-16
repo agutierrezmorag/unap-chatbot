@@ -88,7 +88,7 @@ def get_agent():
     )
 
     calendar_prompt = PromptTemplate.from_template(
-        "Documento: {file_name} \nContenido: {page_content}"
+        "Archivo: {file_name} \nContenido: {page_content}"
     )
     calendar_retriever_tool = create_retriever_tool(
         get_retriever(namespace="Calendarios", k_results=2),
@@ -111,7 +111,7 @@ def get_agent():
         "Contenido: {page_content} \nFuente: {source}"
     )
     web_retriever_tool = create_retriever_tool(
-        get_retriever(namespace="Web", k_results=5),
+        get_retriever(namespace="Web"),
         "web_unap",
         "Esta herramienta se encarga de buscar y recuperar información relevante de la página web oficial de la Universidad Arturo Prat.",
         document_prompt=web_doc_prompt,
@@ -130,7 +130,7 @@ def get_agent():
         agent=agent,
         tools=tools,
         memory=st.session_state.memory,
-        max_iterations=3,
+        max_iterations=5,
         max_execution_time=90.0,
         early_stopping_method="generate",
         return_intermediate_steps=True,
