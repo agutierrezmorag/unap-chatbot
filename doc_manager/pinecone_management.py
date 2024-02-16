@@ -45,7 +45,7 @@ def _get_pinecone() -> pinecone.Pinecone:
     return SingletonPinecone.get_instance()
 
 
-def _get_or_create_vectorstore(namespace: str) -> Pinecone:
+def get_or_create_vectorstore(namespace: str) -> Pinecone:
     """
     Recupera el almacenamiento de vectores para un espacio de nombres dado. Creando un nuevo espacio de nombres si no existe.
 
@@ -265,7 +265,7 @@ def split_and_store_documents(docs: List[Document], namespace: str) -> None:
         delete_namespace(namespace)
 
     try:
-        vectorstore = _get_or_create_vectorstore(namespace)
+        vectorstore = get_or_create_vectorstore(namespace)
         vectorstore.add_documents(documents=split_docs)
 
         logging.info(f"{len(split_docs)} vectores añadidos al namespace '{namespace}'")

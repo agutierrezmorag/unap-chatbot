@@ -6,4 +6,9 @@ icon = "🤖"
 [[pages]]
 path = "doc_manager/doc_manager_ui.py"
 name = "Administracion"
-icon = "👷‍♂️"
+icon = "⚙️"
+
+[[pages]]
+path = "doc_query.py"
+name = "Documentos"
+icon = "🔍"
