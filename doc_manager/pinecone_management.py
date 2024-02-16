@@ -9,8 +9,8 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import (
     DirectoryLoader,
     GitLoader,
-    PyMuPDFLoader,
     TextLoader,
+    UnstructuredXMLLoader,
     WikipediaLoader,
 )
 from langchain_community.document_loaders.sitemap import SitemapLoader
@@ -174,9 +174,8 @@ def get_document_loader(
     elif namespace == "Calendarios":
         return DirectoryLoader(
             path=path,
-            glob="**/*.pdf",
-            loader_cls=PyMuPDFLoader,
-            loader_kwargs={"extract_images": True},
+            glob="**/*.xml",
+            loader_cls=UnstructuredXMLLoader,
             use_multithreading=True,
             silent_errors=True,
         )
@@ -211,13 +210,14 @@ def process_and_load_documents(namespace: str) -> None:
         ).load()
 
     path = f"{config.REPO_DIRECTORY_PATH}/{config.REPO_DIRECTORY_PATH}/{namespace}"
-    print(path)
 
     try:
         loader = get_document_loader(namespace, path)
         if loader is None:
             raise ValueError(f"Namespace no existe en el index: {namespace}")
         docs = loader.load()
+        if len(docs) == 0:
+            raise FileNotFoundError
     except FileNotFoundError:
         logging.error(f"Error: No se encontraron documentos en {path}")
         return
@@ -251,7 +251,7 @@ def split_and_store_documents(docs: List[Document], namespace: str) -> None:
             logging.info("Archivos residuales eliminados.")
         except PermissionError:
             logging.error(
-                "Error: No se tienen los permisos necesarios para eliminar el directorio."
+                "Error: No se tienen los permisos necesarios para eliminar el directorio. Por favor, elimine el directorio manualmente."
             )
         except Exception as e:
             logging.error(f"Error: {e}")
