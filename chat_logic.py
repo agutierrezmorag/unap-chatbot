@@ -77,14 +77,14 @@ def get_agent():
     doc_retriever_tool = create_retriever_tool(
         get_retriever(namespace="Reglamentos"),
         "busqueda_reglamentos_unap",
-        "Esta herramienta se especializa en buscar y recuperar información específica sobre los reglamentos de la Universidad Arturo Prat.",
+        "Esta herramienta te permite buscar documentos y reglamentos de la Universidad Arturo Prat. Utilízala para encontrar información específica sobre normativas, procedimientos y reglamentos de la universidad.",
         document_prompt=document_prompt,
     )
 
     wikipedia_retriever_tool = create_retriever_tool(
         get_retriever(namespace="Wikipedia"),
         "busqueda_wikipedia_unap",
-        "Esta herramienta se centra en buscar y recuperar información general de la página de Wikipedia de la Universidad Arturo Prat.",
+        "Esta herramienta te permite buscar información en Wikipedia. Utilízala para encontrar información general de la universidad, como su historia, ubicación, fundación, etc.",
     )
 
     calendar_prompt = PromptTemplate.from_template(
@@ -93,7 +93,7 @@ def get_agent():
     calendar_retriever_tool = create_retriever_tool(
         get_retriever(namespace="Calendarios", k_results=2),
         "calendario_academico_unap",
-        "Esta herramienta está diseñada para buscar y recuperar información sobre fechas y eventos específicos del calendario académico de la Universidad Arturo Prat.",
+        "Esta herramienta te permite consultar los calendarios académicos de la Universidad Arturo Prat. Utilízala para encontrar información sobre fechas importantes, feriados, vacaciones, etc.",
         document_prompt=calendar_prompt,
     )
 
@@ -103,7 +103,7 @@ def get_agent():
     news_retriever_tool = create_retriever_tool(
         get_retriever(namespace="Noticias"),
         "noticias_unap",
-        "Esta herramienta se dedica a buscar y recuperar las últimas noticias y actualizaciones relacionadas con la Universidad Arturo Prat.",
+        "Esta herramienta te permite buscar articulos noticieros disponibles en Actualidad UNAP. Utilízala para encontrar información sobre eventos, noticias y novedades de la universidad.",
         document_prompt=news_doc_prompt,
     )
 
@@ -113,7 +113,7 @@ def get_agent():
     web_retriever_tool = create_retriever_tool(
         get_retriever(namespace="Web"),
         "web_unap",
-        "Esta herramienta se encarga de buscar y recuperar información relevante de la página web oficial de la Universidad Arturo Prat.",
+        "Esta herramienta te permite buscar información en la web de la Universidad Arturo Prat. Utilízala para buscar informacion mas especificada sobre la universidad, como las paginas de las facultades, carreras, etc.",
         document_prompt=web_doc_prompt,
     )
 
