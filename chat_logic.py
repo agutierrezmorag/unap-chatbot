@@ -84,8 +84,8 @@ def get_tools():
         get_retriever(namespace="Wikipedia"),
         "busqueda_wikipedia_unap",
         "Esta herramienta busca información en Wikipedia. \
-        Es útil para obtener una visión general de la universidad, como su historia, ubicación y fundación. \
-        Utilízala cuando necesites información general y de fácil comprensión sobre la universidad.",
+        Es útil para obtener una visión general de la universidad. \
+        Utilízala cuando necesites información sobre la descripción, historia, ubicación, sedes, facultades y carreras de la universidad.",
     )
 
     calendar_prompt = PromptTemplate.from_template(
