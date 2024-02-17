@@ -1,14 +1,13 @@
-import pinecone
 import streamlit as st
 from langchain import hub
 from langchain.agents import AgentExecutor, create_openai_tools_agent
 from langchain.tools.retriever import create_retriever_tool
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import ConfigurableField
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
-from langchain_pinecone import Pinecone
+from langchain_openai import ChatOpenAI
 from langsmith import Client
 
+from doc_manager.pinecone_management import get_or_create_vectorstore
 from utils import config
 
 
@@ -42,28 +41,12 @@ def get_llm():
 
 @st.cache_resource(show_spinner=False)
 def get_retriever(namespace: str, k_results: int = 5):
-    pc = pinecone.Pinecone(  # noqa: F841
-        api_key=config.PINECONE_API_KEY,
-        environment=config.PINECONE_ENV,
+    vectorstore = get_or_create_vectorstore(namespace)
+    retriever = vectorstore.as_retriever(
+        search_type="similarity", search_kwargs={"k": k_results}
     )
-    embeddings = OpenAIEmbeddings(openai_api_key=config.OPENAI_API_KEY)
-    try:
-        vectorstore = Pinecone.from_existing_index(
-            index_name=config.PINECONE_INDEX_NAME,
-            embedding=embeddings,
-            namespace=namespace,
-        )
-        retriever = vectorstore.as_retriever(
-            search_type="similarity", search_kwargs={"k": k_results}
-        )
 
-        return retriever
-    except Exception as e:
-        print(e)
-        st.error(
-            "Hubo un error al cargar el índice de documentos. Por favor, recarga la página y vuelve a intentarlo."
-        )
-        return None
+    return retriever
 
 
 @st.cache_resource(show_spinner=False)
@@ -75,8 +58,7 @@ def get_tools():
         get_retriever(namespace="Reglamentos"),
         "busqueda_reglamentos_unap",
         "Esta herramienta busca en la base de datos de documentos y reglamentos de la Universidad Arturo Prat. \
-        Es ideal para encontrar información detallada sobre reglamentos, procedimientos, becas, lineamientos, etc. \
-        Utilízala cuando necesites información específica y oficial de la universidad.",
+        Es ideal para encontrar información detallada sobre reglamentos, procedimientos, becas, lineamientos, etc.",
         document_prompt=document_prompt,
     )
 
@@ -84,8 +66,7 @@ def get_tools():
         get_retriever(namespace="Wikipedia"),
         "busqueda_wikipedia_unap",
         "Esta herramienta busca información en Wikipedia. \
-        Es útil para obtener una visión general de la universidad. \
-        Utilízala cuando necesites información sobre la descripción, historia, ubicación, sedes, facultades y carreras de la universidad.",
+        Es útil para obtener información sobre la descripción, historia, ubicación, sedes, facultades y carreras de la universidad",
     )
 
     calendar_prompt = PromptTemplate.from_template(
