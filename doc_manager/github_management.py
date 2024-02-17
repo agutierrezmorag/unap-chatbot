@@ -42,7 +42,9 @@ def _get_repo_documents(subdirectory: str) -> List[ContentFile]:
         repo = _get_repo()
         directory_path = f"{config.REPO_DIRECTORY_PATH}/{subdirectory}"
         docs = repo.get_contents(directory_path, ref=config.REPO_BRANCH)
-        logging.info(f"Recuperados {len(docs)} documentos del repositorio")
+        logging.info(
+            f"Recuperados {len(docs)} documentos del repositorio, desde {directory_path}."
+        )
         return docs
     except GithubException as e:
         logging.error(f"Error al recuperar documentos del repositorio: {e}")
@@ -105,9 +107,9 @@ def delete_repo_doc(file_paths: List[str], namespace: str) -> None:
             )
             progress_container.markdown(f"- {message}")
 
-        progress_container.markdown("- Documentos eliminados exitosamente.")
+        progress_container.markdown("- :green[Documentos eliminados exitosamente.]")
 
-        progress_container.markdown("- Actualizando la memoria de la IA...")
+        progress_container.markdown("- :blue[Actualizando la memoria de la IA...]")
         process_and_load_documents(namespace=namespace)
         progress_container.update(label="Memoria actualizada.", state="complete")
         time.sleep(1)
