@@ -70,6 +70,7 @@ def get_retriever(namespace: str, k_results: int = 3):
 # Esta funcion no puede ser cacheada, para que funcione correctamente el agente
 def get_agent():
     prompt = hub.pull("unap-chatbot/unap-rag-agent")
+    llm = get_llm()
 
     document_prompt = PromptTemplate.from_template(
         "Nombre documento: {file_name} \nContenido: {page_content}"
@@ -125,7 +126,7 @@ def get_agent():
         web_retriever_tool,
     ]
 
-    agent = create_openai_tools_agent(get_llm(), tools, prompt)
+    agent = create_openai_tools_agent(llm, tools, prompt)
     agent_executor = AgentExecutor(
         agent=agent,
         tools=tools,
