@@ -1,4 +1,3 @@
-import datetime
 import time
 import uuid
 
@@ -31,27 +30,6 @@ def update_session_and_rerun(upload_key):
     st.rerun()
 
 
-@st.cache_data(show_spinner=False)
-def get_last_doc_update():
-    if "last_doc_update" in st.session_state:
-        return st.session_state["last_doc_update"]
-    return "Nunca"
-
-
-@st.cache_data(show_spinner=False)
-def get_last_calendar_update():
-    if "last_calendar_update" in st.session_state:
-        return st.session_state["last_calendar_update"]
-    return "Nunca"
-
-
-@st.cache_data(show_spinner=False)
-def get_last_web_update():
-    if "last_web_update" in st.session_state:
-        return st.session_state["last_web_update"]
-    return "Nunca"
-
-
 def general_info():
     st.header("📚 Administración de documentos")
     st.markdown(
@@ -80,16 +58,6 @@ def manage_docs(
     delete_doc_key: str,
     namespace: str,
 ):
-    if namespace == "Reglamentos":
-        last_update = get_last_doc_update()
-    elif namespace == "Calendarios":
-        last_update = get_last_calendar_update()
-    elif namespace == "Web":
-        last_update = get_last_web_update()
-    else:
-        last_update = "-"
-    st.info(f"La memoria fue actualizada por última vez el: {last_update}", icon="ℹ️")
-
     container_placeholder = st.empty()
     form = st.form(key=f"{namespace}_list_form", border=False)
 
@@ -183,39 +151,22 @@ def manage_docs(
         key=st.session_state[upload_key],
     )
 
-    if st.button(
+    st.button(
         f"Subir archivos de {namespace} al repositorio",
         use_container_width=True,
+        on_click=add_files_to_repo,
+        args=(uploaded_files, namespace),
         type="primary",
         disabled=not uploaded_files,
-    ):
-        add_files_to_repo(
-            file_list=uploaded_files,
-            namespace=namespace,
-        )
-        if namespace == "Reglamentos":
-            get_last_doc_update.clear()
-            st.session_state.last_doc_update = datetime.datetime.now().strftime(
-                "%d/%m/%Y a las %H:%M hrs."
-            )
-        elif namespace == "Calendarios":
-            get_last_calendar_update.clear()
-            st.session_state.last_calendar_update = datetime.datetime.now().strftime(
-                "%d/%m/%Y a las %H:%M hrs."
-            )
-        elif namespace == "Web":
-            get_last_web_update.clear()
-            st.session_state.last_web_update = datetime.datetime.now().strftime(
-                "%d/%m/%Y a las %H:%M hrs."
-            )
-        update_session_and_rerun(upload_key)
+    )
 
-    if st.button(
+    st.button(
         f"Limpiar archivos de {namespace} subidos",
         use_container_width=True,
+        on_click=update_session_and_rerun,
+        args=(upload_key,),
         disabled=not uploaded_files,
-    ):
-        update_session_and_rerun(upload_key)
+    )
 
 
 def wikipedia():
