@@ -58,49 +58,45 @@ def manage_docs(
     delete_doc_key: str,
     namespace: str,
 ):
-    container_placeholder = st.empty()
     form = st.form(key=f"{namespace}_list_form", border=False)
 
     df = get_repo_docs_as_pd(namespace)
-    if df.empty:
-        container_placeholder.warning("No hay documentos en el repositorio.", icon="⚠️")
-    else:
-        with form:
-            st.data_editor(
-                df,
-                key=f"{namespace}_list_df",
-                hide_index=True,
-                height=300,
-                use_container_width=True,
-                column_order=["selected", "name", "html_url", "download_url", "size"],
-                column_config={
-                    "selected": st.column_config.CheckboxColumn(
-                        "Seleccionar",
-                        width="small",
-                    ),
-                    "name": st.column_config.TextColumn(
-                        "📄 Nombre",
-                        width="medium",
-                    ),
-                    "html_url": st.column_config.LinkColumn(
-                        "🔗 URL",
-                        display_text="Ver en GitHub",
-                        width="small",
-                    ),
-                    "download_url": st.column_config.LinkColumn(
-                        "⬇️ Descarga",
-                        display_text="Descargar",
-                        width="small",
-                    ),
-                    "size": st.column_config.NumberColumn(
-                        "📏 Tamaño (Kb)",
-                        format="%.1f",
-                        width="small",
-                    ),
-                },
-                disabled=["name", "html_url", "download_url", "size"],
-            )
-        selected_rows = st.session_state[f"{namespace}_list_df"]["edited_rows"]
+    with form:
+        st.data_editor(
+            df,
+            key=f"{namespace}_list_df",
+            hide_index=True,
+            height=300,
+            use_container_width=True,
+            column_order=["selected", "name", "html_url", "download_url", "size"],
+            column_config={
+                "selected": st.column_config.CheckboxColumn(
+                    "Seleccionar",
+                    width="small",
+                ),
+                "name": st.column_config.TextColumn(
+                    "📄 Nombre",
+                    width="medium",
+                ),
+                "html_url": st.column_config.LinkColumn(
+                    "🔗 URL",
+                    display_text="Ver en GitHub",
+                    width="small",
+                ),
+                "download_url": st.column_config.LinkColumn(
+                    "⬇️ Descarga",
+                    display_text="Descargar",
+                    width="small",
+                ),
+                "size": st.column_config.NumberColumn(
+                    "📏 Tamaño (Kb)",
+                    format="%.1f",
+                    width="small",
+                ),
+            },
+            disabled=["name", "html_url", "download_url", "size"],
+        )
+    selected_rows = st.session_state[f"{namespace}_list_df"]["edited_rows"]
 
     delete_confirmation_dialog = st.empty()
     delete_action_button = st.empty()
@@ -116,24 +112,23 @@ def manage_docs(
             "¿Seguro que desea eliminar los documentos seleccionados?",
             icon="⚠️",
         )
-        selected_indices = list(
-            st.session_state[f"{namespace}_list_df"]["edited_rows"].keys()
-        )
-        selected_file_paths = df.loc[selected_indices, "path"].tolist()
-        st.button(
+        if st.button(
             f"Eliminar {namespace} seleccionados",
             use_container_width=True,
             type="primary",
-            on_click=on_delete_button_click,
-            args=(selected_file_paths, namespace, delete_doc_key),
-        )
-        st.button(
-            "Cancelar",
-            use_container_width=True,
-            key=str(uuid.uuid4()),
-            on_click=reset_state_and_rerun,
-            args=(delete_doc_key,),
-        )
+        ):
+            selected_indices = list(
+                st.session_state[f"{namespace}_list_df"]["edited_rows"].keys()
+            )
+            selected_file_paths = df.loc[selected_indices, "path"].tolist()
+            delete_repo_doc(
+                file_paths=selected_file_paths,
+                namespace=namespace,
+            )
+            time.sleep(2)
+            reset_state_and_rerun(delete_doc_key)
+        elif st.button("Cancelar", use_container_width=True, key=str(uuid.uuid4())):
+            reset_state_and_rerun(delete_doc_key)
     elif delete_action_button:
         if selected_rows:
             st.session_state[delete_doc_key] = True
@@ -152,22 +147,24 @@ def manage_docs(
         key=st.session_state[upload_key],
     )
 
-    st.button(
-        f"Subir archivos de {namespace} al repositorio",
-        use_container_width=True,
-        on_click=add_files_to_repo,
-        args=(uploaded_files, namespace),
-        type="primary",
-        disabled=not uploaded_files,
-    )
+    if uploaded_files:
+        if st.button(
+            f"Subir archivos de {namespace} al repositorio",
+            use_container_width=True,
+            type="primary",
+        ):
+            add_files_to_repo(
+                file_list=uploaded_files,
+                namespace=namespace,
+            )
+            update_session_and_rerun(upload_key)
 
-    st.button(
-        f"Limpiar archivos de {namespace} subidos",
-        use_container_width=True,
-        on_click=update_session_and_rerun,
-        args=(upload_key,),
-        disabled=not uploaded_files,
-    )
+        if st.button(
+            "Limpiar",
+            use_container_width=True,
+            key=str(uuid.uuid4()),
+        ):
+            update_session_and_rerun(upload_key)
 
 
 def on_delete_button_click(selected_file_paths, namespace, delete_doc_key):
