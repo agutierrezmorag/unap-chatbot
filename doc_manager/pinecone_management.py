@@ -84,7 +84,11 @@ def delete_namespace(namespace: str) -> None:
         index.delete(delete_all=True, namespace=namespace)
         logging.info(f"Namespace {namespace} eliminado exitosamente.")
     except Exception as e:
-        logging.error(f"Hubo un error al eliminar el namespace {namespace}: {e}")
+        if "Namespace not found" in str(e):
+            logging.info(f"El namespace {namespace} no existe. No se eliminó nada.")
+            pass
+        else:
+            logging.error(f"Hubo un error al eliminar el namespace {namespace}: {e}")
 
 
 def _ensure_index_exists() -> None:
