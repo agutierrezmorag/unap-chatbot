@@ -78,16 +78,18 @@ def get_agent():
     doc_retriever_tool = create_retriever_tool(
         get_retriever(namespace="Reglamentos"),
         "busqueda_reglamentos_unap",
-        "Esta herramienta te permite buscar documentos y reglamentos de la Universidad Arturo Prat. \
-        Utilízala para encontrar información sobre reglamentos, procedimientos, becas, lineamientos, etc.",
+        "Esta herramienta busca en la base de datos de documentos y reglamentos de la Universidad Arturo Prat. \
+        Es ideal para encontrar información detallada sobre reglamentos, procedimientos, becas, lineamientos, etc. \
+        Utilízala cuando necesites información específica y oficial de la universidad.",
         document_prompt=document_prompt,
     )
 
     wikipedia_retriever_tool = create_retriever_tool(
         get_retriever(namespace="Wikipedia"),
         "busqueda_wikipedia_unap",
-        "Esta herramienta te permite buscar información en Wikipedia. \
-        Utilízala para encontrar información general de la universidad, como su historia, ubicación y fundación.",
+        "Esta herramienta busca información en Wikipedia. \
+        Es útil para obtener una visión general de la universidad, como su historia, ubicación y fundación. \
+        Utilízala cuando necesites información general y de fácil comprensión sobre la universidad.",
     )
 
     calendar_prompt = PromptTemplate.from_template(
@@ -96,8 +98,9 @@ def get_agent():
     calendar_retriever_tool = create_retriever_tool(
         get_retriever(namespace="Calendarios", k_results=2),
         "calendario_academico_unap",
-        "Esta herramienta te permite consultar los calendarios académicos de la Universidad Arturo Prat. \
-        Utilízala para encontrar información sobre fechas importantes del año académico, como periodos de matrícula, induccion o vacaciones.",
+        "Esta herramienta consulta los calendarios académicos de la Universidad Arturo Prat. \
+        Es ideal para encontrar información sobre fechas importantes del año académico, como periodos de matrícula, inducción o vacaciones. \
+        Utilízala cuando necesites conocer fechas o plazos específicos del calendario académico.",
         document_prompt=calendar_prompt,
     )
 
@@ -107,8 +110,9 @@ def get_agent():
     news_retriever_tool = create_retriever_tool(
         get_retriever(namespace="Noticias"),
         "noticias_unap",
-        "Esta herramienta te permite buscar articulos publicados en el portal noticiero Actualidad UNAP. \
-        Utilízala para encontrar información sobre eventos, noticias y novedades recientes de la universidad.",
+        "Esta herramienta busca artículos publicados en el portal noticiero Actualidad UNAP. \
+        Es útil para encontrar información sobre eventos, noticias y novedades recientes de la universidad. \
+        Utilízala cuando necesites estar al día con los últimos acontecimientos en la universidad.",
         document_prompt=news_doc_prompt,
     )
 
@@ -118,8 +122,9 @@ def get_agent():
     web_retriever_tool = create_retriever_tool(
         get_retriever(namespace="Web"),
         "web_unap",
-        "Esta herramienta te permite buscar información en la pagina web de la Universidad Arturo Prat. \
-        Utilízala para buscar informacion mas especificada sobre la universidad, como las paginas de las facultades, carreras y los diversos departamentos.",
+        "Esta herramienta busca información en la página web de la Universidad Arturo Prat. \
+        Es ideal para buscar información más especificada sobre la universidad, como las páginas de las facultades, carreras y los diversos departamentos. \
+        Utilízala cuando necesites información que se encuentre en el sitio web oficial de la universidad.",
         document_prompt=web_doc_prompt,
     )
 
