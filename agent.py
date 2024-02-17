@@ -125,10 +125,6 @@ if __name__ == "__main__":
     with st.sidebar:
         st.image(logo_path)
 
-    st.caption(
-        "Este chatbot puede cometer errores. Si encuentras inexactitudes, reformula tu pregunta o consulta los documentos oficiales."
-    )
-
     # Lista de documentos disponibles para consultar
     docs = get_repo_docs_as_pd("Reglamentos")
     with st.expander("¿Sobre qué puedo preguntar?"):
@@ -156,6 +152,9 @@ if __name__ == "__main__":
                     width="small",
                 ),
             },
+        )
+        st.caption(
+            "Este chatbot puede cometer errores. Si encuentras inexactitudes, reformula tu pregunta o consulta los documentos oficiales."
         )
 
     # Inicializacion de variables de estado
