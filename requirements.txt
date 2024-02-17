@@ -29,7 +29,7 @@ docstring-inheritance==2.1.2
 duckduckgo_search==4.4
 emoji==2.10.1
 executing==2.0.1
-extra-streamlit-components==0.1.60
+extra-streamlit-components==0.1.70
 fake-useragent==1.4.0
 filetype==1.2.0
 flatbuffers==23.5.26
@@ -65,7 +65,7 @@ langchain==0.1.7
 langchain-community==0.0.20
 langchain-core==0.1.23
 langchain-google-genai==0.0.9
-langchain-openai==0.0.5
+langchain-openai==0.0.6
 langchain-pinecone==0.0.2
 langchainhub==0.1.14
 langdetect==1.0.9
@@ -129,7 +129,7 @@ sniffio==1.3.0
 soupsieve==2.5
 SQLAlchemy==2.0.25
 st-pages==0.4.5
-streamlit==1.31.0
+streamlit==1.31.1
 streamlit-authenticator==0.3.1
 streamlit-feedback==0.1.3
 sympy==1.12
