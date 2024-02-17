@@ -1,3 +1,4 @@
+import time
 import uuid
 
 import streamlit as st
@@ -110,13 +111,7 @@ def manage_docs(
         disabled=df.empty,
     )
 
-    if delete_action_button:
-        if not selected_rows:
-            delete_confirmation_dialog.error(
-                "No se ha seleccionado ningún documento para eliminar.",
-                icon="❌",
-            )
-            st.stop()
+    if st.session_state.get(delete_doc_key):
         delete_confirmation_dialog.warning(
             "¿Seguro que desea eliminar los documentos seleccionados?",
             icon="⚠️",
@@ -129,9 +124,25 @@ def manage_docs(
             f"Eliminar {namespace} seleccionados",
             use_container_width=True,
             type="primary",
-            on_click=delete_repo_doc,
-            args=(selected_file_paths, namespace),
+            on_click=on_delete_button_click,
+            args=(selected_file_paths, namespace, delete_doc_key),
         )
+        st.button(
+            "Cancelar",
+            use_container_width=True,
+            key=str(uuid.uuid4()),
+            on_click=reset_state_and_rerun,
+            args=(delete_doc_key,),
+        )
+    elif delete_action_button:
+        if selected_rows:
+            st.session_state[delete_doc_key] = True
+            st.rerun()
+        else:
+            delete_confirmation_dialog.error(
+                "No se ha seleccionado ningún documento para eliminar.",
+                icon="❌",
+            )
 
     uploaded_files = st.file_uploader(
         f"Subir archivo .{doc_type}",
@@ -157,6 +168,15 @@ def manage_docs(
         args=(upload_key,),
         disabled=not uploaded_files,
     )
+
+
+def on_delete_button_click(selected_file_paths, namespace, delete_doc_key):
+    delete_repo_doc(
+        file_paths=selected_file_paths,
+        namespace=namespace,
+    )
+    time.sleep(2)
+    reset_state_and_rerun(delete_doc_key)
 
 
 def wikipedia():
