@@ -131,7 +131,7 @@ if __name__ == "__main__":
 
     # Lista de documentos disponibles para consultar
     docs = get_repo_docs_as_pd("Reglamentos")
-    with st.expander("Puedes realizar consultas sobre lo siguiente:"):
+    with st.expander("¿Sobre qué puedo preguntar?"):
         st.markdown(
             "- 📰 Noticias publicadas en [Actualidad UNAP](https://www.unap.cl/prontus_unap/site/edic/base/port/actualidad.html)"
         )
