@@ -41,7 +41,7 @@ def get_llm():
 
 
 @st.cache_resource(show_spinner=False)
-def get_retriever(namespace: str, k_results: int = 3):
+def get_retriever(namespace: str, k_results: int = 5):
     pc = pinecone.Pinecone(  # noqa: F841
         api_key=config.PINECONE_API_KEY,
         environment=config.PINECONE_ENV,
@@ -92,7 +92,7 @@ def get_tools():
         "Archivo: {file_name} \nContenido: {page_content}"
     )
     calendar_retriever_tool = create_retriever_tool(
-        get_retriever(namespace="Calendarios", k_results=2),
+        get_retriever(namespace="Calendarios"),
         "calendario_academico_unap",
         "Esta herramienta consulta los calendarios académicos de la Universidad Arturo Prat. \
         Es ideal para encontrar información sobre fechas importantes del año académico, como periodos de matrícula, inducción o vacaciones. \
