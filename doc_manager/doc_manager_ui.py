@@ -21,6 +21,37 @@ from doc_manager.register import fetch_users
 logo_path = "logos/unap_negativo.png"
 
 
+def reset_state_and_rerun(state_key):
+    st.session_state[state_key] = False
+    st.rerun()
+
+
+def update_session_and_rerun(upload_key):
+    st.session_state[upload_key] = str(uuid.uuid4())
+    st.rerun()
+
+
+@st.cache_data(show_spinner=False)
+def get_last_doc_update():
+    if "last_doc_update" in st.session_state:
+        return st.session_state["last_doc_update"]
+    return "Nunca"
+
+
+@st.cache_data(show_spinner=False)
+def get_last_calendar_update():
+    if "last_calendar_update" in st.session_state:
+        return st.session_state["last_calendar_update"]
+    return "Nunca"
+
+
+@st.cache_data(show_spinner=False)
+def get_last_web_update():
+    if "last_web_update" in st.session_state:
+        return st.session_state["last_web_update"]
+    return "Nunca"
+
+
 def general_info():
     st.header("📚 Administración de documentos")
     st.markdown(
@@ -47,15 +78,16 @@ def manage_docs(
     doc_type: str,
     upload_key: str,
     delete_doc_key: str,
-    delete_mem_key: str,
     namespace: str,
 ):
     if namespace == "Reglamentos":
         last_update = get_last_doc_update()
     elif namespace == "Calendarios":
         last_update = get_last_calendar_update()
+    elif namespace == "Web":
+        last_update = get_last_web_update()
     else:
-        last_update = "Nunca"
+        last_update = "-"
     st.info(f"La memoria fue actualizada por última vez el: {last_update}", icon="ℹ️")
 
     container_placeholder = st.empty()
@@ -169,16 +201,6 @@ def manage_docs(
             update_session_and_rerun(upload_key)
 
 
-def reset_state_and_rerun(state_key):
-    st.session_state[state_key] = False
-    st.rerun()
-
-
-def update_session_and_rerun(upload_key):
-    st.session_state[upload_key] = str(uuid.uuid4())
-    st.rerun()
-
-
 def wikipedia():
     index_data = get_index_data()
     knows_wikipedia = "Wikipedia" in index_data.namespaces
@@ -223,20 +245,6 @@ def wikipedia():
             st.toast("Contenido de Wikipedia eliminado de memoria", icon="⚠️")
 
 
-@st.cache_data(show_spinner=False)
-def get_last_doc_update():
-    if "last_doc_update" in st.session_state:
-        return st.session_state["last_doc_update"]
-    return "Nunca"
-
-
-@st.cache_data(show_spinner=False)
-def get_last_calendar_update():
-    if "last_calendar_update" in st.session_state:
-        return st.session_state["last_calendar_update"]
-    return "Nunca"
-
-
 def main():
     st.set_page_config(
         page_title="Chatbot UNAP",
@@ -263,16 +271,20 @@ def main():
         st.image(logo_path, use_column_width=True)
     show_pages_from_config()
 
-    if "upload_key" not in st.session_state:
-        st.session_state.upload_key = str(uuid.uuid4())
+    if "txt_upload_key" not in st.session_state:
+        st.session_state.txt_upload_key = str(uuid.uuid4())
+    if "txt_delete_state" not in st.session_state:
+        st.session_state.txt_delete_state = False
+
     if "calendar_upload_key" not in st.session_state:
         st.session_state.calendar_upload_key = str(uuid.uuid4())
-    if "website_upload_key" not in st.session_state:
-        st.session_state.website_upload_key = str(uuid.uuid4())
-    if "delete_txt_key" not in st.session_state:
-        st.session_state.delete_txt_key = False
-    if "delete_website_key" not in st.session_state:
-        st.session_state.delete_website_key = False
+    if "calendar_delete_state" not in st.session_state:
+        st.session_state.calendar_delete_state = False
+
+    if "web_upload_key" not in st.session_state:
+        st.session_state.web_upload_key = str(uuid.uuid4())
+    if "web_delete_state" not in st.session_state:
+        st.session_state.web_delete_state = False
 
     try:
         users = fetch_users()
@@ -332,9 +344,8 @@ def main():
             with tab1:
                 manage_docs(
                     "txt",
-                    "upload_key",
-                    "delete_txt_key",
-                    "delete_selected_docs",
+                    "txt_upload_key",
+                    "txt_delete_state",
                     "Reglamentos",
                 )
 
@@ -342,17 +353,15 @@ def main():
                 manage_docs(
                     "xml",
                     "calendar_upload_key",
-                    "delete_xml_key,",
-                    "delete_selected_calendars",
+                    "calendar_delete_state,",
                     "Calendarios",
                 )
 
             with tab3:
                 manage_docs(
                     "xml",
-                    "website_upload_key",
-                    "delete_website_key,",
-                    "delete_selected_websites",
+                    "web_upload_key",
+                    "web_delete_state,",
                     "Web",
                 )
 
