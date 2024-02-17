@@ -176,7 +176,7 @@ if __name__ == "__main__":
         "¿Cuáles son las tareas del decano?",
         "¿Qué hago en caso de reprobar una asignatura?",
         "Explica en qué consiste el trabajo de título",
-        "¿A qué tipo de exámenes puedo optar?",
+        "Cuéntame la historia de la universidad",
     ]
     qcol1, qcol2 = st.columns(2)
     ex_prompt = ""
