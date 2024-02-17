@@ -66,12 +66,8 @@ def get_retriever(namespace: str, k_results: int = 3):
         return None
 
 
-# Funciones de agente
-# Esta funcion no puede ser cacheada, para que funcione correctamente el agente
-def get_agent():
-    prompt = hub.pull("unap-chatbot/unap-rag-agent")
-    llm = get_llm()
-
+@st.cache_resource(show_spinner=False)
+def get_tools():
     document_prompt = PromptTemplate.from_template(
         "Nombre documento: {file_name} \nContenido: {page_content}"
     )
@@ -135,6 +131,20 @@ def get_agent():
         news_retriever_tool,
         web_retriever_tool,
     ]
+    return tools
+
+
+@st.cache_resource(show_spinner=False)
+def get_prompt():
+    hub.pull("unap-chatbot/unap-rag-agent")
+
+
+# Funciones de agente
+# Esta funcion no puede ser cacheada, para que funcione correctamente el agente
+def get_agent():
+    prompt = get_prompt()
+    llm = get_llm()
+    tools = get_tools()
 
     agent = create_openai_tools_agent(llm, tools, prompt)
     agent_executor = AgentExecutor(
