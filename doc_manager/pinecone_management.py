@@ -209,6 +209,8 @@ def process_and_load_documents(namespace: str) -> None:
         delete_namespace(namespace)
         logging.error(f"Error: No se encontraron documentos en {path}")
 
+    if len(docs) == 0:
+        return
     _split_and_store_documents(docs, namespace)
 
 
