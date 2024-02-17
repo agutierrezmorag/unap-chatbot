@@ -117,7 +117,7 @@ def manage_docs(
             icon="⚠️",
         )
         if st.button(
-            "Eliminar {namespace} seleccionados",
+            f"Eliminar {namespace} seleccionados",
             use_container_width=True,
             type="primary",
         ):
