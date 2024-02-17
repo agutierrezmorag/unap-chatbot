@@ -179,30 +179,35 @@ def manage_docs(
         key=st.session_state[upload_key],
     )
 
-    if uploaded_files:
-        if st.button(
-            f"Subir archivos de {namespace} al repositorio",
-            use_container_width=True,
-            type="primary",
-        ):
-            add_files_to_repo(
-                file_list=uploaded_files,
-                namespace=namespace,
+    if st.button(
+        f"Subir archivos de {namespace} al repositorio",
+        use_container_width=True,
+        type="primary",
+        disabled=not uploaded_files,
+    ):
+        add_files_to_repo(
+            file_list=uploaded_files,
+            namespace=namespace,
+        )
+        if namespace == "Reglamentos":
+            get_last_doc_update.clear()
+            st.session_state.last_doc_update = datetime.datetime.now().strftime(
+                "%d/%m/%Y a las %H:%M hrs."
             )
-            if namespace == "Reglamentos":
-                get_last_doc_update.clear()
-                st.session_state.last_doc_update = datetime.datetime.now().strftime(
-                    "%d/%m/%Y a las %H:%M hrs."
-                )
-            elif namespace == "Calendarios":
-                get_last_calendar_update.clear()
-                st.session_state.last_calendar_update = (
-                    datetime.datetime.now().strftime("%d/%m/%Y a las %H:%M hrs.")
-                )
-            update_session_and_rerun(upload_key)
+        elif namespace == "Calendarios":
+            get_last_calendar_update.clear()
+            st.session_state.last_calendar_update = datetime.datetime.now().strftime(
+                "%d/%m/%Y a las %H:%M hrs."
+            )
+        elif namespace == "Web":
+            get_last_web_update.clear()
+            st.session_state.last_web_update = datetime.datetime.now().strftime(
+                "%d/%m/%Y a las %H:%M hrs."
+            )
+        update_session_and_rerun(upload_key)
 
-        if st.button("Limpiar lista de archivos a subir", use_container_width=True):
-            update_session_and_rerun(upload_key)
+    if st.button("Limpiar lista de archivos a subir", use_container_width=True):
+        update_session_and_rerun(upload_key)
 
 
 def wikipedia():
