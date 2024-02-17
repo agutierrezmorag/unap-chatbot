@@ -13,6 +13,7 @@ from utils import config
 logging.basicConfig(level=logging.INFO)
 
 
+@st.cache_resource(show_spinner=False)
 def _get_repo() -> Repository.Repository:
     """
     Recupera el objeto del repositorio de GitHub basado en el token de acceso proporcionado, el propietario del repositorio y el nombre del repositorio.
