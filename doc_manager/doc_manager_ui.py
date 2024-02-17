@@ -148,7 +148,11 @@ def manage_docs(
             "¿Seguro que desea eliminar los documentos seleccionados?",
             icon="⚠️",
         )
-        if st.button("Confirmar", use_container_width=True, type="primary"):
+        if st.button(
+            "Eliminar {namespace} seleccionados",
+            use_container_width=True,
+            type="primary",
+        ):
             selected_indices = list(
                 st.session_state[f"{namespace}_list_df"]["edited_rows"].keys()
             )
@@ -159,7 +163,7 @@ def manage_docs(
             )
             time.sleep(2)
             reset_state_and_rerun(delete_doc_key)
-        elif st.button("Cancelar", use_container_width=True):
+        elif st.button("Cancelar", use_container_width=True, key=str(uuid.uuid4())):
             reset_state_and_rerun(delete_doc_key)
     elif delete_action_button:
         if selected_rows:
@@ -206,7 +210,11 @@ def manage_docs(
             )
         update_session_and_rerun(upload_key)
 
-    if st.button("Limpiar lista de archivos a subir", use_container_width=True):
+    if st.button(
+        f"Limpiar archivos de {namespace} subidos",
+        use_container_width=True,
+        disabled=not uploaded_files,
+    ):
         update_session_and_rerun(upload_key)
 
 
