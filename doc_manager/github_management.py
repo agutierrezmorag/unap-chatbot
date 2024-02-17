@@ -167,9 +167,9 @@ def add_files_to_repo(
 
         update_container.markdown(f"- {message}")
     time.sleep(1)
-    update_container.markdown("- Documentos cargados exitosamente.")
+    update_container.markdown("- :green[Documentos cargados exitosamente.]")
     time.sleep(1)
 
-    update_container.markdown("- Actualizando la memoria de la IA...")
+    update_container.markdown("- :blue[Actualizando la memoria de la IA...]")
     process_and_load_documents(namespace=namespace)
     update_container.update(label="Memoria actualizada.", state="complete")
