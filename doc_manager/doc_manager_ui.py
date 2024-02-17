@@ -1,6 +1,7 @@
 import datetime
 import time
 import uuid
+from typing import List
 
 import streamlit as st
 import streamlit_authenticator as stauth
@@ -75,7 +76,7 @@ def general_info():
 
 
 def manage_docs(
-    doc_type: str,
+    doc_type: List[str],
     upload_key: str,
     delete_doc_key: str,
     namespace: str,
@@ -180,7 +181,11 @@ def manage_docs(
     )
 
     if uploaded_files:
-        if st.button(f"Subir archivos .{doc_type}s al repositorio"):
+        if st.button(
+            f"Subir archivos de {namespace} al repositorio",
+            use_container_width=True,
+            type="primary",
+        ):
             add_files_to_repo(
                 file_list=uploaded_files,
                 namespace=namespace,
@@ -197,7 +202,7 @@ def manage_docs(
                 )
             update_session_and_rerun(upload_key)
 
-        if st.button("Limpiar lista de archivos a subir"):
+        if st.button("Limpiar lista de archivos a subir", use_container_width=True):
             update_session_and_rerun(upload_key)
 
 
@@ -343,7 +348,7 @@ def main():
 
             with tab1:
                 manage_docs(
-                    "txt",
+                    ["txt", "pdf"],
                     "txt_upload_key",
                     "txt_delete_state",
                     "Reglamentos",
@@ -351,7 +356,7 @@ def main():
 
             with tab2:
                 manage_docs(
-                    "xml",
+                    ["xml"],
                     "calendar_upload_key",
                     "calendar_delete_state,",
                     "Calendarios",
@@ -359,7 +364,7 @@ def main():
 
             with tab3:
                 manage_docs(
-                    "xml",
+                    ["xml"],
                     "web_upload_key",
                     "web_delete_state,",
                     "Web",

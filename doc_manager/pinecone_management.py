@@ -10,8 +10,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import (
     DirectoryLoader,
     GitLoader,
-    TextLoader,
-    UnstructuredXMLLoader,
+    UnstructuredFileLoader,
     WikipediaLoader,
 )
 from langchain_community.document_loaders.sitemap import SitemapLoader
@@ -143,12 +142,10 @@ def _get_document_loader(
     Returns:
         DocumentLoader: El cargador de documentos basado en el namespace especificado.
     """
-    if namespace == "Reglamentos":
+    if namespace in ["Reglamentos", "Calendarios"]:
         return DirectoryLoader(
             path=path,
-            glob="**/*.txt",
-            loader_cls=TextLoader,
-            loader_kwargs={"autodetect_encoding": True, "encoding": "utf-8"},
+            loader_cls=UnstructuredFileLoader,
             use_multithreading=True,
             silent_errors=True,
         )
@@ -159,14 +156,6 @@ def _get_document_loader(
             load_max_docs=1,
             load_all_available_meta=True,
             doc_content_chars_max=20000,
-        )
-    elif namespace == "Calendarios":
-        return DirectoryLoader(
-            path=path,
-            glob="**/*.xml",
-            loader_cls=UnstructuredXMLLoader,
-            use_multithreading=True,
-            silent_errors=True,
         )
     elif namespace == "Web":
         return DirectoryLoader(
