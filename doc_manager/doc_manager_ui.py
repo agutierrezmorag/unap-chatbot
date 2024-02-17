@@ -1,7 +1,6 @@
 import datetime
 import time
 import uuid
-from typing import List
 
 import streamlit as st
 import streamlit_authenticator as stauth
@@ -76,7 +75,7 @@ def general_info():
 
 
 def manage_docs(
-    doc_type: List[str],
+    doc_type: str,
     upload_key: str,
     delete_doc_key: str,
     namespace: str,
@@ -348,7 +347,7 @@ def main():
 
             with tab1:
                 manage_docs(
-                    ["txt", "pdf"],
+                    "txt",
                     "txt_upload_key",
                     "txt_delete_state",
                     "Reglamentos",
@@ -356,7 +355,7 @@ def main():
 
             with tab2:
                 manage_docs(
-                    ["xml"],
+                    "xml",
                     "calendar_upload_key",
                     "calendar_delete_state,",
                     "Calendarios",
@@ -364,7 +363,7 @@ def main():
 
             with tab3:
                 manage_docs(
-                    ["xml"],
+                    "xml",
                     "web_upload_key",
                     "web_delete_state,",
                     "Web",
