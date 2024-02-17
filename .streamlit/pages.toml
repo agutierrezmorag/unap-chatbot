@@ -9,6 +9,6 @@ name = "Administracion"
 icon = "⚙️"
 
 [[pages]]
-path = "doc_query.py"
-name = "Documentos"
+path = "doc_querier.py"
+name = "Consulta documentos"
 icon = "🔍"

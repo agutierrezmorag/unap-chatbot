@@ -67,7 +67,7 @@ def main():
         if "type" in df.columns:
             df = df.drop(columns=["type"])
 
-        st.dataframe(df)
+        st.dataframe(df, use_container_width=True)
 
 
 if __name__ == "__main__":
