@@ -5,6 +5,7 @@ import time
 from typing import Dict, List, Optional, Union
 
 import pinecone
+import streamlit as st
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import (
     DirectoryLoader,
@@ -128,6 +129,7 @@ def get_index_data() -> Dict:
     return index_data
 
 
+@st.cache_resource(show_spinner=False)
 def _get_document_loader(
     namespace: str, path: str
 ) -> Optional[Union[DirectoryLoader, WikipediaLoader]]:
