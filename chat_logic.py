@@ -136,7 +136,7 @@ def get_tools():
 
 @st.cache_resource(show_spinner=False)
 def get_prompt():
-    hub.pull("unap-chatbot/unap-rag-agent")
+    return hub.pull("unap-chatbot/unap-rag-agent")
 
 
 # Funciones de agente
