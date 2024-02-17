@@ -131,7 +131,17 @@ if __name__ == "__main__":
 
     # Lista de documentos disponibles para consultar
     docs = get_repo_docs_as_pd("Reglamentos")
-    with st.expander("Puedes realizar consultas sobre los siguientes documentos:"):
+    with st.expander("Puedes realizar consultas sobre lo siguiente:"):
+        st.markdown(
+            "- 📰 Noticias publicadas en [Actualidad UNAP](https://www.unap.cl/prontus_unap/site/edic/base/port/actualidad.html)"
+        )
+        st.markdown("- 🗓️ Los calendarios académicos")
+        st.markdown(
+            "- 🔗 Contenido disponible en la [página web de la universidad](https://www.unap.cl/)"
+        )
+        st.markdown(
+            "- 📃 Reglamentos y documentos generales de la universidad, como los siguientes:"
+        )
         st.dataframe(
             docs,
             height=200,
