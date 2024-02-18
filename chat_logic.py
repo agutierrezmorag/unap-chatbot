@@ -1,15 +1,13 @@
 import streamlit as st
 from langchain import hub
 from langchain.agents import AgentExecutor, create_openai_tools_agent
-from langchain.retrievers import ContextualCompressionRetriever
-from langchain.retrievers.document_compressors import EmbeddingsFilter
 from langchain.tools.retriever import create_retriever_tool
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import ConfigurableField
 from langchain_openai import ChatOpenAI
 from langsmith import Client
 
-from doc_manager.pinecone_management import get_embedder, get_or_create_vectorstore
+from doc_manager.pinecone_management import get_or_create_vectorstore
 from utils import config
 
 
@@ -44,17 +42,11 @@ def get_llm():
 @st.cache_resource(show_spinner=False)
 def get_retriever(namespace: str, k_results: int = 5):
     vectorstore = get_or_create_vectorstore(namespace)
-    retriever = vectorstore.as_retriever()
-
-    embeddings = get_embedder()
-    embeddings_filter = EmbeddingsFilter(
-        embeddings=embeddings, similarity_threshold=0.76
-    )
-    compression_retriever = ContextualCompressionRetriever(
-        base_compressor=embeddings_filter, base_retriever=retriever
+    retriever = vectorstore.as_retriever(
+        search_type="similarity", search_kwargs={"k": k_results}
     )
 
-    return compression_retriever
+    return retriever
 
 
 @st.cache_resource(show_spinner=False)
