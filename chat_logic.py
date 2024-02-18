@@ -58,7 +58,8 @@ def get_tools():
         get_retriever(namespace="Reglamentos"),
         "busqueda_reglamentos_unap",
         "Esta herramienta busca documentos de reglamentos de la Universidad Arturo Prat. \
-        Es útil para encontrar información sobre reglamentos, normativas y políticas de la universidad.",
+        Es útil para encontrar información sobre reglamentos, normativas y políticas de la universidad.\
+        Siempre utilizalo para corroborar información oficial.",
         document_prompt=document_prompt,
     )
 
