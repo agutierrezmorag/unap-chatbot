@@ -1,9 +1,11 @@
 import streamlit as st
 from langchain import hub
 from langchain.agents import AgentExecutor, create_openai_tools_agent
+from langchain.retrievers import MultiQueryRetriever
 from langchain.tools.retriever import create_retriever_tool
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import ConfigurableField
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_openai import ChatOpenAI
 from langsmith import Client
 
@@ -47,7 +49,14 @@ def get_retriever(namespace: str, k_results: int = 5):
         search_kwargs={"k": k_results, "score_threshold": 0.76},
     )
 
-    return retriever
+    retriever_with_llm = MultiQueryRetriever(
+        retriever=retriever,
+        llm=ChatGoogleGenerativeAI(
+            google_api_key=config.AI_STUDIO_API_KEY, model="gemini-pro"
+        ),
+    )
+
+    return retriever_with_llm
 
 
 @st.cache_resource(show_spinner=False)
