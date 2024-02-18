@@ -147,7 +147,6 @@ def manage_docs(
             f"Subir {namespace}",
             use_container_width=True,
             type="primary",
-            disabled=not uploaded_files,
             on_click=add_files_to_repo,
             args=(uploaded_files, namespace),
         )
