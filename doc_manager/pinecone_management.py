@@ -262,7 +262,7 @@ def _split_and_store_documents(docs: List[Document], namespace: str) -> None:
             logging.error(f"Error: {e}")
 
     splitter = RecursiveCharacterTextSplitter(
-        chunk_size=4000, chunk_overlap=200, add_start_index=True
+        chunk_size=2048, chunk_overlap=300, add_start_index=True
     )
     split_docs = splitter.split_documents(docs)
 
