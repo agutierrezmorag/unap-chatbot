@@ -133,7 +133,7 @@ if __name__ == "__main__":
         )
         st.markdown("- 🗓️ Los calendarios académicos")
         st.markdown(
-            "- 🔗 Contenido disponible en la [página web de la universidad](https://www.unap.cl/)"
+            "- 🔗 Contenido disponible en la [página web de la universidad](https://www.unap.cl/) y [admision UNAP](https://www.admisionunap.cl/)"
         )
         st.markdown(
             "- 📃 Reglamentos y documentos generales de la universidad, como los siguientes:"
