@@ -44,10 +44,7 @@ def get_llm():
 @st.cache_resource(show_spinner=False)
 def get_retriever(namespace: str, k_results: int = 5):
     vectorstore = get_or_create_vectorstore(namespace)
-    retriever = vectorstore.as_retriever(
-        search_type="similarity",
-        search_kwargs={"k": k_results, "score_threshold": 0.76},
-    )
+    retriever = vectorstore.as_retriever()
 
     embeddings = get_embedder()
     embeddings_filter = EmbeddingsFilter(
