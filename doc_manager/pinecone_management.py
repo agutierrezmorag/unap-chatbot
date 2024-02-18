@@ -181,6 +181,7 @@ def _get_document_loader(
             path=path,
             glob="**/*.xml",
             loader_cls=UnstructuredXMLLoader,
+            loader_kwargs={"mode": "single"},
             use_multithreading=True,
             silent_errors=True,
         )
