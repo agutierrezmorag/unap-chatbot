@@ -57,8 +57,8 @@ def get_tools():
     doc_retriever_tool = create_retriever_tool(
         get_retriever(namespace="Reglamentos"),
         "busqueda_reglamentos_unap",
-        "Esta herramienta busca en la base de datos de documentos y reglamentos de la Universidad Arturo Prat. \
-        Es ideal para encontrar información detallada sobre reglamentos, procedimientos, becas, lineamientos, etc.",
+        "Esta herramienta busca documentos de reglamentos de la Universidad Arturo Prat. \
+        Es útil para encontrar información sobre reglamentos, normativas y políticas de la universidad.",
         document_prompt=document_prompt,
     )
 
@@ -88,8 +88,7 @@ def get_tools():
         get_retriever(namespace="Noticias"),
         "busqueda_noticias_unap",
         "Esta herramienta busca artículos publicados en el portal noticiero Actualidad UNAP. \
-        Es útil para encontrar información sobre eventos, noticias y novedades recientes de la universidad. \
-        Utilízala cuando necesites estar al día con los últimos acontecimientos en la universidad.",
+        Es útil para encontrar información sobre eventos, noticias y novedades recientes de la universidad.",
         document_prompt=news_doc_prompt,
     )
 
@@ -100,8 +99,7 @@ def get_tools():
         get_retriever(namespace="Web"),
         "busqueda_web_unap",
         "Esta herramienta busca información en la página web de la Universidad Arturo Prat. \
-        Es ideal para buscar información más especificada sobre la universidad, como las páginas de las facultades, carreras y los diversos departamentos. \
-        Utilízala cuando necesites información que se encuentre en el sitio web oficial de la universidad.",
+        Es ideal para buscar información más especificada sobre la universidad, como las páginas de las facultades, carreras y los diversos departamentos.",
         document_prompt=web_doc_prompt,
     )
 
