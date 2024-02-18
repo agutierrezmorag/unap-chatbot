@@ -10,7 +10,6 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import (
     DirectoryLoader,
     GitLoader,
-    TextLoader,
     UnstructuredXMLLoader,
     WikipediaLoader,
 )
@@ -163,8 +162,6 @@ def _get_document_loader(
         return DirectoryLoader(
             path=path,
             glob="**/*.txt",
-            loader_cls=TextLoader,
-            loader_kwargs={"autodetect_encoding": True, "encoding": "utf-8"},
             use_multithreading=True,
             silent_errors=True,
         )
