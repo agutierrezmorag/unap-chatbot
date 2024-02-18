@@ -43,7 +43,8 @@ def get_llm():
 def get_retriever(namespace: str, k_results: int = 5):
     vectorstore = get_or_create_vectorstore(namespace)
     retriever = vectorstore.as_retriever(
-        search_type="similarity", search_kwargs={"k": k_results}
+        search_type="similarity",
+        search_kwargs={"k": k_results, "score_threshold": 0.76},
     )
 
     return retriever
