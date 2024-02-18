@@ -41,7 +41,7 @@ def _get_repo_documents(subdirectory: str) -> List[ContentFile]:
         repo = _get_repo()
         directory_path = f"{config.REPO_DIRECTORY_PATH}/{subdirectory}"
         docs = repo.get_contents(directory_path, ref=config.REPO_BRANCH)
-        logging.info(
+        logging.debug(
             f"Recuperados {len(docs)} documentos del repositorio, desde {directory_path}."
         )
         return docs
