@@ -255,7 +255,7 @@ def _split_and_store_documents(docs: List[Document], namespace: str) -> None:
             shutil.rmtree(config.REPO_DIRECTORY_PATH)
             logging.info("Archivos residuales eliminados.")
         except PermissionError:
-            logging.error(
+            logging.critical(
                 f"Error: No se tienen los permisos necesarios para eliminar el directorio '{config.REPO_DIRECTORY_PATH}. Por favor, elimine el directorio manualmente."
             )
         except Exception as e:
