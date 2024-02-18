@@ -147,25 +147,22 @@ def manage_docs(
         key=st.session_state[upload_key],
     )
 
-    if st.button(
+    st.button(
         f"Subir archivos de {namespace} al repositorio",
         use_container_width=True,
         type="primary",
         disabled=not uploaded_files,
-    ):
-        add_files_to_repo(
-            file_list=uploaded_files,
-            namespace=namespace,
-        )
-        update_session_and_rerun(upload_key)
+        on_click=on_upload_button_click,
+        args=(uploaded_files, namespace, upload_key),
+    )
 
-    if st.button(
-        "Limpiar",
-        use_container_width=True,
-        key=str(uuid.uuid4()),
-        disabled=not uploaded_files,
-    ):
-        update_session_and_rerun(upload_key)
+
+def on_upload_button_click(uploaded_files, namespace, upload_key):
+    add_files_to_repo(
+        file_list=uploaded_files,
+        namespace=namespace,
+    )
+    update_session_and_rerun(upload_key)
 
 
 def on_delete_button_click(selected_file_paths, namespace, delete_doc_key):
