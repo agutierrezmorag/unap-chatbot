@@ -121,7 +121,7 @@ def manage_docs(
             )
             time.sleep(2)
             reset_state_and_rerun(delete_doc_key)
-        elif st.button("Cancelar", use_container_width=True, key=str(uuid.uuid4())):
+        if st.button("Cancelar", use_container_width=True, key=str(uuid.uuid4())):
             reset_state_and_rerun(delete_doc_key)
     elif delete_action_button:
         if selected_rows:
@@ -141,13 +141,13 @@ def manage_docs(
             accept_multiple_files=True,
             help=f"Selecciona uno o más archivos. Solo se permiten {doc_type}.",
         )
-        st.form_submit_button(
+        submitted = st.form_submit_button(
             f"Subir {namespace}",
             use_container_width=True,
             type="primary",
-            on_click=add_files_to_repo,
-            args=(uploaded_files, namespace),
         )
+        if submitted:
+            add_files_to_repo(uploaded_files, namespace)
 
 
 def wikipedia():
