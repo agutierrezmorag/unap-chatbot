@@ -141,18 +141,14 @@ def manage_docs(
             accept_multiple_files=True,
             help=f"Selecciona uno o más archivos. Solo se permiten {doc_type}.",
         )
-        submitted = st.form_submit_button(
+        st.form_submit_button(
             f"Subir {namespace}",
             use_container_width=True,
             type="primary",
             disabled=not uploaded_files,
+            on_click=add_files_to_repo,
+            args=(uploaded_files, namespace),
         )
-
-        if submitted:
-            add_files_to_repo(
-                file_list=uploaded_files,
-                namespace=namespace,
-            )
 
 
 def wikipedia():
