@@ -133,9 +133,7 @@ def manage_docs(
                 icon="❌",
             )
 
-    upload_form = st.form(
-        key=f"{namespace}_upload_form", border=False, clear_on_submit=True
-    )
+    upload_form = st.form(key=f"{namespace}_upload_form", border=False)
     with upload_form:
         uploaded_files = st.file_uploader(
             f"Subir archivo .{doc_type}",
