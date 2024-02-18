@@ -129,12 +129,9 @@ def add_files_to_repo(file_list: List[UploadedFile], namespace: str) -> None:
     """
     repo = _get_repo()
 
-    update_container = st.status(
-        label="Agregando documentos al repositorio...",
-        state="running",
-        expanded=True,
-    )
-    for uploaded_file in file_list:
+    progress_bar = st.progress(0)
+    total_files = len(file_list)
+    for i, uploaded_file in enumerate(file_list):
         content = uploaded_file.getvalue()
         file_path = f"{config.REPO_DIRECTORY_PATH}/{namespace}/{uploaded_file.name}"
 
@@ -160,9 +157,9 @@ def add_files_to_repo(file_list: List[UploadedFile], namespace: str) -> None:
                 message = f"Error al obtener el documento '{uploaded_file.name}'"
                 logging.error(f"{message} : {e}")
 
-        update_container.markdown(f"- {message}")
-    update_container.markdown("- :green[Documentos cargados exitosamente.]")
+        progress_bar.progress((i + 1) / total_files)
+    progress_bar.progress(text="- :green[Documentos cargados exitosamente.]")
 
-    update_container.markdown("- :blue[Actualizando la memoria de la IA...]")
+    progress_bar.progress(text="- :blue[Actualizando la memoria de la IA...]")
     process_and_load_documents(namespace=namespace)
-    update_container.update(label="Memoria actualizada.", state="complete")
+    progress_bar.progress(text="Memoria actualizada.")
