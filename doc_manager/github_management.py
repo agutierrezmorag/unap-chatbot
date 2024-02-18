@@ -91,11 +91,10 @@ def delete_repo_doc(file_paths: List[str], namespace: str) -> None:
         None
     """
     repo = _get_repo()
-    progress_container = st.status(
-        "Eliminando documentos...", state="running", expanded=True
-    )
+    progress_bar = st.progress(0)
+    total_files = len(file_paths)
     try:
-        for file_path in file_paths:
+        for i, file_path in enumerate(file_paths):
             doc = repo.get_contents(file_path, ref=config.REPO_BRANCH)
             message = f"Documento '{doc.name}' eliminado."
             resp = repo.delete_file(  # noqa: F841
@@ -104,13 +103,14 @@ def delete_repo_doc(file_paths: List[str], namespace: str) -> None:
                 sha=doc.sha,
                 branch=config.REPO_BRANCH,
             )
-            progress_container.markdown(f"- {message}")
+            st.markdown(f"- {message}")
+            progress_bar.progress((i + 1) / total_files)
 
-        progress_container.markdown("- :green[Documentos eliminados exitosamente.]")
+        progress_bar.progress(1.0, ":green[Documentos eliminados exitosamente.]")
 
-        progress_container.markdown("- :blue[Actualizando la memoria de la IA...]")
+        progress_bar.progress(1.0, ":blue[Actualizando la memoria de la IA...]")
         process_and_load_documents(namespace=namespace)
-        progress_container.update(label="Memoria actualizada.", state="complete")
+        progress_bar.progress(1.0, "Memoria actualizada.")
     except GithubException as e:
         logging.error(f"Error al eliminar el documento '{file_path}': {e}")
         return
@@ -158,8 +158,8 @@ def add_files_to_repo(file_list: List[UploadedFile], namespace: str) -> None:
                 logging.error(f"{message} : {e}")
 
         progress_bar.progress(value=(i + 1) / total_files, text=message)
-    progress_bar.progress(value=1, text=":green[Documentos cargados exitosamente.]")
+    progress_bar.progress(value=1.0, text=":green[Documentos cargados exitosamente.]")
 
-    progress_bar.progress(value=1, text=":blue[Actualizando la memoria de la IA...]")
+    progress_bar.progress(value=1.0, text=":blue[Actualizando la memoria de la IA...]")
     process_and_load_documents(namespace=namespace)
-    progress_bar.progress(value=1, text="Memoria actualizada.")
+    progress_bar.progress(value=1.0, text="Memoria actualizada.")
