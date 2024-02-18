@@ -48,10 +48,10 @@ def _get_pinecone() -> pinecone.Pinecone:
 
 def get_or_create_vectorstore(namespace: str) -> Pinecone:
     """
-    Recupera el almacenamiento de vectores para un espacio de nombres dado. Creando un nuevo espacio de nombres si no existe.
+    Recupera el almacenamiento de vectores para un namespace dado. Creando un nuevo namespace si no existe.
 
     Args:
-        namespace (str): El espacio de nombres del almacenamiento de vectores.
+        namespace (str): El namespace en Pinecone.
 
     Returns:
         vectorstore (Pinecone): El objeto de almacenamiento de vectores.
@@ -67,13 +67,13 @@ def get_or_create_vectorstore(namespace: str) -> Pinecone:
 
 def delete_namespace(namespace: str) -> None:
     """
-    Elimina un espacio de nombres del índice Pinecone.
+    Elimina un namespace del índice Pinecone.
 
     Args:
-        namespace (str): El nombre del espacio de nombres a eliminar.
+        namespace (str): El nombre del namespace a eliminar.
 
     Throws:
-        Exception: Si hay un error al eliminar el espacio de nombres.
+        Exception: Si hay un error al eliminar el namespace.
 
     Returns:
         None

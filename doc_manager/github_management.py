@@ -84,7 +84,7 @@ def delete_repo_doc(file_paths: List[str], namespace: str) -> None:
 
     Args:
         file_paths (List[str]): Lista de rutas de los archivos a eliminar.
-        namespace (str): Espacio de nombres en Pinecone.
+        namespace (str): Namespace en Pinecone.
         directory_path (str): Ruta del directorio donde se encuentran los documentos.
 
     Returns:
@@ -116,16 +116,13 @@ def delete_repo_doc(file_paths: List[str], namespace: str) -> None:
         return
 
 
-def add_files_to_repo(
-    file_list: List[UploadedFile],
-    namespace: str,
-) -> None:
+def add_files_to_repo(file_list: List[UploadedFile], namespace: str) -> None:
     """
     Agrega archivos a un repositorio de GitHub. Luego, procesa y carga los documentos en Pinecone.
 
     Args:
         file_list (List[UploadedFile]): Lista de archivos para agregar.
-        namespace (str): Espacio de nombres de los documentos en Pinecone.
+        namespace (str): Namespace de los documentos en Pinecone.
 
     Returns:
         None
