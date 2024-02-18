@@ -54,7 +54,6 @@ def general_info():
 
 def manage_docs(
     doc_type: str,
-    upload_key: str,
     delete_doc_key: str,
     namespace: str,
 ):
@@ -139,39 +138,25 @@ def manage_docs(
                 icon="❌",
             )
 
-    uploaded_files = st.file_uploader(
-        f"Subir archivo .{doc_type}",
-        type=doc_type,
-        accept_multiple_files=True,
-        help=f"Selecciona uno o más archivos. Solo se permiten {doc_type}.",
-        key=st.session_state[upload_key],
-    )
+    upload_form = st.form(key=f"{namespace}_upload_form", border=False)
+    with upload_form:
+        uploaded_files = st.file_uploader(
+            f"Subir archivo .{doc_type}",
+            type=doc_type,
+            accept_multiple_files=True,
+            help=f"Selecciona uno o más archivos. Solo se permiten {doc_type}.",
+        )
+        submitted = st.form_submit_button(
+            f"Subir {namespace}",
+            use_container_width=True,
+            type="primary",
+        )
 
-    st.button(
-        f"Subir archivos de {namespace} al repositorio",
-        use_container_width=True,
-        type="primary",
-        disabled=not uploaded_files,
-        on_click=on_upload_button_click,
-        args=(uploaded_files, namespace, upload_key),
-    )
-
-
-def on_upload_button_click(uploaded_files, namespace, upload_key):
-    add_files_to_repo(
-        file_list=uploaded_files,
-        namespace=namespace,
-    )
-    update_session_and_rerun(upload_key)
-
-
-def on_delete_button_click(selected_file_paths, namespace, delete_doc_key):
-    delete_repo_doc(
-        file_paths=selected_file_paths,
-        namespace=namespace,
-    )
-    time.sleep(2)
-    reset_state_and_rerun(delete_doc_key)
+        if submitted:
+            add_files_to_repo(
+                file_list=uploaded_files,
+                namespace=namespace,
+            )
 
 
 def wikipedia():
@@ -244,18 +229,12 @@ def main():
         st.image(logo_path, use_column_width=True)
     show_pages_from_config()
 
-    if "txt_upload_key" not in st.session_state:
-        st.session_state.txt_upload_key = str(uuid.uuid4())
     if "txt_delete_state" not in st.session_state:
         st.session_state.txt_delete_state = False
 
-    if "calendar_upload_key" not in st.session_state:
-        st.session_state.calendar_upload_key = str(uuid.uuid4())
     if "calendar_delete_state" not in st.session_state:
         st.session_state.calendar_delete_state = False
 
-    if "web_upload_key" not in st.session_state:
-        st.session_state.web_upload_key = str(uuid.uuid4())
     if "web_delete_state" not in st.session_state:
         st.session_state.web_delete_state = False
 
@@ -317,7 +296,6 @@ def main():
             with tab1:
                 manage_docs(
                     "txt",
-                    "txt_upload_key",
                     "txt_delete_state",
                     "Reglamentos",
                 )
@@ -325,7 +303,6 @@ def main():
             with tab2:
                 manage_docs(
                     "xml",
-                    "calendar_upload_key",
                     "calendar_delete_state,",
                     "Calendarios",
                 )
@@ -333,7 +310,6 @@ def main():
             with tab3:
                 manage_docs(
                     "xml",
-                    "web_upload_key",
                     "web_delete_state,",
                     "Web",
                 )
