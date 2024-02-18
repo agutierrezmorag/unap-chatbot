@@ -174,10 +174,10 @@ if __name__ == "__main__":
             return_messages=True,
         )
     if "model_type" not in st.session_state:
-        st.session_state.model_type = "gpt-3.5-turbo-1106"
+        st.session_state.model_type = "gpt-3.5-turbo-0125"
 
     st.session_state.model_type = st.selectbox(
-        "Tipo de modelo", ["gpt-3.5-turbo-1106", "gpt-4-turbo-preview"]
+        "Tipo de modelo", ["gpt-3.5-turbo-0125", "gpt-4-turbo-preview"]
     )
 
     # Preguntas predefinidas

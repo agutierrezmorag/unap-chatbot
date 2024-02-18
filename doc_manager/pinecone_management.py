@@ -46,6 +46,18 @@ def _get_pinecone() -> pinecone.Pinecone:
     return SingletonPinecone.get_instance()
 
 
+def get_embedder() -> OpenAIEmbeddings:
+    """
+    Obtiene el objeto OpenAIEmbeddings para realizar la incrustación de texto.
+
+    Returns:
+        OpenAIEmbeddings: El objeto OpenAIEmbeddings para realizar la incrustación de texto.
+    """
+    return OpenAIEmbeddings(
+        openai_api_key=config.OPENAI_API_KEY, model="text-embedding-3-small"
+    )
+
+
 def get_or_create_vectorstore(namespace: str) -> Pinecone:
     """
     Recupera el almacenamiento de vectores para un namespace dado. Creando un nuevo namespace si no existe.
@@ -56,7 +68,7 @@ def get_or_create_vectorstore(namespace: str) -> Pinecone:
     Returns:
         vectorstore (Pinecone): El objeto de almacenamiento de vectores.
     """
-    embeddings = OpenAIEmbeddings(openai_api_key=config.OPENAI_API_KEY)
+    embeddings = get_embedder()
     vectorstore = Pinecone.from_existing_index(
         index_name=config.PINECONE_INDEX_NAME,
         embedding=embeddings,
