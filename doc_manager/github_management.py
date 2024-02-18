@@ -158,8 +158,8 @@ def add_files_to_repo(file_list: List[UploadedFile], namespace: str) -> None:
                 logging.error(f"{message} : {e}")
 
         progress_bar.progress((i + 1) / total_files)
-    progress_bar.progress(text="- :green[Documentos cargados exitosamente.]")
+    progress_bar.progress(1, text="- :green[Documentos cargados exitosamente.]")
 
     progress_bar.progress(text="- :blue[Actualizando la memoria de la IA...]")
     process_and_load_documents(namespace=namespace)
-    progress_bar.progress(text="Memoria actualizada.")
+    progress_bar.progress(1, text="Memoria actualizada.")
