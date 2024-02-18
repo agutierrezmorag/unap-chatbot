@@ -241,7 +241,8 @@ def _split_and_store_documents(docs: List[Document], namespace: str) -> None:
     Returns:
         None
     """
-    if namespace in ["Reglamentos", "Calendarios"]:
+    cloned_namespaces = ["Reglamentos", "Calendarios"]
+    if namespace in cloned_namespaces:
         for doc in docs:
             normalized_path = doc.metadata["source"].replace("\\", "/")
             file_name_with_ext = os.path.basename(normalized_path)
@@ -249,7 +250,7 @@ def _split_and_store_documents(docs: List[Document], namespace: str) -> None:
             doc.metadata["file_name"] = file_name
 
     time.sleep(1)
-    if namespace in ["Reglamentos", "Calendarios"]:
+    if namespace in cloned_namespaces:
         try:
             shutil.rmtree(config.REPO_DIRECTORY_PATH)
             logging.info("Archivos residuales eliminados.")
@@ -260,7 +261,9 @@ def _split_and_store_documents(docs: List[Document], namespace: str) -> None:
         except Exception as e:
             logging.error(f"Error: {e}")
 
-    splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=4000, chunk_overlap=200, add_start_index=True
+    )
     split_docs = splitter.split_documents(docs)
 
     _ensure_index_exists()
