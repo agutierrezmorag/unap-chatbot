@@ -25,11 +25,6 @@ def reset_state_and_rerun(state_key):
     st.rerun()
 
 
-def update_session_and_rerun(upload_key):
-    st.session_state[upload_key] = str(uuid.uuid4())
-    st.rerun()
-
-
 def general_info():
     st.header("📚 Administración de documentos")
     st.markdown(
@@ -150,6 +145,7 @@ def manage_docs(
             f"Subir {namespace}",
             use_container_width=True,
             type="primary",
+            disabled=not uploaded_files,
         )
 
         if submitted:
