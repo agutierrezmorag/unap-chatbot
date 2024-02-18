@@ -5,7 +5,6 @@ from langchain.retrievers import MultiQueryRetriever
 from langchain.tools.retriever import create_retriever_tool
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import ConfigurableField
-from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_openai import ChatOpenAI
 from langsmith import Client
 
@@ -51,9 +50,7 @@ def get_retriever(namespace: str, k_results: int = 5):
 
     retriever_with_llm = MultiQueryRetriever(
         retriever=retriever,
-        llm=ChatGoogleGenerativeAI(
-            google_api_key=config.AI_STUDIO_API_KEY, model="gemini-pro"
-        ),
+        llm=get_llm(),
     )
 
     return retriever_with_llm
