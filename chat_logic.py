@@ -52,14 +52,14 @@ def get_retriever(namespace: str, k_results: int = 5):
 @st.cache_resource(show_spinner=False)
 def get_tools():
     document_prompt = PromptTemplate.from_template(
-        "Nombre documento: {file_name} \nContenido: {page_content}"
+        "Nombre del documento: {file_name} \nContenido: {page_content}"
     )
     doc_retriever_tool = create_retriever_tool(
         get_retriever(namespace="Reglamentos"),
         "busqueda_reglamentos_unap",
-        "Esta herramienta busca documentos de reglamentos de la Universidad Arturo Prat. \
-        Es útil para encontrar información sobre reglamentos, normativas y políticas de la universidad.\
-        Siempre utilizalo para corroborar información oficial.",
+        "Esta herramienta busca en la base de datos de reglamentos de la Universidad Arturo Prat. \
+        Es ideal para encontrar información detallada y oficial sobre reglamentos, procedimientos, becas, directrices, etc. \
+        Utiliza esta herramienta cuando necesites información específica y autorizada de la universidad.",
         document_prompt=document_prompt,
     )
 
@@ -67,29 +67,31 @@ def get_tools():
         get_retriever(namespace="Wikipedia"),
         "busqueda_wikipedia_unap",
         "Esta herramienta busca información en Wikipedia. \
-        Es útil para obtener información sobre la descripción, historia, ubicación, sedes, facultades y carreras de la universidad",
+        Proporciona una visión general de la universidad, incluyendo su historia, ubicación y fundación. \
+        Utiliza esta herramienta con moderación, solo cuando necesites información general y no específica sobre la universidad.",
     )
 
     calendar_prompt = PromptTemplate.from_template(
         "Archivo: {file_name} \nContenido: {page_content}"
     )
     calendar_retriever_tool = create_retriever_tool(
-        get_retriever(namespace="Calendarios"),
-        "busqueda_calendario_academico_unap",
+        get_retriever(namespace="Calendarios", k_results=2),
+        "calendario_academico_unap",
         "Esta herramienta consulta los calendarios académicos de la Universidad Arturo Prat. \
         Es ideal para encontrar información sobre fechas importantes del año académico, como periodos de matrícula, inducción o vacaciones. \
-        Utilízala para responder consultas sobre fechas.",
+        Utiliza esta herramienta cuando necesites conocer fechas específicas o plazos del calendario académico.",
         document_prompt=calendar_prompt,
     )
 
     news_doc_prompt = PromptTemplate.from_template(
-        "Titulo:{title} \nContenido: {page_content} \nFuente:{link} \nFecha de publicación: {publish_date}"
+        "Título:{title} \nContenido: {page_content} \nFuente:{link} \nFecha de publicación: {publish_date}"
     )
     news_retriever_tool = create_retriever_tool(
         get_retriever(namespace="Noticias"),
-        "busqueda_noticias_unap",
-        "Esta herramienta busca artículos publicados en el portal noticiero Actualidad UNAP. \
-        Es útil para encontrar información sobre eventos, noticias y novedades recientes de la universidad.",
+        "noticias_unap",
+        "Esta herramienta busca artículos publicados en el portal de noticias Actualidad UNAP. \
+        Es útil para encontrar información sobre eventos, noticias y desarrollos recientes en la universidad. \
+        Utiliza esta herramienta cuando necesites mantenerte al día con los últimos acontecimientos en la universidad.",
         document_prompt=news_doc_prompt,
     )
 
@@ -98,9 +100,10 @@ def get_tools():
     )
     web_retriever_tool = create_retriever_tool(
         get_retriever(namespace="Web"),
-        "busqueda_web_unap",
-        "Esta herramienta busca información en la página web de la Universidad Arturo Prat. \
-        Es ideal para buscar información más especificada sobre la universidad, como las páginas de las facultades, carreras y los diversos departamentos.",
+        "web_unap",
+        "Esta herramienta busca información en el sitio web de la Universidad Arturo Prat. \
+        Es ideal para buscar información más específica sobre la universidad, como las páginas de facultades, carreras y diversos departamentos. \
+        Utiliza esta herramienta cuando necesites información que se encuentra en el sitio web oficial de la universidad.",
         document_prompt=web_doc_prompt,
     )
 

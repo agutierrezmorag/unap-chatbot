@@ -54,15 +54,15 @@ async def agent_answer(prompt, agent_thoughts_placeholder, response_placeholder)
                         agent_thoughts_placeholder.markdown(
                             f"- 📚 Consultando **{query}** en los reglamentos..."
                         )
-                    if event_name == "busqueda_calendario_academico_unap":
+                    if event_name == "calendario_academico_unap":
                         agent_thoughts_placeholder.markdown(
                             f"- 📅 Consultando **{query}** en el calendario académico..."
                         )
-                    if event_name == "busqueda_noticias_unap":
+                    if event_name == "noticias_unap":
                         agent_thoughts_placeholder.markdown(
                             f"- 📰 Consultando **{query}** en las noticias..."
                         )
-                    if event_name == "busqueda_web_unap":
+                    if event_name == "web_unap":
                         agent_thoughts_placeholder.markdown(
                             f"- 🔗 Revisando **{query}** en la pagina web..."
                         )
