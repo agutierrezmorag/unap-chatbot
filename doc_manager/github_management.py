@@ -1,5 +1,4 @@
 import logging
-import time
 from typing import List
 
 import pandas as pd
@@ -112,7 +111,6 @@ def delete_repo_doc(file_paths: List[str], namespace: str) -> None:
         progress_container.markdown("- :blue[Actualizando la memoria de la IA...]")
         process_and_load_documents(namespace=namespace)
         progress_container.update(label="Memoria actualizada.", state="complete")
-        time.sleep(1)
     except GithubException as e:
         logging.error(f"Error al eliminar el documento '{file_path}': {e}")
         return
@@ -166,9 +164,7 @@ def add_files_to_repo(
                 logging.error(f"{message} : {e}")
 
         update_container.markdown(f"- {message}")
-    time.sleep(1)
     update_container.markdown("- :green[Documentos cargados exitosamente.]")
-    time.sleep(1)
 
     update_container.markdown("- :blue[Actualizando la memoria de la IA...]")
     process_and_load_documents(namespace=namespace)
