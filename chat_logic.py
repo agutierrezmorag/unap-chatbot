@@ -117,7 +117,9 @@ def question_suggester_chain():
     llm = get_llm()
     prompt = hub.pull("unap-chatbot/unap-chatbot-q-suggester")
 
-    chain = {"input": RunnablePassthrough()} | prompt | llm | StrOutputParser()
+    chain = (
+        {"input": RunnablePassthrough()} | prompt | llm | StrOutputParser()
+    ).with_config({"run_name": "Question Suggester"})
     return chain
 
 
