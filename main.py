@@ -28,7 +28,7 @@ async def agent_answer(prompt, agent_thoughts_placeholder, response_placeholder)
             async for event in agent.astream_events(
                 {"input": prompt},
                 config={
-                    "tags": [config.CHAT_ENVIRONMENT, st.session_state.model_type],
+                    "tags": [config.CHAT_ENVIRONMENT],
                     "metadata": {"conversation_id": st.session_state.session_id},
                 },
                 version="v1",
@@ -200,14 +200,8 @@ if __name__ == "__main__":
             chat_memory=st.session_state.msgs,
             return_messages=True,
         )
-    if "model_type" not in st.session_state:
-        st.session_state.model_type = "gpt-3.5-turbo-0125"
     if "user_question" not in st.session_state:
         st.session_state.user_question = ""
-
-    st.session_state.model_type = st.selectbox(
-        "Tipo de modelo", ["gpt-3.5-turbo-0125", "gpt-4-turbo-preview"]
-    )
 
     # Preguntas predefinidas
     questions = [
