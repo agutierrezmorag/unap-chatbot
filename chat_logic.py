@@ -3,10 +3,7 @@ from langchain import hub
 from langchain.agents import AgentExecutor, create_openai_tools_agent
 from langchain.tools.retriever import create_retriever_tool
 from langchain_core.output_parsers import StrOutputParser
-from langchain_core.prompts import (
-    ChatPromptTemplate,
-    PromptTemplate,
-)
+from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import ConfigurableField, RunnablePassthrough
 from langchain_openai import ChatOpenAI
 from langsmith import Client
@@ -115,43 +112,24 @@ def get_tools():
     return tools
 
 
-def get_suggest_prompt():
-    hub.pull("unap-chatbot/unap-chatbot-question-suggester")
-
-
 @st.cache_resource(show_spinner=False)
 def question_suggester():
     llm = get_llm()
-    prompt = ChatPromptTemplate.from_template(
-        """
-        Imagina que estás escuchando una conversación entre un usuario y un chatbot de una universidad. 
-        A continuación, verás un fragmento de esa conversación. 
-        Tu misión es pensar en la próxima pregunta que el usuario podría hacer basándote en el contexto de la conversación. 
-        Asegúrate de que tu pregunta sea relevante y ayude a profundizar en el tema que se está discutiendo. 
-        Genera y retorna solo la pregunta, sin incluir la respuesta del chatbot. 
-        Prioriza preguntas sobre terminos específicos, detalles o información adicional que el usuario podría necesitar.
-        
-        Aquí tienes la conversación:
-
-        {input}
-
-        Basándote en esto, ¿cuál crees que sería la próxima pregunta del usuario?
-        """
-    )
+    prompt = hub.pull("unap-chatbot/unap-chatbot-q-suggester")
 
     chain = {"input": RunnablePassthrough()} | prompt | llm | StrOutputParser()
     return chain
 
 
 @st.cache_resource(show_spinner=False)
-def get_prompt():
+def get_agent_prompt():
     return hub.pull("unap-chatbot/unap-rag-agent")
 
 
 # Funciones de agente
 # Esta funcion no puede ser cacheada, para que funcione correctamente el agente
 def get_agent():
-    prompt = get_prompt()
+    prompt = get_agent_prompt()
     llm = get_llm()
     tools = get_tools()
 
