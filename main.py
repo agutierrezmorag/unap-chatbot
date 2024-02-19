@@ -12,7 +12,7 @@ from st_pages import show_pages_from_config
 from streamlit_feedback import streamlit_feedback
 from termcolor import cprint
 
-from chat_logic import get_agent, get_langsmith_client
+from chat_logic import get_agent, get_langsmith_client, question_suggester
 from doc_manager.github_management import get_repo_docs_as_pd
 from utils import config
 
@@ -25,7 +25,7 @@ async def agent_answer(prompt, agent_thoughts_placeholder, response_placeholder)
     with collect_runs() as cb:
         try:
             async for event in agent.astream_events(
-                {"input": user_question},
+                {"input": prompt},
                 config={
                     "tags": [config.CHAT_ENVIRONMENT, st.session_state.model_type],
                     "metadata": {"conversation_id": st.session_state.session_id},
@@ -95,6 +95,10 @@ async def agent_answer(prompt, agent_thoughts_placeholder, response_placeholder)
         st.session_state.run_id = cb.traced_runs[0].id
 
 
+def submit_question(question):
+    st.session_state.user_question = question
+
+
 if __name__ == "__main__":
     st.set_page_config(
         page_title="Chatbot UNAP",
@@ -106,12 +110,24 @@ if __name__ == "__main__":
     )
     show_pages_from_config()
 
-    # Eliminar el texto 'footnotes' generado por streamlit
+    # CSS necesario para mostrar el boton de sugerencia de preguntas como texto plano
     st.markdown(
         """
     <style>
-    #footnotes {
-        display: none
+    .element-container:has(style){
+        display: none;
+    }
+    #button-after {
+        display: none;
+    }
+    .element-container:has(#button-after) {
+        display: none;
+    }
+    .element-container:has(#button-after) + div button {
+        border: none;
+        background: none;
+        font-style: italic;
+        text-align: left;
     }
     </style>
     """,
@@ -122,6 +138,7 @@ if __name__ == "__main__":
     set_llm_cache(InMemoryCache())
     logo_path = "logos/unap_negativo.png"
     client = get_langsmith_client()
+    qsuggester = question_suggester()
     with st.sidebar:
         st.image(logo_path)
 
@@ -175,6 +192,8 @@ if __name__ == "__main__":
         )
     if "model_type" not in st.session_state:
         st.session_state.model_type = "gpt-3.5-turbo-0125"
+    if "user_question" not in st.session_state:
+        st.session_state.user_question = ""
 
     st.session_state.model_type = st.selectbox(
         "Tipo de modelo", ["gpt-3.5-turbo-0125", "gpt-4-turbo-preview"]
@@ -191,43 +210,59 @@ if __name__ == "__main__":
     ex_prompt = ""
     for question in questions[:2]:
         with qcol1:
-            if st.button(question, use_container_width=True):
-                ex_prompt = question
+            st.button(
+                question,
+                use_container_width=True,
+                on_click=submit_question,
+                args=(question,),
+            )
     for question in questions[2:]:
         with qcol2:
-            if st.button(question, use_container_width=True):
-                ex_prompt = question
+            st.button(
+                question,
+                use_container_width=True,
+                on_click=submit_question,
+                args=(question,),
+            )
 
     # Historial de mensajes
     avatars = {"human": "🧑‍💻", "ai": logo_path}
+    if len(st.session_state.msgs.messages) == 0:
+        st.session_state.msgs.add_ai_message("¡Hola! ¿En qué puedo ayudarte?")
     for msg in st.session_state.msgs.messages:
         st.chat_message(msg.type, avatar=avatars[msg.type]).write(msg.content)
 
     # Interaccion con el chatbot
-    user_question = st.chat_input(placeholder="Escribe tu pregunta...")
+    if question := st.chat_input(placeholder="Escribe tu pregunta..."):
+        submit_question(question)
 
-    # Logica de respuesta
-    if ex_prompt:
-        user_question = ex_prompt
-
-    if user_question:
-        st.chat_message("user", avatar="🧑‍💻").write(user_question)
+    if st.session_state.user_question != "":
+        st.chat_message("user", avatar="🧑‍💻").write(st.session_state.user_question)
         with st.chat_message("assistant", avatar=logo_path):
             response_placeholder = st.empty()
             agent_thoughts_placeholder = st.status("🤔 Pensando...", expanded=True)
             asyncio.run(
                 agent_answer(
-                    user_question, agent_thoughts_placeholder, response_placeholder
+                    st.session_state.user_question,
+                    agent_thoughts_placeholder,
+                    response_placeholder,
                 )
+            )
+            suggested_question = qsuggester.invoke(st.session_state.memory.buffer[-2:])
+
+            st.markdown('<span id="button-after"></span>', unsafe_allow_html=True)
+            st.button(
+                f"✨ {suggested_question}",
+                on_click=submit_question,
+                args=(suggested_question,),
             )
 
     # Botones de feedback
-    if len(st.session_state.msgs.messages) > 0:
-        feedback = streamlit_feedback(
-            feedback_type="faces",
-            optional_text_label="Proporciona retroalimentación adicional (opcional):",
-            key=f"feedback_{st.session_state.run_id}",
-        )
+    feedback = streamlit_feedback(
+        feedback_type="faces",
+        optional_text_label="Proporciona retroalimentación adicional (opcional):",
+        key=f"feedback_{st.session_state.run_id}",
+    )
 
     # Registro de feedback
     if st.session_state.run_id:
@@ -238,10 +273,8 @@ if __name__ == "__main__":
 
         if feedback:
             score = scores.get(feedback["score"])
-
             if score is not None:
                 feedback_type_str = f"faces {feedback['score']}"
-
                 feedback_record = client.create_feedback(
                     st.session_state.run_id,
                     feedback_type_str,
