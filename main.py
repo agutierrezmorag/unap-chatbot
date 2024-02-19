@@ -12,13 +12,14 @@ from st_pages import show_pages_from_config
 from streamlit_feedback import streamlit_feedback
 from termcolor import cprint
 
-from chat_logic import get_agent, get_langsmith_client, question_suggester
+from chat_logic import get_agent, get_langsmith_client, question_suggester_chain
 from doc_manager.github_management import get_repo_docs_as_pd
 from utils import config
 
 
 async def agent_answer(prompt, agent_thoughts_placeholder, response_placeholder):
     agent = get_agent()
+    suggester_llm = question_suggester_chain()
     full_response = ""
     full_output = ""
 
@@ -41,6 +42,9 @@ async def agent_answer(prompt, agent_thoughts_placeholder, response_placeholder)
                             label="🤗 Respuesta generada.",
                             expanded=False,
                             state="complete",
+                        )
+                        suggested_question = suggester_llm.invoke(
+                            st.session_state.memory.buffer[-2:]
                         )
                 if kind == "on_chat_model_stream":
                     content = event["data"]["chunk"].content
@@ -94,6 +98,13 @@ async def agent_answer(prompt, agent_thoughts_placeholder, response_placeholder)
             return
         st.session_state.run_id = cb.traced_runs[0].id
 
+    st.markdown('<span id="button-after"></span>', unsafe_allow_html=True)
+    st.button(
+        f"✨ {suggested_question}",
+        on_click=submit_question,
+        args=(suggested_question,),
+    )
+
 
 def submit_question(question):
     st.session_state.user_question = question
@@ -138,7 +149,6 @@ if __name__ == "__main__":
     set_llm_cache(InMemoryCache())
     logo_path = "logos/unap_negativo.png"
     client = get_langsmith_client()
-    qsuggester = question_suggester()
     with st.sidebar:
         st.image(logo_path)
 
@@ -247,14 +257,6 @@ if __name__ == "__main__":
                     agent_thoughts_placeholder,
                     response_placeholder,
                 )
-            )
-            suggested_question = qsuggester.invoke(st.session_state.memory.buffer[-2:])
-
-            st.markdown('<span id="button-after"></span>', unsafe_allow_html=True)
-            st.button(
-                f"✨ {suggested_question}",
-                on_click=submit_question,
-                args=(suggested_question,),
             )
 
     # Botones de feedback

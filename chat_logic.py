@@ -113,7 +113,7 @@ def get_tools():
 
 
 @st.cache_resource(show_spinner=False)
-def question_suggester():
+def question_suggester_chain():
     llm = get_llm()
     prompt = hub.pull("unap-chatbot/unap-chatbot-q-suggester")
 
