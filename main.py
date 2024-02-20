@@ -98,12 +98,13 @@ async def agent_answer(prompt, agent_thoughts_placeholder, response_placeholder)
             return
         st.session_state.run_id = cb.traced_runs[0].id
 
-    st.markdown('<span id="button-after"></span>', unsafe_allow_html=True)
-    st.button(
-        f"✨ {suggested_question}",
-        on_click=submit_question,
-        args=(suggested_question,),
-    )
+    if full_response:
+        st.markdown('<span id="button-after"></span>', unsafe_allow_html=True)
+        st.button(
+            f"✨ {suggested_question}",
+            on_click=submit_question,
+            args=(suggested_question,),
+        )
 
 
 def submit_question(question):
