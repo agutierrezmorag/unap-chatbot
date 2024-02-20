@@ -1,4 +1,5 @@
 import asyncio
+import random
 import time
 import uuid
 
@@ -206,12 +207,18 @@ if __name__ == "__main__":
         st.session_state.user_question = ""
 
     # Preguntas predefinidas
-    questions = [
+    question_pool = [
         "¿Cuáles son las tareas del decano?",
         "¿Qué hago en caso de reprobar una asignatura?",
         "Explica en qué consiste el trabajo de título",
         "Cuéntame la historia de la universidad",
+        "¿Qué es el levantamiento de pre-requisito?",
+        "¿Qué funciones cumple el consejo de carrera?",
+        "Cuéntame sobre algunas noticias recientes",
+        "¿Cuanto dura el primer semestre académico?",
+        "¿La UNAP ofrece tutorias?",
     ]
+    questions = random.sample(question_pool, 4)
     qcol1, qcol2 = st.columns(2)
     ex_prompt = ""
     for question in questions[:2]:
