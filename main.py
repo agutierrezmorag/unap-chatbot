@@ -93,7 +93,7 @@ async def agent_answer(prompt, agent_thoughts_placeholder, response_placeholder)
         except Exception as e:
             cprint(e, "red")
             st.error(
-                "Hubo un error al generar la respuesta. Por favor, recarga la página y vuelve a intentarlo."
+                "Hubo un error al generar la respuesta. Por favor, y vuelve a intentarlo."
             )
             return
         st.session_state.run_id = cb.traced_runs[0].id
