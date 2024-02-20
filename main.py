@@ -105,6 +105,7 @@ async def agent_answer(prompt, agent_thoughts_placeholder, response_placeholder)
             on_click=submit_question,
             args=(suggested_question,),
         )
+    st.session_state.user_question = ""
 
 
 def submit_question(question):
