@@ -104,13 +104,13 @@ def delete_repo_doc(file_paths: List[str], namespace: str) -> None:
                 branch=config.REPO_BRANCH,
             )
             st.markdown(f"- {message}")
-            progress_bar.progress((i + 1) / total_files)
+            progress_bar.progress((i + 1) / total_files, text=message)
 
-        progress_bar.progress(1.0, ":green[Documentos eliminados exitosamente.]")
+        progress_bar.progress(1.0, text=":green[Documentos eliminados exitosamente.]")
 
-        progress_bar.progress(1.0, ":blue[Actualizando la memoria de la IA...]")
+        progress_bar.progress(1.0, text=":blue[Actualizando la memoria de la IA...]")
         process_and_load_documents(namespace=namespace)
-        progress_bar.progress(1.0, "Memoria actualizada.")
+        progress_bar.progress(1.0, text="Memoria actualizada.")
     except GithubException as e:
         logging.error(f"Error al eliminar el documento '{file_path}': {e}")
         return
