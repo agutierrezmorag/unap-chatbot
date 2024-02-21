@@ -90,18 +90,19 @@ def manage_docs(
             },
             disabled=["name", "html_url", "download_url", "size"],
         )
-    selected_rows = st.session_state[f"{namespace}_list_df"]["edited_rows"]
+        selected_rows = st.session_state[f"{namespace}_list_df"]["edited_rows"]
+
+        st.form_submit_button(
+            f"Eliminar {doc_type}s seleccionados",
+            use_container_width=True,
+            disabled=df.empty,
+            on_click=set_delete_state,
+            args=(delete_doc_key, True),
+        )
 
     delete_confirmation_dialog = st.empty()
-    delete_action_button = st.empty()
 
-    delete_action_button = form.form_submit_button(
-        f"Eliminar {doc_type}s seleccionados",
-        use_container_width=True,
-        disabled=df.empty,
-    )
-
-    if st.session_state.get(delete_doc_key):
+    if st.session_state.get(delete_doc_key) and selected_rows:
         delete_confirmation_dialog.warning(
             "¿Seguro que desea eliminar los documentos seleccionados?",
             icon="⚠️",
@@ -121,17 +122,18 @@ def manage_docs(
             )
             time.sleep(2)
             reset_state_and_rerun(delete_doc_key)
-        if st.button("Cancelar", use_container_width=True, key=str(uuid.uuid4())):
-            reset_state_and_rerun(delete_doc_key)
-    elif delete_action_button:
-        if selected_rows:
-            st.session_state[delete_doc_key] = True
-            st.rerun()
-        else:
-            delete_confirmation_dialog.error(
-                "No se ha seleccionado ningún documento para eliminar.",
-                icon="❌",
-            )
+        st.button(
+            "Cancelar",
+            use_container_width=True,
+            key=str(uuid.uuid4()),
+            on_click=set_delete_state,
+            args=(delete_doc_key, False),
+        )
+    elif st.session_state.get(delete_doc_key) and not selected_rows:
+        delete_confirmation_dialog.error(
+            "No se ha seleccionado ningún documento para eliminar.",
+            icon="❌",
+        )
 
     upload_form = st.form(key=f"{namespace}_upload_form", border=False)
     with upload_form:
@@ -148,6 +150,10 @@ def manage_docs(
         )
         if submitted:
             add_files_to_repo(uploaded_files, namespace)
+
+
+def set_delete_state(delete_state_key: str, delete_state: bool):
+    st.session_state[delete_state_key] = delete_state
 
 
 def wikipedia():
