@@ -46,6 +46,9 @@ def manage_docs(
     delete_doc_key: str,
     namespace: str,
 ):
+    if delete_doc_key not in st.session_state:
+        st.session_state.delete_doc_key = False
+
     form = st.form(key=f"{namespace}_list_form", border=False)
 
     df = get_repo_docs_as_pd(namespace)
@@ -218,15 +221,6 @@ def main():
     with st.sidebar:
         st.image(logo_path, use_column_width=True)
     show_pages_from_config()
-
-    if "txt_delete_state" not in st.session_state:
-        st.session_state.txt_delete_state = False
-
-    if "calendar_delete_state" not in st.session_state:
-        st.session_state.calendar_delete_state = False
-
-    if "web_delete_state" not in st.session_state:
-        st.session_state.web_delete_state = False
 
     try:
         users = fetch_users()
