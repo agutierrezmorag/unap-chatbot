@@ -147,6 +147,13 @@ def manage_docs(
     ):
         add_files_to_repo(uploaded_files, namespace)
         st.rerun()
+    if st.button(
+        "Limpiar",
+        key=f"{namespace}_clean_uploads",
+        use_container_width=True,
+        type="secondary",
+    ):
+        st.rerun()
 
 
 def set_delete_state(delete_state_key: str, delete_state: bool):
