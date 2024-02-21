@@ -131,21 +131,22 @@ def manage_docs(
             icon="❌",
         )
 
-    upload_form = st.form(key=f"{namespace}_upload_form", border=False)
-    with upload_form:
-        uploaded_files = st.file_uploader(
-            f"Subir archivo .{doc_type}",
-            type=doc_type,
-            accept_multiple_files=True,
-            help=f"Selecciona uno o más archivos. Solo se permiten {doc_type}.",
-        )
-        st.form_submit_button(
-            f"Subir {namespace}",
-            use_container_width=True,
-            type="primary",
-            on_click=add_files_to_repo,
-            args=(uploaded_files, namespace),
-        )
+    uploaded_files = st.file_uploader(
+        f"Subir archivo .{doc_type}",
+        type=doc_type,
+        accept_multiple_files=True,
+        key=f"{namespace}_file_uploader",
+        help=f"Selecciona uno o más archivos. Solo se permiten {doc_type}.",
+    )
+
+    if st.button(
+        f"Subir {namespace}",
+        use_container_width=True,
+        type="primary",
+        disabled=not uploaded_files,
+    ):
+        add_files_to_repo(uploaded_files, namespace)
+        st.rerun()
 
 
 def set_delete_state(delete_state_key: str, delete_state: bool):
