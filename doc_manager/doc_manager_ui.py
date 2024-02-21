@@ -1,4 +1,3 @@
-import time
 import uuid
 
 import streamlit as st
@@ -18,11 +17,6 @@ from doc_manager.pinecone_management import (
 from doc_manager.register import fetch_users
 
 logo_path = "logos/unap_negativo.png"
-
-
-def reset_state_and_rerun(state_key):
-    st.session_state[state_key] = False
-    st.rerun()
 
 
 def general_info():
@@ -120,8 +114,7 @@ def manage_docs(
                 file_paths=selected_file_paths,
                 namespace=namespace,
             )
-            time.sleep(2)
-            reset_state_and_rerun(delete_doc_key)
+            set_delete_state(delete_doc_key, False)
         st.button(
             "Cancelar",
             use_container_width=True,
@@ -143,13 +136,13 @@ def manage_docs(
             accept_multiple_files=True,
             help=f"Selecciona uno o más archivos. Solo se permiten {doc_type}.",
         )
-        submitted = st.form_submit_button(
+        st.form_submit_button(
             f"Subir {namespace}",
             use_container_width=True,
             type="primary",
+            on_click=add_files_to_repo,
+            args=(uploaded_files, namespace),
         )
-        if submitted:
-            add_files_to_repo(uploaded_files, namespace)
 
 
 def set_delete_state(delete_state_key: str, delete_state: bool):
