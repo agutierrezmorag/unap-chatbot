@@ -58,15 +58,16 @@ def get_tools():
     doc_retriever_tool = create_retriever_tool(
         get_retriever(namespace="Reglamentos"),
         "buscador_reglamentos_unap",
-        "Busca en la base de datos de reglamentos de la Universidad Arturo Prat. \
-        Ideal para información detallada y oficial sobre reglamentos, procedimientos, becas y directrices. Corrobora información oficial.",
+        "Este es el principal recurso de información. Busca en la base de datos de reglamentos de la Universidad Arturo Prat. \
+        Proporciona información detallada y oficial sobre reglamentos, procedimientos, becas y directrices. Utilízalo para corroborar información oficial.",
         document_prompt=document_prompt,
     )
 
     wikipedia_retriever_tool = create_retriever_tool(
         get_retriever(namespace="Wikipedia"),
         "wikipedia_unap",
-        "Recupera información relevante de Wikipedia sobre la Universidad Arturo Prat, incluyendo historia, ubicación y sedes.",
+        "Este recurso proporciona información general de Wikipedia sobre la Universidad Arturo Prat, incluyendo historia, ubicación y sedes. \
+        Úsalo como un recurso secundario para obtener una visión general.",
     )
 
     calendar_prompt = PromptTemplate.from_template(
