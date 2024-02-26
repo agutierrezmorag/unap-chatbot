@@ -5,15 +5,11 @@ from langchain.tools.retriever import create_retriever_tool
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import ConfigurableField, RunnablePassthrough
-from langchain_openai import ChatOpenAI, OpenAI
+from langchain_openai import ChatOpenAI
 from langsmith import Client
 
 from doc_manager.pinecone_management import get_or_create_vectorstore
 from utils import config
-
-OPENAI_MODEL_NAME = "gpt-3.5-turbo-0125"
-TEMPERATURE = 0.3
-MAX_TOKENS = 1000
 
 
 @st.cache_resource(show_spinner=False)
@@ -27,12 +23,12 @@ def get_langsmith_client():
 
 # Para que funcione el agente, esta funcion no puede ser cacheada
 # @st.cache_resource(show_spinner=False)
-def get_chat_model():
-    chat_model = ChatOpenAI(
+def get_llm():
+    llm = ChatOpenAI(
+        model_name="gpt-3.5-turbo-0125",
         openai_api_key=config.OPENAI_API_KEY,
-        model_name=OPENAI_MODEL_NAME,
-        temperature=TEMPERATURE,
-        max_tokens=MAX_TOKENS,
+        temperature=0.3,
+        max_tokens=1000,
         streaming=True,
     ).configurable_fields(
         model_name=ConfigurableField(
@@ -40,17 +36,6 @@ def get_chat_model():
             name="GPT Model",
             description="The model to use for generating the response",
         )
-    )
-    return chat_model
-
-
-@st.cache_resource(show_spinner=False)
-def get_llm():
-    llm = OpenAI(
-        openai_api_key=config.OPENAI_API_KEY,
-        model_name=OPENAI_MODEL_NAME,
-        temperature=TEMPERATURE,
-        max_tokens=MAX_TOKENS,
     )
     return llm
 
@@ -131,7 +116,7 @@ def get_tools():
 @st.cache_resource(show_spinner=False)
 def question_suggester_chain():
     llm = get_llm()
-    prompt = hub.pull("unap-chatbot/qa-suggester")
+    prompt = hub.pull("unap-chatbot/unap-chatbot-q-suggester")
 
     chain = (
         {"input": RunnablePassthrough()} | prompt | llm | StrOutputParser()
@@ -148,7 +133,7 @@ def get_agent_prompt():
 # Esta funcion no puede ser cacheada, para que funcione correctamente el agente
 def get_agent():
     prompt = get_agent_prompt()
-    llm = get_chat_model()
+    llm = get_llm()
     tools = get_tools()
 
     agent = create_openai_tools_agent(llm, tools, prompt)
