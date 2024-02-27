@@ -103,7 +103,6 @@ def delete_repo_doc(file_paths: List[str], namespace: str) -> None:
                 sha=doc.sha,
                 branch=config.REPO_BRANCH,
             )
-            st.markdown(f"- {message}")
             progress_bar.progress((i + 1) / total_files, text=message)
 
         progress_bar.progress(1.0, text=":green[Documentos eliminados exitosamente.]")
