@@ -27,7 +27,7 @@ def get_llm():
     llm = ChatOpenAI(
         model_name="gpt-3.5-turbo-0125",
         openai_api_key=config.OPENAI_API_KEY,
-        temperature=0.7,
+        temperature=0.3,
         max_tokens=1000,
         streaming=True,
     ).configurable_fields(
