@@ -261,11 +261,12 @@ if __name__ == "__main__":
             )
 
     # Botones de feedback
-    feedback = streamlit_feedback(
-        feedback_type="faces",
-        optional_text_label="Proporciona retroalimentación adicional (opcional):",
-        key=f"feedback_{st.session_state.run_id}",
-    )
+    if len(st.session_state.msgs.messages) > 0:
+        feedback = streamlit_feedback(
+            feedback_type="faces",
+            optional_text_label="Proporciona retroalimentación adicional (opcional):",
+            key=f"feedback_{st.session_state.run_id}",
+        )
 
     # Registro de feedback
     if st.session_state.run_id:
