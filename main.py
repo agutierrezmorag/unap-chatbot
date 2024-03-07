@@ -240,8 +240,6 @@ if __name__ == "__main__":
 
     # Historial de mensajes
     avatars = {"human": "🧑‍💻", "ai": logo_path}
-    if len(st.session_state.msgs.messages) == 0:
-        st.session_state.msgs.add_ai_message("¡Hola! ¿En qué puedo ayudarte?")
     for msg in st.session_state.msgs.messages:
         st.chat_message(msg.type, avatar=avatars[msg.type]).write(msg.content)
 
