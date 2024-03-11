@@ -8,7 +8,3 @@ path = "doc_manager/doc_manager_ui.py"
 name = "Administracion"
 icon = "⚙️"
 
-[[pages]]
-path = "doc_querier.py"
-name = "Consulta documentos"
-icon = "🔍"
