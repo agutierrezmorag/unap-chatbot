@@ -24,7 +24,7 @@ dataclasses-json-speakeasy==0.5.11
 Deprecated==1.2.14
 deprecation==2.1.0
 distro==1.9.0
-dnspython==2.5.0
+dnspython==2.6.1
 docstring-inheritance==2.1.2
 duckduckgo_search==4.4
 emoji==2.10.1
