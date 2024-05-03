@@ -143,7 +143,7 @@ tiktoken==0.5.2
 toml==0.10.2
 toolz==0.12.1
 tornado==6.4
-tqdm==4.66.1
+tqdm==4.66.3
 trubrics==1.6.2
 typer==0.9.0
 types-requests==2.31.0.20240125
