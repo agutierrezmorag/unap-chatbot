@@ -3,19 +3,19 @@ import time
 
 import pinecone
 import streamlit as st
+from documents_manager import get_repo_documents
 from icecream import ic
-from langchain.cache import InMemoryCache
 from langchain.chains import ConversationalRetrievalChain
 from langchain.globals import set_llm_cache
 from langchain.memory import ConversationBufferWindowMemory
+from langchain_community.cache import InMemoryCache
 from langchain_community.chat_message_histories import StreamlitChatMessageHistory
-from langchain_community.vectorstores import Pinecone
 from langchain_core.prompts import PromptTemplate
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from langchain_pinecone import Pinecone
 from st_pages import show_pages_from_config
 from streamlit_feedback import streamlit_feedback
 
-from documents_manager import get_repo_documents
 from utils import config
 from utils.callbacks import (
     PrintRetrievalHandler,
