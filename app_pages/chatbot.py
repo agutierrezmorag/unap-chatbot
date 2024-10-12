@@ -9,7 +9,6 @@ from langchain.callbacks.manager import collect_runs
 from langchain.globals import set_llm_cache
 from langchain.memory import ConversationBufferWindowMemory
 from langchain_community.chat_message_histories import StreamlitChatMessageHistory
-from st_pages import show_pages_from_config
 from streamlit_feedback import streamlit_feedback
 from termcolor import cprint
 
@@ -113,7 +112,7 @@ def submit_question(question):
     st.session_state.user_question = question
 
 
-if __name__ == "__main__":
+def chatbot_page():
     st.set_page_config(
         page_title="Chatbot UNAP",
         page_icon="🤖",
@@ -122,8 +121,6 @@ if __name__ == "__main__":
             "About": "Chat capaz de responder preguntas relacionadas a reglamentos y documentos de la universidad Arturo Prat."
         },
     )
-
-    show_pages_from_config()
 
     # CSS necesario para mostrar el boton de sugerencia de preguntas como texto plano
     st.markdown(
@@ -153,8 +150,6 @@ if __name__ == "__main__":
     set_llm_cache(InMemoryCache())
     logo_path = "logos/unap_negativo.png"
     client = get_langsmith_client()
-    with st.sidebar:
-        st.image(logo_path)
 
     # Lista de documentos disponibles para consultar
     docs = get_repo_docs_as_pd("Reglamentos")

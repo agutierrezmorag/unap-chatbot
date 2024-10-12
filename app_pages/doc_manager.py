@@ -2,7 +2,6 @@ import uuid
 
 import streamlit as st
 import streamlit_authenticator as stauth
-from st_pages import show_pages_from_config
 
 from doc_manager.github_management import (
     add_files_to_repo,
@@ -15,8 +14,6 @@ from doc_manager.pinecone_management import (
     process_and_load_documents,
 )
 from doc_manager.register import fetch_users
-
-logo_path = "logos/unap_negativo.png"
 
 
 def general_info():
@@ -197,7 +194,7 @@ def wikipedia():
             st.toast("Contenido de Wikipedia eliminado de memoria", icon="⚠️")
 
 
-def main():
+def doc_manager_page():
     st.set_page_config(
         page_title="Chatbot UNAP",
         page_icon="🤖",
@@ -218,10 +215,6 @@ def main():
         """,
         unsafe_allow_html=True,
     )
-
-    with st.sidebar:
-        st.image(logo_path, use_column_width=True)
-    show_pages_from_config()
 
     try:
         users = fetch_users()
@@ -305,7 +298,3 @@ def main():
     except Exception as e:
         print(e)
         st.rerun()
-
-
-if __name__ == "__main__":
-    main()

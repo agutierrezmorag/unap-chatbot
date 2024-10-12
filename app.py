@@ -1,14 +1,17 @@
 import streamlit as st
 
+from app_pages.chatbot import chatbot_page
+from app_pages.doc_manager import doc_manager_page
+
 if __name__ == "__main__":
     chatbot_page = st.Page(
-        page="pages\chatbot.py",
+        page=chatbot_page,
         title="Chatbot UNAP",
         icon=":material/smart_toy:",
         default=True,
     )
     admin_page = st.Page(
-        page="pages\doc_manager.py",
+        page=doc_manager_page,
         title="Admin",
         icon=":material/settings:",
         default=False,
