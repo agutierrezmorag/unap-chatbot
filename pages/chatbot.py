@@ -122,6 +122,7 @@ if __name__ == "__main__":
             "About": "Chat capaz de responder preguntas relacionadas a reglamentos y documentos de la universidad Arturo Prat."
         },
     )
+
     show_pages_from_config()
 
     # CSS necesario para mostrar el boton de sugerencia de preguntas como texto plano
@@ -205,6 +206,8 @@ if __name__ == "__main__":
         )
     if "user_question" not in st.session_state:
         st.session_state.user_question = ""
+    if "role" not in st.session_state:
+        st.session_state.role = "user"
 
     # Preguntas predefinidas
     question_pool = [
