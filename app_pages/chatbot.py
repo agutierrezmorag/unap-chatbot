@@ -1,14 +1,11 @@
 import asyncio
 import random
 import time
-import uuid
 
 import streamlit as st
 from langchain.cache import InMemoryCache
 from langchain.callbacks.manager import collect_runs
 from langchain.globals import set_llm_cache
-from langchain.memory import ConversationBufferWindowMemory
-from langchain_community.chat_message_histories import StreamlitChatMessageHistory
 from streamlit_feedback import streamlit_feedback
 from termcolor import cprint
 
@@ -182,27 +179,6 @@ def chatbot_page():
         st.caption(
             "Este chatbot puede cometer errores. Si encuentras inexactitudes, reformula tu pregunta o consulta los documentos oficiales."
         )
-
-    # Inicializacion de variables de estado
-    if "session_id" not in st.session_state:
-        st.session_state.session_id = str(uuid.uuid4())
-    if "run_id" not in st.session_state:
-        st.session_state.run_id = ""
-    if "msgs" not in st.session_state:
-        st.session_state.msgs = StreamlitChatMessageHistory(key="msgs")
-    if "memory" not in st.session_state:
-        st.session_state.memory = ConversationBufferWindowMemory(
-            k=5,
-            memory_key="chat_history",
-            input_key="input",
-            output_key="output",
-            chat_memory=st.session_state.msgs,
-            return_messages=True,
-        )
-    if "user_question" not in st.session_state:
-        st.session_state.user_question = ""
-    if "role" not in st.session_state:
-        st.session_state.role = "user"
 
     # Preguntas predefinidas
     question_pool = [
