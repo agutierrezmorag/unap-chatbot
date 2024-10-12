@@ -2,11 +2,10 @@ import os
 from typing import Any, Dict, List
 
 import streamlit as st
-from langchain.callbacks.base import BaseCallbackHandler
-from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
-from langchain.schema import LLMResult
-from langchain.schema.messages import BaseMessage
 from langchain_community.callbacks.openai_info import get_openai_token_cost_for_model
+from langchain_core.callbacks import BaseCallbackHandler, StreamingStdOutCallbackHandler
+from langchain_core.messages import BaseMessage
+from langchain_core.outputs import LLMResult
 from tiktoken import encoding_for_model
 
 
