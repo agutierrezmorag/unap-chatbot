@@ -6,7 +6,6 @@ from typing import Dict, List, Optional, Union
 
 import pinecone
 import streamlit as st
-from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import (
     DirectoryLoader,
     GitLoader,
@@ -20,6 +19,7 @@ from langchain_openai import OpenAIEmbeddings
 from langchain_pinecone import Pinecone
 
 from utils import config
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 logging.basicConfig(level=logging.INFO)
 
