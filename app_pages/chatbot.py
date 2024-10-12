@@ -3,9 +3,9 @@ import random
 import time
 
 import streamlit as st
-from langchain.cache import InMemoryCache
-from langchain.callbacks.manager import collect_runs
 from langchain.globals import set_llm_cache
+from langchain_community.cache import InMemoryCache
+from langchain_core.tracers.context import collect_runs
 from streamlit_feedback import streamlit_feedback
 from termcolor import cprint
 
