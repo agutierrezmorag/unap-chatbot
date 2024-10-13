@@ -25,7 +25,7 @@ def get_langsmith_client():
 # @st.cache_resource(show_spinner=False)
 def get_llm():
     llm = ChatOpenAI(
-        model_name="gpt-3.5-turbo-0125",
+        model_name=config.OPENAI_AI_MODEL,
         openai_api_key=config.OPENAI_API_KEY,
         temperature=0.7,
         max_tokens=1000,
@@ -37,6 +37,7 @@ def get_llm():
             description="The model to use for generating the response",
         )
     )
+
     return llm
 
 
