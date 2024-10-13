@@ -17,9 +17,9 @@ from langchain_community.document_loaders.sitemap import SitemapLoader
 from langchain_core.documents import Document
 from langchain_openai import OpenAIEmbeddings
 from langchain_pinecone import Pinecone
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from utils import config
-from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 logging.basicConfig(level=logging.INFO)
 
@@ -31,7 +31,7 @@ class SingletonPinecone:
     def get_instance():
         if SingletonPinecone._instance is None:
             SingletonPinecone._instance = pinecone.Pinecone(
-                api_key=config.PINECONE_API_KEY, environment=config.PINECONE_ENV
+                api_key=config.PINECONE_API_KEY
             )
         return SingletonPinecone._instance
 
