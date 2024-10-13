@@ -37,7 +37,7 @@ if __name__ == "__main__":
         icon=":material/settings:",
         default=False,
     )
-    logo = st.logo("logos\\logo_wide.png", icon_image="logos\\logo_wide.png")
+    logo = st.logo("logos/logo_wide.png", icon_image="logos/logo_wide.png")
 
     pages = st.navigation([chatbot_page, admin_page])
     pages.run()
