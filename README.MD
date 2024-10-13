@@ -16,4 +16,12 @@ Visualizadora de data: <https://unap-chatbot-stats.streamlit.app/>
 - [**Pinecone**](https://www.pinecone.io/) como base de datos de vectores.
 - [**Streamlit/Streamlit Cloud**](https://streamlit.io/) para el frontend y deploy de la herramienta.
 
-Taller de titulo. UNAP 2023-2024.
+## Screenshots
+
+### Vista inicial
+
+![Vista inicial](ss1.png)
+
+### Respuesta generada
+
+![Respuesta generada](ss2.png)
