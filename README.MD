@@ -12,8 +12,8 @@ Visualizadora de data: <https://unap-chatbot-stats.streamlit.app/>
 
 ## Servicios utilizados
 
-- [**OpenAI API**](https://openai.com/blog/openai-api) para la generacion de las respuestas. Modelos 3.5 y 4.
+- [**OpenAI API**](https://openai.com/blog/openai-api) para la generacion de las respuestas. Modelo gpt4o-mini.
 - [**Pinecone**](https://www.pinecone.io/) como base de datos de vectores.
-- [**Streamlit Share**](https://streamlit.io/) para el frontend y deploy de la herramienta.
+- [**Streamlit/Streamlit Cloud**](https://streamlit.io/) para el frontend y deploy de la herramienta.
 
 Taller de titulo. UNAP 2023-2024.
