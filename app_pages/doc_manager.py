@@ -2,17 +2,18 @@ import uuid
 
 import streamlit as st
 import streamlit_authenticator as stauth
-from document_manager.github_management import (
+
+from document_management.github_management import (
     add_files_to_repo,
     delete_repo_doc,
     get_repo_docs_as_pd,
 )
-from document_manager.pinecone_management import (
+from document_management.pinecone_management import (
     delete_namespace,
     get_index_data,
     process_and_load_documents,
 )
-from document_manager.register import fetch_users
+from document_management.register import fetch_users
 
 
 def general_info():
