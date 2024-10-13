@@ -1,7 +1,10 @@
 import pandas as pd
 import streamlit as st
 
-from doc_manager.pinecone_management import get_index_data, get_or_create_vectorstore
+from document_management.pinecone_management import (
+    get_index_data,
+    get_or_create_vectorstore,
+)
 
 logo_path = "logos/unap_negativo.png"
 

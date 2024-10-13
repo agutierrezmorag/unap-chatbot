@@ -10,7 +10,7 @@ from streamlit_feedback import streamlit_feedback
 from termcolor import cprint
 
 from chat_logic import get_agent, get_langsmith_client, question_suggester_chain
-from doc_manager.github_management import get_repo_docs_as_pd
+from document_management.github_management import get_repo_docs_as_pd
 from utils import config
 
 

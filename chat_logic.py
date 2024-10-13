@@ -8,7 +8,7 @@ from langchain_core.runnables import ConfigurableField, RunnablePassthrough
 from langchain_openai import ChatOpenAI
 from langsmith import Client
 
-from doc_manager.pinecone_management import get_or_create_vectorstore
+from document_management.pinecone_management import get_or_create_vectorstore
 from utils import config
 
 

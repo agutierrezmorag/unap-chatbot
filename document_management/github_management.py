@@ -3,10 +3,10 @@ from typing import List
 
 import pandas as pd
 import streamlit as st
+from document_manager.pinecone_management import process_and_load_documents
 from github import Auth, ContentFile, Github, GithubException, Repository
 from streamlit.elements.widgets.file_uploader import UploadedFile
 
-from doc_manager.pinecone_management import process_and_load_documents
 from utils import config
 
 logging.basicConfig(level=logging.INFO)
