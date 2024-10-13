@@ -109,7 +109,7 @@ def submit_question(question):
     st.session_state.user_question = question
 
 
-def chatbot_page():
+if __name__ == "__page__":
     st.set_page_config(
         page_title="Chatbot UNAP",
         page_icon="🤖",

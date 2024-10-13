@@ -4,9 +4,6 @@ import streamlit as st
 from langchain.memory import ConversationBufferWindowMemory
 from langchain_community.chat_message_histories import StreamlitChatMessageHistory
 
-from app_pages.chatbot import chatbot_page
-from app_pages.doc_manager import doc_manager_page
-
 if __name__ == "__main__":
     if "role" not in st.session_state:
         st.session_state.role = "user"
@@ -29,18 +26,18 @@ if __name__ == "__main__":
         st.session_state.user_question = ""
 
     chatbot_page = st.Page(
-        page=chatbot_page,
+        page="app_pages/chatbot.py",
         title="Chatbot UNAP",
         icon=":material/smart_toy:",
         default=True,
     )
     admin_page = st.Page(
-        page=doc_manager_page,
+        page="app_pages/doc_manager.py",
         title="Admin",
         icon=":material/settings:",
         default=False,
     )
     logo = st.logo("logos\\logo_wide.png", icon_image="logos\\logo_wide.png")
 
-    pages = st.navigation([chatbot_page, admin_page], expanded=False)
+    pages = st.navigation([chatbot_page, admin_page])
     pages.run()

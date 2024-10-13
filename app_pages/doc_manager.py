@@ -194,7 +194,7 @@ def wikipedia():
             st.toast("Contenido de Wikipedia eliminado de memoria", icon="⚠️")
 
 
-def doc_manager_page():
+if __name__ == "__page__":
     st.set_page_config(
         page_title="Chatbot UNAP",
         page_icon="🤖",
