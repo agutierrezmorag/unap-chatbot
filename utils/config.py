@@ -6,6 +6,9 @@ import streamlit as st
 OPENAI_API_KEY = st.secrets.openai.api_key
 PINECONE_API_KEY = st.secrets.pinecone.api_key
 
+# OPENAI data
+OPENAI_AI_MODEL = st.secrets.openai.ai_model
+
 # PINECONE data
 PINECONE_ENV = st.secrets.pinecone.env
 PINECONE_INDEX_NAME = st.secrets.pinecone.index_name
