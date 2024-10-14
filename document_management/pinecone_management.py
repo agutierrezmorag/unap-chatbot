@@ -91,7 +91,7 @@ def delete_namespace(namespace: str) -> None:
     """
     try:
         pc = _get_pinecone_instance()
-        index = pc.Index(config.PINECONE_INDEX_NAME)
+        index = pc.Index(config.PINECONE_INDEX_NAME, host=config.PINECONE_INDEX_HOST)
         index.delete(delete_all=True, namespace=namespace)
         logging.info(f"Namespace {namespace} eliminado exitosamente.")
     except Exception as e:
@@ -137,8 +137,7 @@ def get_index_data() -> Dict:
         dict: Un diccionario que contiene las estadísticas del índice.
     """
     pc = _get_pinecone_instance()
-    host = pc.describe_index(config.PINECONE_INDEX_NAME).host
-    index = pc.Index(host=host)
+    index = pc.Index(host=config.PINECONE_INDEX_HOST)
     index_data = index.describe_index_stats()
 
     return index_data

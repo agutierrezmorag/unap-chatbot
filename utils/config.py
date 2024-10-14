@@ -11,6 +11,7 @@ OPENAI_API_KEY = st.secrets.openai.api_key
 PINECONE_API_KEY = st.secrets.pinecone.api_key
 PINECONE_INDEX_NAME = st.secrets.pinecone.index_name
 PINECONE_INDEX_DIMENSIONS = st.secrets.pinecone.index_dimensions
+PINECONE_INDEX_HOST = st.secrets.pinecone.index_host
 
 # GitHub repo keys
 REPO_OWNER = st.secrets.github.repo_owner
