@@ -34,7 +34,7 @@ class SingletonPinecone:
         return SingletonPinecone._instance
 
 
-def _get_pinecone() -> pinecone.Pinecone:
+def _get_pinecone_instance() -> pinecone.Pinecone:
     """
     Obtiene una instancia del objeto Pinecone.
 
@@ -89,7 +89,7 @@ def delete_namespace(namespace: str) -> None:
         None
     """
     try:
-        pc = _get_pinecone()
+        pc = _get_pinecone_instance()
         index = pc.Index(config.PINECONE_INDEX_NAME)
         index.delete(delete_all=True, namespace=namespace)
         logging.info(f"Namespace {namespace} eliminado exitosamente.")
@@ -114,7 +114,7 @@ def _ensure_index_exists() -> None:
     Returns:
         None
     """
-    pc = _get_pinecone()
+    pc = _get_pinecone_instance()
     if config.PINECONE_INDEX_NAME not in pc.list_indexes().names():
         try:
             pc.create_index(
@@ -135,7 +135,7 @@ def get_index_data() -> Dict:
     Returns:
         dict: Un diccionario que contiene las estadísticas del índice.
     """
-    pc = _get_pinecone()
+    pc = _get_pinecone_instance()
     host = pc.describe_index(config.PINECONE_INDEX_NAME).host
     index = pc.Index(host=host)
     index_data = index.describe_index_stats()
