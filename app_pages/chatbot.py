@@ -28,7 +28,7 @@ async def agent_answer(prompt, agent_thoughts_placeholder, response_placeholder)
                     "tags": [config.CHAT_ENVIRONMENT],
                     "metadata": {"conversation_id": st.session_state.session_id},
                 },
-                version="v1",
+                version="v2",
             ):
                 kind = event["event"]
                 if kind == "on_chain_end":
