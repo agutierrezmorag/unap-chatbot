@@ -9,8 +9,6 @@ from streamlit.elements.widgets.file_uploader import UploadedFile
 from document_management.pinecone_management import process_and_load_documents
 from utils import config
 
-logging.basicConfig(level=logging.INFO)
-
 
 @st.cache_resource(show_spinner=False)
 def _get_repo() -> Repository.Repository:

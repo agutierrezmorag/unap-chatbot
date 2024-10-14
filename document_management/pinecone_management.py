@@ -21,8 +21,6 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from utils import config
 
-logging.basicConfig(level=logging.INFO)
-
 
 class SingletonPinecone:
     _instance = None

@@ -1,8 +1,11 @@
+import logging
 import uuid
 
 import streamlit as st
 from langchain.memory import ConversationBufferWindowMemory
 from langchain_community.chat_message_histories import StreamlitChatMessageHistory
+
+logging.basicConfig(level=logging.INFO)
 
 if __name__ == "__main__":
     if "role" not in st.session_state:
