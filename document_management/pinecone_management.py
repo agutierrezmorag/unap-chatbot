@@ -52,7 +52,8 @@ def get_embedder() -> OpenAIEmbeddings:
         OpenAIEmbeddings: El objeto OpenAIEmbeddings para realizar la incrustación de texto.
     """
     return OpenAIEmbeddings(
-        openai_api_key=config.OPENAI_API_KEY, model="text-embedding-3-small"
+        openai_api_key=config.OPENAI_API_KEY,
+        model=config.OPENAI_EMBEDDING_MODEL,
     )
 
 
@@ -121,7 +122,7 @@ def _ensure_index_exists() -> None:
                 name=config.PINECONE_INDEX_NAME,
                 metric="cosine",
                 dimension=1536,
-                spec=pinecone.PodSpec(environment=config.PINECONE_ENV),
+                spec=pinecone.ServerlessSpec(cloud="aws", region="us-east-1"),
             )
             logging.info(f"Índice creado {config.PINECONE_INDEX_NAME}")
         except Exception as e:
