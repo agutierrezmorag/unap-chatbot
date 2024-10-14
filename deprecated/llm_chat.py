@@ -68,7 +68,6 @@ def get_vectorstore():
     embeddings = OpenAIEmbeddings(openai_api_key=config.OPENAI_API_KEY)
     pinecone.init(
         api_key=config.PINECONE_API_KEY,
-        environment=config.PINECONE_ENV,
     )
 
     vectorstore = Pinecone.from_existing_index(config.PINECONE_INDEX_NAME, embeddings)

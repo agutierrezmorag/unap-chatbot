@@ -9,7 +9,6 @@ OPENAI_API_KEY = st.secrets.openai.api_key
 
 # PINECONE data
 PINECONE_API_KEY = st.secrets.pinecone.api_key
-PINECONE_ENV = st.secrets.pinecone.env
 PINECONE_INDEX_NAME = st.secrets.pinecone.index_name
 PINECONE_INDEX_DIMENSIONS = st.secrets.pinecone.index_dimensions
 
