@@ -254,8 +254,8 @@ if __name__ == "__page__":
             if score is not None:
                 feedback_type_str = f"faces {feedback['score']}"
                 feedback_record = client.create_feedback(
-                    st.session_state.run_id,
-                    feedback_type_str,
+                    run_id=st.session_state.run_id,
+                    key=feedback_type_str,
                     score=score,
                     comment=feedback.get("text"),
                 )
