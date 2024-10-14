@@ -28,7 +28,7 @@ async def agent_answer(prompt, agent_thoughts_placeholder, response_placeholder)
                     "tags": [config.CHAT_ENVIRONMENT],
                     "metadata": {"conversation_id": st.session_state.session_id},
                 },
-                version="v2",
+                version="v1",
             ):
                 kind = event["event"]
                 if kind == "on_chain_end":
@@ -225,7 +225,7 @@ if __name__ == "__page__":
         st.chat_message("user", avatar="🧑‍💻").write(st.session_state.user_question)
         with st.chat_message("assistant", avatar=logo_path):
             response_placeholder = st.empty()
-            agent_thoughts_placeholder = st.status("🤔 Pensando...", expanded=True)
+            agent_thoughts_placeholder = st.status("🤔 Pensando...", expanded=False)
             asyncio.run(
                 agent_answer(
                     st.session_state.user_question,
