@@ -2,17 +2,16 @@ import os
 
 import streamlit as st
 
-# API keys
-OPENAI_API_KEY = st.secrets.openai.api_key
-PINECONE_API_KEY = st.secrets.pinecone.api_key
-
-# LLMs data
+# OPENAI data
 OPENAI_CHAT_MODEL = st.secrets.openai.chat_model
 OPENAI_EMBEDDING_MODEL = st.secrets.openai.embedding_model
+OPENAI_API_KEY = st.secrets.openai.api_key
 
 # PINECONE data
+PINECONE_API_KEY = st.secrets.pinecone.api_key
 PINECONE_ENV = st.secrets.pinecone.env
 PINECONE_INDEX_NAME = st.secrets.pinecone.index_name
+PINECONE_INDEX_DIMENSIONS = st.secrets.pinecone.index_dimensions
 
 # GitHub repo keys
 REPO_OWNER = st.secrets.github.repo_owner
@@ -35,14 +34,9 @@ LANGCHAIN_API_KEY = st.secrets.langsmith.api_key
 LANGCHAIN_PROJECT = st.secrets.langsmith.project
 CHAT_ENVIRONMENT = st.secrets.langsmith.chat_environment
 
-# Tavily data
-TAVILY_API_KEY = st.secrets.tavily.api_key
-
 os.environ["PINECONE_API_KEY"] = PINECONE_API_KEY
 
 os.environ["LANGCHAIN_TRACING_V2"] = LANGCHAIN_TRACING_V2
 os.environ["LANGCHAIN_ENDPOINT"] = LANGCHAIN_ENDPOINT
 os.environ["LANGCHAIN_API_KEY"] = LANGCHAIN_API_KEY
 os.environ["LANGCHAIN_PROJECT"] = LANGCHAIN_PROJECT
-
-os.environ["TAVILY_API_KEY"] = TAVILY_API_KEY

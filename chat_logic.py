@@ -25,7 +25,7 @@ def get_langsmith_client():
 # @st.cache_resource(show_spinner=False)
 def get_llm():
     llm = ChatOpenAI(
-        model_name=config.OPENAI_AI_CHAT_MODEL,
+        model_name=config.OPENAI_CHAT_MODEL,
         openai_api_key=config.OPENAI_API_KEY,
         temperature=0.7,
         max_tokens=1000,

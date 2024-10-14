@@ -121,7 +121,7 @@ def _ensure_index_exists() -> None:
             pc.create_index(
                 name=config.PINECONE_INDEX_NAME,
                 metric="cosine",
-                dimension=1536,
+                dimension=config.PINECONE_INDEX_DIMENSIONS,
                 spec=pinecone.ServerlessSpec(cloud="aws", region="us-east-1"),
             )
             logging.info(f"Índice creado {config.PINECONE_INDEX_NAME}")
