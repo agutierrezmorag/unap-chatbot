@@ -75,7 +75,7 @@ if __name__ == "__main__":
         default=(st.session_state.role == "User"),
     )
     admin_test_page = st.Page(
-        page="app_pages/doc_manager_test.py",
+        page="app_pages/doc_manager.py",
         title="Gestor de Documentos",
         icon=":material/settings:",
         default=(st.session_state.role == "Admin"),
