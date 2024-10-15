@@ -1,4 +1,5 @@
 import logging
+import time
 import uuid
 
 import streamlit as st
@@ -12,7 +13,7 @@ logging.basicConfig(level=logging.INFO)
 
 
 if __name__ == "__main__":
-    # st.set_page_config(initial_sidebar_state="collapsed")
+    st.set_page_config(initial_sidebar_state="collapsed")
     if "role" not in st.session_state:
         st.session_state.role = "User"
     if "session_id" not in st.session_state:
@@ -41,16 +42,42 @@ if __name__ == "__main__":
             config["cookie"]["key"],
             config["cookie"]["expiry_days"],
         )
+    if "logout_key" not in st.session_state:
+        st.session_state.logout_key = str(uuid.uuid4())
+    if "reset_password_key" not in st.session_state:
+        st.session_state.reset_password_key = str(uuid.uuid4())
 
     if st.session_state.authentication_status:
         st.session_state.role = "Admin"
         with st.sidebar:
             st.write(f"Bienvenido **{st.session_state.name}**")
+            if st.button("Cambiar contraseña"):
+                is_reset = st.session_state.authenticator.reset_password(
+                    st.session_state["username"],
+                    key=st.session_state.reset_password_key,
+                    fields={
+                        "Form name": "Actualizar contraseña",
+                        "Current password": "Contraseña actual",
+                        "New password": "Contraseña nueva",
+                        "Repeat password": "Repetir contraseña",
+                        "Reset": "Actualizar",
+                    },
+                )
+                print(is_reset)
+                if is_reset:
+                    st.success(
+                        "Se ha actualizado la contraseña. Vuelva a iniciar sesión."
+                    )
+                    time.sleep(3)
+                    with open(".streamlit/auth_config.yaml", "w") as file:
+                        yaml.dump(config, file, default_flow_style=False)
+                    st.session_state.role = "User"
+                    is_reset = False
 
         st.session_state.authenticator.logout(
             button_name="Cerrar Sesión",
             location="sidebar",
-            key=st.session_state.session_id,
+            key=st.session_state.logout_key,
         )
     elif st.session_state.authentication_status is False:
         st.session_state.role = "User"
