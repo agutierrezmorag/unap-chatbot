@@ -20,10 +20,13 @@ Visualizadora de data: <https://unap-chatbot-stats.streamlit.app/>
 
 ## Screenshots
 
-### Vista inicial
+### Vistas Usuario
 
-![Vista inicial](ss1.png)
+![Vista inicial usuario](screenshots/view-user1.png)
+![Vista con sidebar expandido](screenshots/view-user2.png)
+![Vista con pregunta y su respuesta](screenshots/view-user3.png)
 
-### Respuesta generada
+### Vistas Admin
 
-![Respuesta generada](ss2.png)
+![Vista inicial admin](screenshots/view-admin1.png)
+![Vista gestor de documentos](screenshots/view-admin2.png)
