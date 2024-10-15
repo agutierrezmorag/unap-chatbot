@@ -1,0 +1,16 @@
+cookie:
+  expiry_days: 30
+  key: unap-chatbot # Must be a string
+  name: unap-chatbot-cookie
+credentials:
+  usernames:
+    agutierrez:
+      email: agm@gmail.com
+      failed_login_attempts: 0 # Will be managed automatically
+      first_name: Alvaro
+      last_name: Gutierrez
+      logged_in: False # Will be managed automatically
+      password: $2b$12$uf/Z263rjS297F2KDWj9Mua3ydp043FQwzFuT0qLCRDAGgXDOeEGS # Will be hashed automatically
+      roles: # Optional
+      - admin
+      - user
