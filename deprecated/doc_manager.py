@@ -1,6 +1,7 @@
 import uuid
 
 import streamlit as st
+import streamlit_authenticator as stauth
 
 from document_management.github_management import (
     add_files_to_repo,
@@ -12,6 +13,7 @@ from document_management.pinecone_management import (
     get_index_data,
     process_and_load_documents,
 )
+from document_management.register import fetch_users
 
 
 def general_info():
@@ -193,35 +195,106 @@ def wikipedia():
 
 
 if __name__ == "__page__":
-    if st.session_state["authentication_status"]:
-        general_info()
+    st.set_page_config(
+        page_title="Chatbot UNAP",
+        page_icon="🤖",
+    )
 
-        tab1, tab2, tab3, tab4 = st.tabs(
-            ["📃 Reglamentos", "🗓️ Calendarios", "🔗 Web", "🌍 Wikipedia"]
+    st.markdown(
+        """
+        <style>
+            [data-testid=stSidebar] [data-testid=stImage]{
+                text-align: center;
+                display: block;
+                margin-left: auto;
+                margin-right: auto;
+                margin-top: auto;
+                width: 100%;
+            }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    try:
+        users = fetch_users()
+        emails = []
+        usernames = []
+        passwords = []
+
+        for user in users:
+            emails.append(user["email"])
+            usernames.append(user["username"].lower())
+            passwords.append(user["password"])
+
+        credentials = {"usernames": {}}
+        for index in range(len(emails)):
+            credentials["usernames"][usernames[index]] = {
+                "name": emails[index],
+                "password": passwords[index],
+            }
+
+        Authenticator = stauth.Authenticate(
+            credentials, cookie_name="Streamlit", key="abcdef", cookie_expiry_days=1
         )
 
-        with tab1:
-            manage_docs(
-                "txt",
-                "txt_delete_state",
-                "Reglamentos",
+        email, authentication_status, username = Authenticator.login(
+            "main",
+            fields={
+                "Form name": "Inicio de sesión",
+                "Username": "Usuario",
+                "Password": "Contraseña",
+                "Login": "Iniciar Sesión",
+            },
+        )
+
+        # Para querer registrar una cuenta.
+        # if not authentication_status:
+        # sign_up()
+
+        if not username:
+            st.warning("Por favor, ingrese sus credenciales.")
+            st.stop()
+        elif username not in usernames:
+            st.warning("Usuario no existente.")
+            st.stop()
+        if not authentication_status:
+            st.error("Contraseña o usuario incorrectos.")
+            st.stop()
+        else:
+            st.sidebar.subheader(f"Bienvenido {username}")
+            Authenticator.logout("Cerrar Sesión", "sidebar")
+
+            general_info()
+
+            tab1, tab2, tab3, tab4 = st.tabs(
+                ["📃 Reglamentos", "🗓️ Calendarios", "🔗 Web", "🌍 Wikipedia"]
             )
 
-        with tab2:
-            manage_docs(
-                "xml",
-                "calendar_delete_state,",
-                "Calendarios",
-            )
+            with tab1:
+                manage_docs(
+                    "txt",
+                    "txt_delete_state",
+                    "Reglamentos",
+                )
 
-        with tab3:
-            manage_docs(
-                "xml",
-                "web_delete_state,",
-                "Web",
-            )
+            with tab2:
+                manage_docs(
+                    "xml",
+                    "calendar_delete_state,",
+                    "Calendarios",
+                )
 
-        with tab4:
-            wikipedia()
-    else:
-        st.title("Permiso denegado")
+            with tab3:
+                manage_docs(
+                    "xml",
+                    "web_delete_state,",
+                    "Web",
+                )
+
+            with tab4:
+                wikipedia()
+
+    except Exception as e:
+        print(e)
+        st.rerun()
