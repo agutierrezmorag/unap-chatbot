@@ -114,5 +114,10 @@ if __name__ == "__main__":
     elif st.session_state.role == "Admin":
         pages = st.navigation([chatbot_page, admin_test_page])
 
-    logo = st.logo("logos/logo_wide.png", icon_image="logos/logo_wide.png")
+    logo = st.logo(
+        "logos/logo_wide.png",
+        icon_image="logos/logo_small.png",
+        size="large",
+        link="https://www.unap.cl/",
+    )
     pages.run()
