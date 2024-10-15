@@ -110,15 +110,6 @@ def submit_question(question):
 
 
 if __name__ == "__page__":
-    st.set_page_config(
-        page_title="Chatbot UNAP",
-        page_icon="🤖",
-        initial_sidebar_state="collapsed",
-        menu_items={
-            "About": "Chat capaz de responder preguntas relacionadas a reglamentos y documentos de la universidad Arturo Prat."
-        },
-    )
-
     # CSS necesario para mostrar el boton de sugerencia de preguntas como texto plano
     st.markdown(
         """
