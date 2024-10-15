@@ -1,4 +1,4 @@
-# UNAP Chatbot 🤖
+# Chatbot UNAP 🤖
 
 Desarrollo de chatbot consciente de documentos y reglamentos pertinentes a la universidad Arturo Prat y la carrera de Ingenieria Civil en Computacion e Informatica.
 
@@ -17,6 +17,8 @@ Visualizadora de data: <https://unap-chatbot-stats.streamlit.app/>
 - [**Pinecone**](https://www.pinecone.io/) como base de datos de vectores.
 
 - [**Streamlit/Streamlit Cloud**](https://streamlit.io/) para el frontend y deploy de la herramienta.
+
+---
 
 ## Screenshots
 
