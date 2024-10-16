@@ -219,12 +219,14 @@ if __name__ == "__page__":
                     response_placeholder,
                 )
             )
-    st.markdown('<span id="button-after"></span>', unsafe_allow_html=True)
-    st.button(
-        f"✨ {st.session_state.suggested_question}",
-        on_click=submit_question,
-        args=(st.session_state.suggested_question,),
-    )
+
+    if st.session_state.suggested_question:
+        st.markdown('<span id="button-after"></span>', unsafe_allow_html=True)
+        st.button(
+            f"✨ {st.session_state.suggested_question}",
+            on_click=submit_question,
+            args=(st.session_state.suggested_question,),
+        )
 
     # Botones de feedback
     if len(st.session_state.msgs.messages) > 0:
