@@ -1,3 +1,4 @@
+import locale
 import logging
 import time
 import uuid
@@ -10,7 +11,7 @@ from langchain_community.chat_message_histories import StreamlitChatMessageHisto
 from yaml.loader import SafeLoader
 
 logging.basicConfig(level=logging.INFO)
-
+locale.setlocale(locale.LC_TIME, "es_CL.UTF-8")
 
 if __name__ == "__main__":
     st.set_page_config(initial_sidebar_state="collapsed")
@@ -33,6 +34,8 @@ if __name__ == "__main__":
         )
     if "user_question" not in st.session_state:
         st.session_state.user_question = ""
+    if "suggested_question" not in st.session_state:
+        st.session_state.suggested_question = None
     if "authenticator" not in st.session_state:
         with open(".streamlit/auth_config.yaml") as file:
             config = yaml.load(file, Loader=SafeLoader)

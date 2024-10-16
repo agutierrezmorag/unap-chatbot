@@ -78,6 +78,7 @@ def get_tools():
         get_retriever(namespace="Calendarios"),
         "calendario_academico_unap",
         "Consulta los calendarios académicos de la Universidad Arturo Prat. \
+        Recuerda SIEMPRE incluir la fecha del dia para obtener la información mas actualizada y relevante. \
         Proporciona fechas importantes del año académico, como periodos de matrícula, inducción y vacaciones.",
         document_prompt=calendar_prompt,
     )
@@ -89,6 +90,7 @@ def get_tools():
         get_retriever(namespace="Noticias"),
         "actualidad_unap",
         "Recupera artículos del portal de noticias Actualidad UNAP. \
+        Recuerda SIEMPRE incluir la fecha del dia para obtener la información mas actualizada y relevante. \
         Útil para mantenerse al día con eventos, noticias y desarrollos recientes en la universidad.",
         document_prompt=news_doc_prompt,
     )

@@ -1,6 +1,7 @@
 import asyncio
 import random
 import time
+from datetime import datetime
 
 import streamlit as st
 from langchain.globals import set_llm_cache
@@ -17,13 +18,14 @@ from utils import config
 async def agent_answer(prompt, agent_thoughts_placeholder, response_placeholder):
     agent = get_agent()
     suggester_llm = question_suggester_chain()
+    today_date = datetime.today().strftime("%d de %B de %Y")
     full_response = ""
     full_output = ""
 
     with collect_runs() as cb:
         try:
             async for event in agent.astream_events(
-                {"input": prompt},
+                {"date": today_date, "input": prompt},
                 config={
                     "tags": [config.CHAT_ENVIRONMENT],
                     "metadata": {"conversation_id": st.session_state.session_id},
@@ -40,7 +42,7 @@ async def agent_answer(prompt, agent_thoughts_placeholder, response_placeholder)
                             expanded=False,
                             state="complete",
                         )
-                        suggested_question = suggester_llm.invoke(
+                        st.session_state.suggested_question = suggester_llm.invoke(
                             st.session_state.memory.buffer[-2:]
                         )
                 if kind == "on_chat_model_stream":
@@ -95,13 +97,6 @@ async def agent_answer(prompt, agent_thoughts_placeholder, response_placeholder)
             return
         st.session_state.run_id = cb.traced_runs[0].id
 
-    if full_response:
-        st.markdown('<span id="button-after"></span>', unsafe_allow_html=True)
-        st.button(
-            f"✨ {suggested_question}",
-            on_click=submit_question,
-            args=(suggested_question,),
-        )
     st.session_state.user_question = ""
 
 
@@ -224,6 +219,12 @@ if __name__ == "__page__":
                     response_placeholder,
                 )
             )
+    st.markdown('<span id="button-after"></span>', unsafe_allow_html=True)
+    st.button(
+        f"✨ {st.session_state.suggested_question}",
+        on_click=submit_question,
+        args=(st.session_state.suggested_question,),
+    )
 
     # Botones de feedback
     if len(st.session_state.msgs.messages) > 0:
