@@ -102,13 +102,12 @@ if __name__ == "__main__":
         page="app_pages/chatbot.py",
         title="Chatbot UNAP",
         icon=":material/smart_toy:",
-        default=(st.session_state.role == "User"),
+        default=True,
     )
     admin_test_page = st.Page(
         page="app_pages/doc_manager.py",
         title="Gestor de Documentos",
         icon=":material/settings:",
-        default=(st.session_state.role == "Admin"),
     )
 
     pages = None
