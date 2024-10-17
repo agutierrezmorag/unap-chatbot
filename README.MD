@@ -24,11 +24,32 @@ Visualizadora de data: <https://unap-chatbot-stats.streamlit.app/>
 
 ### Vistas Usuario
 
+#### Vista inicial Usuario
+
 ![Vista inicial usuario](screenshots/view-user1.png)
+
+#### Vista con sidebar expandido
+
 ![Vista con sidebar expandido](screenshots/view-user2.png)
+
+#### Vista con pregunta y su respuesta
+
 ![Vista con pregunta y su respuesta](screenshots/view-user3.png)
 
 ### Vistas Admin
 
+#### Vista inicial Admin
+
 ![Vista inicial admin](screenshots/view-admin1.png)
+
+#### Vista gestor de documentos
+
 ![Vista gestor de documentos](screenshots/view-admin2.png)
+
+#### Vista cambio de contraseña
+
+![Vista cambio de contraseña de usuario](screenshots/view-admin3.png)
+
+#### Vista registro de usuario
+
+![Vista registro de usuario](screenshots/view-admin4.png)
