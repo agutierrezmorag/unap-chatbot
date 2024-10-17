@@ -133,7 +133,7 @@ def get_agent_prompt():
 
 
 # Funciones de agente
-# Esta funcion no puede ser cacheada, para que funcione correctamente el agente
+# Esta función no puede ser cacheada
 def get_agent():
     prompt = get_agent_prompt()
     llm = get_llm()
