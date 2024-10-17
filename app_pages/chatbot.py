@@ -131,7 +131,7 @@ if __name__ == "__page__":
 
     # Variables utiles a lo largo de la app
     set_llm_cache(InMemoryCache())
-    logo_path = "logos/unap_negativo.png"
+    logo_path = "images/logos/unap_negativo.png"
     client = get_langsmith_client()
 
     # Lista de documentos disponibles para consultar
