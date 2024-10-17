@@ -24,30 +24,30 @@ Disponible en: <https://unap-chatbot.streamlit.app/>
 
 #### Vista inicial Usuario
 
-![Vista inicial usuario](screenshots/view-user1.png)
+![Vista inicial usuario](images/screenshots/view-user1.png)
 
 #### Vista con sidebar expandido
 
-![Vista con sidebar expandido](screenshots/view-user2.png)
+![Vista con sidebar expandido](images/screenshots/view-user2.png)
 
 #### Vista con pregunta y su respuesta
 
-![Vista con pregunta y su respuesta](screenshots/view-user3.png)
+![Vista con pregunta y su respuesta](images/screenshots/view-user3.png)
 
 ### Vistas Admin
 
 #### Vista inicial Admin
 
-![Vista inicial admin](screenshots/view-admin1.png)
+![Vista inicial admin](images/screenshots/view-admin1.png)
 
 #### Vista gestor de documentos
 
-![Vista gestor de documentos](screenshots/view-admin2.png)
+![Vista gestor de documentos](images/screenshots/view-admin2.png)
 
 #### Vista cambio de contraseña
 
-![Vista cambio de contraseña de usuario](screenshots/view-admin3.png)
+![Vista cambio de contraseña de usuario](images/screenshots/view-admin3.png)
 
 #### Vista registro de usuario
 
-![Vista registro de usuario](screenshots/view-admin4.png)
+![Vista registro de usuario](images/screenshots/view-admin4.png)

@@ -112,8 +112,8 @@ if __name__ == "__main__":
         )
 
     logo = st.logo(
-        "logos/logo_wide.png",
-        icon_image="logos/logo_small.png",
+        "images/logos/logo_wide.png",
+        icon_image="images/logos/logo_small.png",
         size="large",
         link="https://www.unap.cl/",
     )
