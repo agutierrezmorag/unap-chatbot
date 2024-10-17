@@ -10,9 +10,9 @@ from langchain_core.tracers.context import collect_runs
 from streamlit_feedback import streamlit_feedback
 from termcolor import cprint
 
-from chat_logic import get_agent, get_langsmith_client, question_suggester_chain
 from document_management.github_management import get_repo_docs_as_pd
 from utils import config
+from utils.chat_logic import get_agent, get_langsmith_client, question_suggester_chain
 
 
 async def agent_answer(prompt, agent_thoughts_placeholder, response_placeholder):
