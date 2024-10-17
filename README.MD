@@ -6,16 +6,14 @@ Disponible en: <https://unap-chatbot.streamlit.app/>
 
 ## Links
 
-Agente: <https://unap-chatbot.streamlit.app/>
-Modelo de chat: <https://unap-chatbot-llm.streamlit.app/>
-Visualizadora de data: <https://unap-chatbot-stats.streamlit.app/>
+- Agente: <https://unap-chatbot.streamlit.app/>
+- Modelo de chat: <https://unap-chatbot-llm.streamlit.app/>
+- Visualizadora de data: <https://unap-chatbot-stats.streamlit.app/>
 
 ## Servicios utilizados
 
 - [**OpenAI API**](https://openai.com/blog/openai-api) para la generacion de las respuestas. Modelo *gpt4o-mini*.
-
 - [**Pinecone**](https://www.pinecone.io/) como base de datos de vectores.
-
 - [**Streamlit/Streamlit Cloud**](https://streamlit.io/) para el frontend y deploy de la herramienta.
 
 ---
