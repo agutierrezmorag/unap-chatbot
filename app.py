@@ -1,14 +1,14 @@
 import locale
 import logging
-import time
 import uuid
 
 import streamlit as st
-import streamlit_authenticator as stauth
 import yaml
 from langchain.memory import ConversationBufferWindowMemory
 from langchain_community.chat_message_histories import StreamlitChatMessageHistory
 from yaml.loader import SafeLoader
+
+from utils.custom_authenticator import CustomAuthenticate
 
 logging.basicConfig(level=logging.INFO)
 locale.setlocale(locale.LC_TIME, "es_CL.UTF-8")
@@ -38,12 +38,12 @@ if __name__ == "__main__":
         st.session_state.suggested_question = None
     if "authenticator" not in st.session_state:
         with open(".streamlit/auth_config.yaml") as file:
-            config = yaml.load(file, Loader=SafeLoader)
-        st.session_state.authenticator = stauth.Authenticate(
-            config["credentials"],
-            config["cookie"]["name"],
-            config["cookie"]["key"],
-            config["cookie"]["expiry_days"],
+            st.session_state.auth_config = yaml.load(file, Loader=SafeLoader)
+        st.session_state.authenticator = CustomAuthenticate(
+            st.session_state.auth_config["credentials"],
+            st.session_state.auth_config["cookie"]["name"],
+            st.session_state.auth_config["cookie"]["key"],
+            st.session_state.auth_config["cookie"]["expiry_days"],
         )
     if "logout_key" not in st.session_state:
         st.session_state.logout_key = str(uuid.uuid4())
@@ -54,29 +54,6 @@ if __name__ == "__main__":
         st.session_state.role = "Admin"
         with st.sidebar:
             st.write(f"Bienvenido **{st.session_state.name}**")
-            if st.button("Cambiar contraseña"):
-                is_reset = st.session_state.authenticator.reset_password(
-                    st.session_state["username"],
-                    key=st.session_state.reset_password_key,
-                    fields={
-                        "Form name": "Actualizar contraseña",
-                        "Current password": "Contraseña actual",
-                        "New password": "Contraseña nueva",
-                        "Repeat password": "Repetir contraseña",
-                        "Reset": "Actualizar",
-                    },
-                )
-                print(is_reset)
-                if is_reset:
-                    st.success(
-                        "Se ha actualizado la contraseña. Vuelva a iniciar sesión."
-                    )
-                    time.sleep(3)
-                    with open(".streamlit/auth_config.yaml", "w") as file:
-                        yaml.dump(config, file, default_flow_style=False)
-                    st.session_state.role = "User"
-                    is_reset = False
-
         st.session_state.authenticator.logout(
             button_name="Cerrar Sesión",
             location="sidebar",
@@ -104,17 +81,35 @@ if __name__ == "__main__":
         icon=":material/smart_toy:",
         default=True,
     )
-    admin_test_page = st.Page(
+    docs_manager_page = st.Page(
         page="app_pages/doc_manager.py",
         title="Gestor de Documentos",
         icon=":material/settings:",
     )
+    change_password_page = st.Page(
+        page="app_pages/change_password.py",
+        title="Cambiar Contraseña",
+        icon=":material/lock:",
+    )
+    create_account_page = st.Page(
+        page="app_pages/create_account.py",
+        title="Crear Cuenta",
+        icon=":material/person_add:",
+    )
+
+    user_pages = {"Chatbot": [chatbot_page]}
+    admin_pages = {
+        "Documentos": [docs_manager_page],
+        "Cuenta": [change_password_page, create_account_page],
+    }
 
     pages = None
     if st.session_state.role == "User":
-        pages = st.navigation([chatbot_page])
+        pages = st.navigation(user_pages)
     elif st.session_state.role == "Admin":
-        pages = st.navigation([chatbot_page, admin_test_page])
+        pages = st.navigation(
+            user_pages | admin_pages,
+        )
 
     logo = st.logo(
         "logos/logo_wide.png",
